@@ -27,6 +27,18 @@ public sealed class DsuStatusDto
     [JsonPropertyName("serverPort")]
     public int ServerPort { get; set; } = 26760;
 
+    [JsonPropertyName("activeSlot")]
+    public int ActiveSlot { get; set; }
+
+    [JsonPropertyName("wasPortFallbackTriggered")]
+    public bool WasPortFallbackTriggered { get; set; }
+
+    [JsonPropertyName("isSecondaryClusterActive")]
+    public bool IsSecondaryClusterActive { get; set; }
+
+    [JsonPropertyName("secondaryPort")]
+    public int SecondaryPort { get; set; } = 26762;
+
     [JsonPropertyName("ipcPort")]
     public int IpcPort { get; set; } = 26761;
 
@@ -135,7 +147,7 @@ public sealed class DsuIpcClient : IDisposable
             _embeddedSensor = new SensorService(DeviceProfile.CreateDefault(), _embeddedSettings);
             _embeddedSensor.Initialize();
 
-            _embeddedUdpServer = new DsuUdpServer(_embeddedSensor, _embeddedSettings.UdpPort);
+            _embeddedUdpServer = new DsuUdpServer(_embeddedSensor, _embeddedSettings.UdpPort, (byte)_embeddedSettings.ActiveSlot);
             _embeddedUdpServer.ToggleStreaming(_embeddedSettings.IsStreamingEnabled);
 
             _embeddedIpcServer = new IpcHttpServer(_embeddedSensor, _embeddedUdpServer, _embeddedSettings, IpcHttpServer.DefaultIpcPort);
@@ -173,6 +185,10 @@ public sealed class DsuIpcClient : IDisposable
             Language = _embeddedSettings?.Language ?? "tr",
             ActiveProfileName = _embeddedSettings?.ActiveProfileName ?? "Standard Landscape",
             ServerPort = _embeddedUdpServer.Port,
+            ActiveSlot = _embeddedUdpServer.ActiveSlot,
+            WasPortFallbackTriggered = _embeddedUdpServer.WasPortFallbackTriggered,
+            IsSecondaryClusterActive = _embeddedUdpServer.IsSecondaryClusterActive,
+            SecondaryPort = _embeddedUdpServer.SecondaryPort,
             IpcPort = IpcHttpServer.DefaultIpcPort,
             IsStreamingEnabled = _embeddedUdpServer.IsStreamingEnabled,
             StartWithWindows = StartupManager.IsStartupEnabled(),
@@ -451,6 +467,29 @@ public sealed class DsuIpcClient : IDisposable
 
         ProfileManager.DeleteProfile(name);
         return BuildEmbeddedStatusDto();
+    }
+
+    public async Task<DsuStatusDto> SetActiveSlotAsync(int slot, CancellationToken cancellationToken = default)
+    {
+        if (!_usingEmbeddedEngine)
+        {
+            string payload = JsonSerializer.Serialize(new { slot });
+            DsuStatusDto? remote = await PostJsonAsync("/slot", payload, cancellationToken);
+            if (remote is not null)
+                return remote;
+
+            EnsureEmbeddedEngineStarted();
+        }
+
+        _embeddedUdpServer!.SetActiveSlot(slot);
+        _embeddedIpcServer?.SaveCurrentSettings();
+        return BuildEmbeddedStatusDto();
+    }
+
+    public bool SetSecondaryClusterActive(bool enabled)
+    {
+        EnsureEmbeddedEngineStarted();
+        return _embeddedUdpServer!.SetSecondaryClusterActive(enabled);
     }
 
     private async Task<DsuStatusDto?> PostJsonAsync(string path, string jsonBody, CancellationToken cancellationToken)

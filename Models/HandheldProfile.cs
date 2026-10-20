@@ -32,4 +32,10 @@ public sealed class HandheldProfile
 
     [JsonPropertyName("usePitchOffset")]
     public bool UsePitchOffset { get; set; } = true;
+
+    [JsonPropertyName("preferredSlot")]
+    public int PreferredSlot { get; set; }
+
+    [JsonPropertyName("linkedProcess")]
+    public string? LinkedProcess { get; set; }
 }

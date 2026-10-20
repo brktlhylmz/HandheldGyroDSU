@@ -26,23 +26,92 @@ public sealed class DsuUdpServer : IDisposable
     private readonly object _socketLock = new();
 
     private volatile int _port;
+    private volatile byte _activeSlot;
+    private volatile bool _wasPortFallbackTriggered;
     private volatile UdpClient? _udpClient;
+    private volatile UdpClient? _secondaryClusterClient;
+    private volatile int _secondaryPort;
+    private volatile bool _isSecondaryClusterActive;
     private readonly ConcurrentDictionary<IPEndPoint, DateTime> _subscribedClients = new();
+    private readonly ConcurrentDictionary<IPEndPoint, DateTime> _secondarySubscribedClients = new();
 
     private uint _packetNumber;
     private long _totalPacketsSent;
     private volatile bool _isStreamingEnabled = true;
 
     public int Port => _port;
+    public byte ActiveSlot => _activeSlot;
+    public bool WasPortFallbackTriggered => _wasPortFallbackTriggered;
+    public bool IsSecondaryClusterActive => _isSecondaryClusterActive;
+    public int SecondaryPort => _secondaryPort;
     public uint ServerId => _serverId;
     public long TotalPacketsSent => Interlocked.Read(ref _totalPacketsSent);
     public bool IsStreamingEnabled => _isStreamingEnabled;
 
-    public DsuUdpServer(SensorService sensorService, int port = DefaultPort)
+    public DsuUdpServer(SensorService sensorService, int port = DefaultPort, byte activeSlot = 0)
     {
         _sensorService = sensorService;
         _port = port is >= 1024 and <= 65535 ? port : DefaultPort;
+        _activeSlot = (byte)Math.Clamp((int)activeSlot, 0, 3);
+        _secondaryPort = _port + 2;
         _serverId = BinaryPrimitives.ReadUInt32LittleEndian(RandomNumberGenerator.GetBytes(4));
+    }
+
+    public byte SetActiveSlot(int slot)
+    {
+        _activeSlot = (byte)Math.Clamp(slot, 0, 3);
+        return _activeSlot;
+    }
+
+    /// <summary>
+    /// Enables or disables the secondary DSU UDP cluster port (Port + 2, e.g., 26762)
+    /// when 5 to 8 controllers are connected simultaneously.
+    /// </summary>
+    public bool SetSecondaryClusterActive(bool enabled)
+    {
+        lock (_socketLock)
+        {
+            if (enabled == _isSecondaryClusterActive && (!enabled || _secondaryClusterClient is not null))
+                return _isSecondaryClusterActive;
+
+            if (!enabled)
+            {
+                _isSecondaryClusterActive = false;
+                _secondarySubscribedClients.Clear();
+                try
+                {
+                    _secondaryClusterClient?.Close();
+                    _secondaryClusterClient?.Dispose();
+                }
+                catch
+                {
+                    // Ignore disposal errors
+                }
+                _secondaryClusterClient = null;
+                return false;
+            }
+
+            for (int candidate = _port + 2; candidate <= _port + 20 && candidate <= 65535; candidate++)
+            {
+                if (candidate == 26761) // Skip IPC port
+                    continue;
+
+                try
+                {
+                    _secondaryClusterClient = CreateConfiguredUdpClient(candidate);
+                    _secondaryPort = candidate;
+                    _isSecondaryClusterActive = true;
+                    return true;
+                }
+                catch
+                {
+                    // Try next candidate port
+                }
+            }
+
+            _isSecondaryClusterActive = false;
+            return false;
+        }
     }
 
     public bool ToggleStreaming(bool? enabled = null)
@@ -138,18 +207,46 @@ public sealed class DsuUdpServer : IDisposable
 
     /// <summary>
     /// Starts the UDP server receive loop and high-frequency motion broadcast loop.
+    /// Automatically falls back to the next free port if the initial port is occupied.
     /// </summary>
     public async Task RunAsync(CancellationToken cancellationToken)
     {
         lock (_socketLock)
         {
-            _udpClient ??= CreateConfiguredUdpClient(_port);
+            if (_udpClient is null)
+            {
+                try
+                {
+                    _udpClient = CreateConfiguredUdpClient(_port);
+                    _wasPortFallbackTriggered = false;
+                }
+                catch
+                {
+                    // Auto-fallback if default/configured port is in use by another application (e.g., DS4Windows)
+                    for (int candidate = 26762; candidate <= 26780; candidate++)
+                    {
+                        try
+                        {
+                            _udpClient = CreateConfiguredUdpClient(candidate);
+                            _port = candidate;
+                            _secondaryPort = _port + 2;
+                            _wasPortFallbackTriggered = true;
+                            break;
+                        }
+                        catch
+                        {
+                            // Try next candidate
+                        }
+                    }
+                }
+            }
         }
 
         Task receiveTask = ReceiveLoopAsync(cancellationToken);
+        Task secondaryReceiveTask = SecondaryClusterReceiveLoopAsync(cancellationToken);
         Task broadcastTask = BroadcastMotionLoopAsync(cancellationToken);
 
-        await Task.WhenAll(receiveTask, broadcastTask);
+        await Task.WhenAll(receiveTask, secondaryReceiveTask, broadcastTask);
     }
 
     private async Task ReceiveLoopAsync(CancellationToken cancellationToken)
@@ -179,11 +276,11 @@ public sealed class DsuUdpServer : IDisposable
                         break;
 
                     case DsuProtocol.MsgTypeControllerInfoRequest:
-                        await HandleControllerInfoRequestAsync(currentClient, clientEndPoint, buffer, cancellationToken);
+                        await HandleControllerInfoRequestAsync(currentClient, clientEndPoint, buffer, _activeSlot, 0, cancellationToken);
                         break;
 
                     case DsuProtocol.MsgTypeControllerDataRequest:
-                        await HandleControllerDataRequestAsync(currentClient, clientEndPoint, buffer, cancellationToken);
+                        await HandleControllerDataRequestAsync(currentClient, clientEndPoint, buffer, _subscribedClients, _activeSlot, 0, cancellationToken);
                         break;
                 }
             }
@@ -206,6 +303,52 @@ public sealed class DsuUdpServer : IDisposable
         }
     }
 
+    private async Task SecondaryClusterReceiveLoopAsync(CancellationToken cancellationToken)
+    {
+        while (!cancellationToken.IsCancellationRequested)
+        {
+            UdpClient? secondaryClient = _secondaryClusterClient;
+            if (!_isSecondaryClusterActive || secondaryClient is null)
+            {
+                await Task.Delay(150, cancellationToken);
+                continue;
+            }
+
+            try
+            {
+                UdpReceiveResult result = await secondaryClient.ReceiveAsync(cancellationToken);
+                byte[] buffer = result.Buffer;
+                IPEndPoint clientEndPoint = result.RemoteEndPoint;
+
+                if (!DsuProtocol.TryParseClientPacket(buffer, out _, out uint messageType))
+                    continue;
+
+                switch (messageType)
+                {
+                    case DsuProtocol.MsgTypeVersionRequest:
+                        await HandleVersionRequestAsync(secondaryClient, clientEndPoint, cancellationToken);
+                        break;
+
+                    case DsuProtocol.MsgTypeControllerInfoRequest:
+                        await HandleControllerInfoRequestAsync(secondaryClient, clientEndPoint, buffer, activeSlot: 0, macOffset: 4, cancellationToken);
+                        break;
+
+                    case DsuProtocol.MsgTypeControllerDataRequest:
+                        await HandleControllerDataRequestAsync(secondaryClient, clientEndPoint, buffer, _secondarySubscribedClients, activeSlot: 0, macOffset: 4, cancellationToken);
+                        break;
+                }
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                break;
+            }
+            catch
+            {
+                // Ignore transient errors on secondary cluster port
+            }
+        }
+    }
+
     private async Task HandleVersionRequestAsync(
         UdpClient udpClient,
         IPEndPoint clientEndPoint,
@@ -219,11 +362,13 @@ public sealed class DsuUdpServer : IDisposable
         UdpClient udpClient,
         IPEndPoint clientEndPoint,
         byte[] requestBuffer,
+        byte activeSlot,
+        byte macOffset,
         CancellationToken cancellationToken)
     {
         if (requestBuffer.Length < 24)
         {
-            byte[] fallback = DsuProtocol.BuildControllerInfoResponse(_serverId, 0);
+            byte[] fallback = DsuProtocol.BuildControllerInfoResponse(_serverId, activeSlot, isSlotConnected: true, macSuffixOffset: macOffset);
             await udpClient.SendAsync(fallback, clientEndPoint, cancellationToken);
             return;
         }
@@ -234,7 +379,8 @@ public sealed class DsuUdpServer : IDisposable
         for (int i = 0; i < numPorts; i++)
         {
             byte requestedSlot = (24 + i < requestBuffer.Length) ? requestBuffer[24 + i] : (byte)i;
-            byte[] response = DsuProtocol.BuildControllerInfoResponse(_serverId, requestedSlot);
+            bool isConnected = requestedSlot == activeSlot;
+            byte[] response = DsuProtocol.BuildControllerInfoResponse(_serverId, requestedSlot, isConnected, macOffset);
             await udpClient.SendAsync(response, clientEndPoint, cancellationToken);
         }
 
@@ -244,7 +390,7 @@ public sealed class DsuUdpServer : IDisposable
         {
             for (byte extraSlot = 4; extraSlot < 8; extraSlot++)
             {
-                byte[] response = DsuProtocol.BuildControllerInfoResponse(_serverId, extraSlot);
+                byte[] response = DsuProtocol.BuildControllerInfoResponse(_serverId, extraSlot, isSlotConnected: false, macOffset);
                 await udpClient.SendAsync(response, clientEndPoint, cancellationToken);
             }
         }
@@ -254,6 +400,9 @@ public sealed class DsuUdpServer : IDisposable
         UdpClient udpClient,
         IPEndPoint clientEndPoint,
         byte[] requestBuffer,
+        ConcurrentDictionary<IPEndPoint, DateTime> clientRegistry,
+        byte activeSlot,
+        byte macOffset,
         CancellationToken cancellationToken)
     {
         if (requestBuffer.Length >= 22)
@@ -261,18 +410,18 @@ public sealed class DsuUdpServer : IDisposable
             byte regFlags = requestBuffer[20];
             byte slot = requestBuffer[21];
 
-            if (regFlags == 1 && slot != 0)
+            if (regFlags == 1 && slot != activeSlot)
                 return;
         }
 
-        _subscribedClients[clientEndPoint] = DateTime.UtcNow;
+        clientRegistry[clientEndPoint] = DateTime.UtcNow;
 
         if (_isStreamingEnabled)
         {
             byte[] immediatePacket = new byte[100];
             MotionData motion = _sensorService.GetProcessedMotionData();
             uint currentPacketNum = Interlocked.Increment(ref _packetNumber);
-            DsuProtocol.BuildMotionDataPacket(immediatePacket, _serverId, currentPacketNum, in motion);
+            DsuProtocol.BuildMotionDataPacket(immediatePacket, _serverId, currentPacketNum, in motion, activeSlot, macOffset);
             await udpClient.SendAsync(immediatePacket, clientEndPoint, cancellationToken);
             Interlocked.Increment(ref _totalPacketsSent);
         }
@@ -294,26 +443,44 @@ public sealed class DsuUdpServer : IDisposable
                 if (!await timer.WaitForNextTickAsync(cancellationToken))
                     break;
 
-                if (!_isStreamingEnabled || _subscribedClients.IsEmpty)
-                    continue;
-
-                UdpClient? currentClient = _udpClient;
-                if (currentClient is null)
-                    continue;
-
-                IReadOnlyList<IPEndPoint> activeClients = GetActiveClients();
-                if (activeClients.Count == 0)
+                if (!_isStreamingEnabled || (_subscribedClients.IsEmpty && _secondarySubscribedClients.IsEmpty))
                     continue;
 
                 MotionData motion = _sensorService.GetProcessedMotionData();
                 uint currentPacketNum = Interlocked.Increment(ref _packetNumber);
 
-                DsuProtocol.BuildMotionDataPacket(packetBuffer, _serverId, currentPacketNum, in motion);
-
-                foreach (IPEndPoint client in activeClients)
+                UdpClient? currentClient = _udpClient;
+                if (currentClient is not null && !_subscribedClients.IsEmpty)
                 {
-                    await currentClient.SendAsync(packetBuffer, client, cancellationToken);
-                    Interlocked.Increment(ref _totalPacketsSent);
+                    IReadOnlyList<IPEndPoint> activeClients = GetActiveClients();
+                    if (activeClients.Count > 0)
+                    {
+                        DsuProtocol.BuildMotionDataPacket(packetBuffer, _serverId, currentPacketNum, in motion, _activeSlot, 0);
+                        foreach (IPEndPoint client in activeClients)
+                        {
+                            await currentClient.SendAsync(packetBuffer, client, cancellationToken);
+                            Interlocked.Increment(ref _totalPacketsSent);
+                        }
+                    }
+                }
+
+                UdpClient? secondaryClient = _secondaryClusterClient;
+                if (_isSecondaryClusterActive && secondaryClient is not null && !_secondarySubscribedClients.IsEmpty)
+                {
+                    DateTime now = DateTime.UtcNow;
+                    DsuProtocol.BuildMotionDataPacket(packetBuffer, _serverId, currentPacketNum, in motion, slot: 0, macSuffixOffset: 4);
+                    foreach (var kvp in _secondarySubscribedClients)
+                    {
+                        if (now - kvp.Value <= ClientSubscriptionTimeout)
+                        {
+                            await secondaryClient.SendAsync(packetBuffer, kvp.Key, cancellationToken);
+                            Interlocked.Increment(ref _totalPacketsSent);
+                        }
+                        else
+                        {
+                            _secondarySubscribedClients.TryRemove(kvp.Key, out _);
+                        }
+                    }
                 }
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -333,6 +500,8 @@ public sealed class DsuUdpServer : IDisposable
         {
             _udpClient?.Dispose();
             _udpClient = null;
+            _secondaryClusterClient?.Dispose();
+            _secondaryClusterClient = null;
         }
     }
 }
