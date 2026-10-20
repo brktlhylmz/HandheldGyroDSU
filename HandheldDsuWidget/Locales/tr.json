@@ -123,6 +123,8 @@
   "StartupDisabledDesc": "Kapalı • Yalnızca manuel çalıştırıldığında açılır",
   "CloseToTrayTitle": "Kapat ('✕') Tuşu Tepsiye Küçültsün",
   "CloseToTrayDesc": "Kapatma tuşuna basıldığında DSU sunucusunu durdurmak yerine arka plana gizler",
+  "GameBarOverlayTitle": "Xbox Game Bar (Win + G) ile Otomatik Aç",
+  "GameBarOverlayDesc": "Win + G basıldığında ekranın üstünde açılır, oyuna döndüğünüzde otomatik gizlenir",
   "HudNotificationsTitle": "Oyun İçi HUD Bildirimleri",
   "HudNotificationsDesc": "Tam ekran oyunlarda kol veya profil değiştiğinde ekranın üstünde bildirim gösterir",
   "SectionDataMaintenance": "VERİ & SIFIRLAMA",
