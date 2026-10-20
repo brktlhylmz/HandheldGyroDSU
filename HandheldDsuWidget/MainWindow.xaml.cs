@@ -387,6 +387,8 @@ public partial class MainWindow : Window
             UpdateAxisBadgeVisual(BadgeInvertZ, BadgeInvertZText, status.InvertZ);
             UpdateAxisBadgeVisual(BadgeSwapAxes, BadgeSwapAxesText, status.SwapAxes);
 
+            UpdateProfileIndicatorUi(ProfileComboBox.SelectedItem as HandheldProfile, status);
+
             // 4. Live IMU values (deg/s & G)
             PitchValueText.Text = $"{status.GyroPitch:+0.00;-0.00;0.00}°/s";
             YawValueText.Text = $"{status.GyroYaw:+0.00;-0.00;0.00}°/s";
@@ -957,7 +959,8 @@ public partial class MainWindow : Window
             invertZ: InvertZToggle.IsChecked == true,
             swapAxes: SwapAxesToggle.IsChecked == true,
             usePitchOffset: PitchOffsetToggle.IsChecked == true);
-        UpdateUiFromStatus(status);
+
+        await SyncActiveProfileAfterAxisChangeAsync(status);
     }
 
     private async void ResetAxesButton_Click(object sender, RoutedEventArgs e)
@@ -966,7 +969,76 @@ public partial class MainWindow : Window
             return;
 
         DsuStatusDto status = await _ipcClient.ResetAxesAsync();
+        await SyncActiveProfileAfterAxisChangeAsync(status);
+    }
+
+    private async Task SyncActiveProfileAfterAxisChangeAsync(DsuStatusDto status)
+    {
+        if (ProfileComboBox.SelectedItem is HandheldProfile selected && !IsSystemPreset(selected))
+        {
+            selected.InvertX = status.InvertX;
+            selected.InvertY = status.InvertY;
+            selected.InvertZ = status.InvertZ;
+            selected.SwapAxes = status.SwapAxes;
+            selected.UsePitchOffset = status.UsePitchOffset;
+            status = await _ipcClient.SaveProfileAsync(selected);
+            UpdateSelectedProfileDetails(selected);
+        }
+
         UpdateUiFromStatus(status);
+    }
+
+    private void AppBarProfileButton_Click(object sender, RoutedEventArgs e)
+    {
+        ProfilesTabButton.IsChecked = true;
+        if (ProfileComboBox.SelectedItem is HandheldProfile selected &&
+            _lastStatus is not null &&
+            !DoesProfileMatchStatus(selected, _lastStatus))
+        {
+            NewProfileNameTextBox.Focus();
+        }
+    }
+
+    private static bool DoesProfileMatchStatus(HandheldProfile profile, DsuStatusDto status)
+    {
+        return profile.InvertX == status.InvertX
+            && profile.InvertY == status.InvertY
+            && profile.InvertZ == status.InvertZ
+            && profile.SwapAxes == status.SwapAxes
+            && profile.UsePitchOffset == status.UsePitchOffset;
+    }
+
+    private void UpdateProfileIndicatorUi(HandheldProfile? activeProfile, DsuStatusDto? status)
+    {
+        activeProfile ??= _profiles.FirstOrDefault(p => string.Equals(p.Name, status?.ActiveProfileName, StringComparison.OrdinalIgnoreCase));
+        string baseName = activeProfile?.Name ?? status?.ActiveProfileName ?? "Standard Landscape";
+        bool isModified = activeProfile is not null && status is not null && !DoesProfileMatchStatus(activeProfile, status);
+
+        if (isModified)
+        {
+            AppBarProfileNameText.Text = $"{baseName} *";
+            AppBarProfileButton.BorderBrush = AccentPrimaryBrush;
+            AppBarProfileButton.Background = AccentDimBrush;
+            AppBarProfileNameText.Foreground = TextOnAccentBrush;
+            AppBarProfileIcon.Stroke = AccentPrimaryBrush;
+            AppBarProfileButton.ToolTip = _loc["AppBarProfileModifiedTooltip"];
+
+            ProfileStatusBadgeText.Text = _loc["ProfileBadgeModified"];
+            ProfileStatusBadgeText.Foreground = AccentPrimaryBrush;
+        }
+        else
+        {
+            AppBarProfileNameText.Text = baseName;
+            AppBarProfileButton.BorderBrush = BorderInputBrush;
+            AppBarProfileButton.Background = BgSubPanelBrush;
+            AppBarProfileNameText.Foreground = TextSecondaryBrush;
+            AppBarProfileIcon.Stroke = StatusOnlineBrush;
+            AppBarProfileButton.ToolTip = _loc["AppBarProfileTooltip"];
+
+            bool isCustom = activeProfile is not null && !IsSystemPreset(activeProfile);
+            ProfileStatusBadgeText.Text = isCustom ? _loc["ProfileBadgeCustom"] : _loc["ProfileBadgeSystem"];
+            ProfileStatusBadgeText.Foreground = isCustom ? StatusOnlineBrush : TextSecondaryBrush;
+        }
     }
 
     private static bool IsSystemPreset(HandheldProfile profile)
@@ -993,6 +1065,7 @@ public partial class MainWindow : Window
     {
         ProfileDescriptionText.Text = FormatProfileTagSummary(profile);
         DeleteProfileButton.IsEnabled = !IsSystemPreset(profile);
+        UpdateProfileIndicatorUi(profile, _lastStatus);
     }
 
     public void ShowToastNotification(string title, string subtitle, bool isError = false, bool showHudOverlay = false)

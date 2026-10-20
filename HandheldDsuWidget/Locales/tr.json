@@ -4,6 +4,8 @@
 
   "AppTitle": "HANDHELD GYRO DSU",
   "HeaderSubtitleFormat": "UDP 0.0.0.0:{0} • IPC 127.0.0.1:{1}",
+  "AppBarProfileTooltip": "Aktif Profil (Profilleri yönetmek için tıklayın)",
+  "AppBarProfileModifiedTooltip": "Aktif ön tanımlı profilde değişiklik yapıldı (*) — Yeni profil olarak kaydetmek için tıklayın",
   "TabDashboard": "PANEL",
   "TabControllers": "KOLLAR",
   "TabProfiles": "PROFİL",
@@ -23,7 +25,11 @@
   "StreamActiveDesc": "Aktif • Emülatöre hareket verisi gönderiliyor",
   "StreamPausedDesc": "Duraklatıldı • DSU hareket verisi çıkışı kapalı",
 
-  "SectionProfileAxes": "EKSEN YÖNLERİ & TUTUŞ AÇISI",
+  "SectionProfileAxes": "PROFİL & EKSEN YÖNLERİ",
+  "ProfileBadgeSystem": "SİSTEM PROFİLİ",
+  "ProfileBadgeCustom": "ÖZEL PROFİL • OTO-KAYIT",
+  "ProfileBadgeModified": "● DEĞİŞTİRİLDİ (YENİ PROFİL OLARAK KAYDEDİN)",
+  "ProfileBadgeAutoSaved": "✓ PROFİLE KAYDEDİLDİ",
   "ResetAxesButton": "VARSAYILANA SIFIRLA",
   "ResetAxesTooltip": "Eksen yönlerini ve tutuş açısı dengelemesini varsayılan değerlere döndür",
   "PitchOffsetTitle": "Tutuş Açısını Merkezle (Zero Pitch)",
