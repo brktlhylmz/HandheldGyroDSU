@@ -22,6 +22,9 @@ public sealed class SystemTrayService : IDisposable
     private const int WM_LBUTTONUP = 0x0202;
     private const int WM_LBUTTONDBLCLK = 0x0203;
     private const int WM_RBUTTONUP = 0x0205;
+    private const int WM_POWERBROADCAST = 0x0218;
+    private const int PBT_APMRESUMESUSPEND = 0x0007;
+    private const int PBT_APMRESUMEAUTOMATIC = 0x0012;
 
     private static readonly IntPtr IDI_APPLICATION = new(32512);
 
@@ -79,6 +82,7 @@ public sealed class SystemTrayService : IDisposable
 
     public event EventHandler? TrayLeftClicked;
     public event EventHandler? TrayRightClicked;
+    public event EventHandler? PowerResumed;
 
     public void Initialize(Window window, string tooltip = "Handheld Gyro DSU (Click: Show/Hide)")
     {
@@ -219,6 +223,14 @@ public sealed class SystemTrayService : IDisposable
             {
                 TrayRightClicked?.Invoke(this, EventArgs.Empty);
                 handled = true;
+            }
+        }
+        else if (msg == WM_POWERBROADCAST)
+        {
+            int powerEvent = (int)(wParam.ToInt64() & 0xFFFF);
+            if (powerEvent is PBT_APMRESUMEAUTOMATIC or PBT_APMRESUMESUSPEND)
+            {
+                PowerResumed?.Invoke(this, EventArgs.Empty);
             }
         }
 

@@ -552,6 +552,7 @@ public sealed class DsuIpcClient : IDisposable
         bool? closeToTray = null,
         bool? hudNotificationsEnabled = null,
         bool? syntheticWaveEnabled = null,
+        bool? rebindSensors = null,
         CancellationToken cancellationToken = default)
     {
         if (!_usingEmbeddedEngine)
@@ -560,7 +561,8 @@ public sealed class DsuIpcClient : IDisposable
             {
                 closeToTray,
                 hudNotificationsEnabled,
-                syntheticWaveEnabled
+                syntheticWaveEnabled,
+                rebindSensors
             });
             DsuStatusDto? remote = await PostJsonAsync("/preferences", payload, cancellationToken);
             if (remote is not null)
@@ -569,7 +571,7 @@ public sealed class DsuIpcClient : IDisposable
             EnsureEmbeddedEngineStarted();
         }
 
-        _embeddedIpcServer?.SetPreferences(closeToTray, hudNotificationsEnabled, syntheticWaveEnabled);
+        _embeddedIpcServer?.SetPreferences(closeToTray, hudNotificationsEnabled, syntheticWaveEnabled, rebindSensors);
         return BuildEmbeddedStatusDto();
     }
 

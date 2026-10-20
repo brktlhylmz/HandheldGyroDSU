@@ -32,8 +32,11 @@ public sealed class SensorService : IDisposable
     private float _rawGyroZ;
 
     private long _lastGyroEventTimestamp;
+    private long _lastAccelEventTimestamp;
     private long _gyroEventsReceived;
     private long _accelEventsReceived;
+    private volatile bool _rebindRequested;
+    private int _sensorRecoveryCount;
 
     // Calibration offsets (Drift Bias and Resting Pitch Attitude)
     private GyroBias _gyroBias = GyroBias.Zero;
@@ -53,6 +56,9 @@ public sealed class SensorService : IDisposable
     public uint AccelReportIntervalMs { get; private set; } = 10;
     public long GyroEventsReceived => Interlocked.Read(ref _gyroEventsReceived);
     public long AccelEventsReceived => Interlocked.Read(ref _accelEventsReceived);
+    public int SensorRecoveryCount => Volatile.Read(ref _sensorRecoveryCount);
+
+    public void RequestSensorRebind() => _rebindRequested = true;
 
     public bool IsCalibrating => _isCalibrating;
     public int CalibrationProgressPercent => _calibrationProgressPercent;
@@ -167,67 +173,190 @@ public sealed class SensorService : IDisposable
     {
         try
         {
-            try
-            {
-                _gyrometer = Gyrometer.GetDefault();
-                if (_gyrometer is not null)
-                {
-                    uint minGyro = _gyrometer.MinimumReportInterval;
-                    GyroReportIntervalMs = Math.Clamp(minGyro, 4u, 16u);
-                    _gyrometer.ReportInterval = GyroReportIntervalMs;
-                    _gyrometer.ReadingChanged += OnGyrometerReadingChanged;
-                    IsGyroAvailable = true;
-                }
-            }
-            catch
-            {
-                _gyrometer = null;
-            }
-
-            try
-            {
-                _accelerometer = Accelerometer.GetDefault();
-                if (_accelerometer is not null)
-                {
-                    uint minAccel = _accelerometer.MinimumReportInterval;
-                    AccelReportIntervalMs = Math.Clamp(minAccel, 4u, 16u);
-                    _accelerometer.ReportInterval = AccelReportIntervalMs;
-                    _accelerometer.ReadingChanged += OnAccelerometerReadingChanged;
-                    IsAccelerometerAvailable = true;
-                }
-            }
-            catch
-            {
-                _accelerometer = null;
-            }
-
+            BindSensors();
             _initCompleted.Set();
+
+            long lastLoopTicks = Stopwatch.GetTimestamp();
+            long lastWatchdogCheckTicks = lastLoopTicks;
 
             while (!_stopRequested)
             {
-                Thread.Sleep(50);
+                Thread.Sleep(100);
+                if (_stopRequested)
+                    break;
+
+                long nowTicks = Stopwatch.GetTimestamp();
+                double loopDeltaMs = (nowTicks - lastLoopTicks) * 1000.0 / Stopwatch.Frequency;
+                lastLoopTicks = nowTicks;
+
+                // 1. Modern Standby / Sleep-Resume detection:
+                // If a 100ms sleep took > 2.5 seconds, the system just woke from sleep/hibernate.
+                if (loopDeltaMs > 2500.0 || _rebindRequested)
+                {
+                    _rebindRequested = false;
+                    Thread.Sleep(600);
+                    RebindSensorsInternal();
+                    lastLoopTicks = Stopwatch.GetTimestamp();
+                    lastWatchdogCheckTicks = lastLoopTicks;
+                    continue;
+                }
+
+                // 2. Periodic Watchdog Probe (every 4 seconds):
+                // If WinRT ReadingChanged stops firing after a driver stall, probe GetCurrentReading()
+                // and re-bind if the COM sensor handle became invalid.
+                double sinceWatchdogMs = (nowTicks - lastWatchdogCheckTicks) * 1000.0 / Stopwatch.Frequency;
+                if (sinceWatchdogMs >= 4000.0)
+                {
+                    lastWatchdogCheckTicks = nowTicks;
+                    CheckSensorHealthAndPollFallback(nowTicks);
+                }
             }
         }
         finally
         {
             _initCompleted.Set();
-            try
+            UnbindSensors();
+        }
+    }
+
+    private void BindSensors()
+    {
+        long now = Stopwatch.GetTimestamp();
+        try
+        {
+            _gyrometer = Gyrometer.GetDefault();
+            if (_gyrometer is not null)
             {
-                if (_gyrometer is not null)
+                uint minGyro = _gyrometer.MinimumReportInterval;
+                GyroReportIntervalMs = Math.Clamp(minGyro, 4u, 16u);
+                _gyrometer.ReportInterval = GyroReportIntervalMs;
+                _gyrometer.ReadingChanged += OnGyrometerReadingChanged;
+                Interlocked.Exchange(ref _lastGyroEventTimestamp, now);
+                IsGyroAvailable = true;
+            }
+        }
+        catch
+        {
+            _gyrometer = null;
+        }
+
+        try
+        {
+            _accelerometer = Accelerometer.GetDefault();
+            if (_accelerometer is not null)
+            {
+                uint minAccel = _accelerometer.MinimumReportInterval;
+                AccelReportIntervalMs = Math.Clamp(minAccel, 4u, 16u);
+                _accelerometer.ReportInterval = AccelReportIntervalMs;
+                _accelerometer.ReadingChanged += OnAccelerometerReadingChanged;
+                Interlocked.Exchange(ref _lastAccelEventTimestamp, now);
+                IsAccelerometerAvailable = true;
+            }
+        }
+        catch
+        {
+            _accelerometer = null;
+        }
+    }
+
+    private void UnbindSensors()
+    {
+        try
+        {
+            if (_gyrometer is not null)
+            {
+                _gyrometer.ReadingChanged -= OnGyrometerReadingChanged;
+                _gyrometer.ReportInterval = 0;
+            }
+        }
+        catch
+        {
+            // Ignore cleanup exceptions on stale COM handle
+        }
+        finally
+        {
+            _gyrometer = null;
+        }
+
+        try
+        {
+            if (_accelerometer is not null)
+            {
+                _accelerometer.ReadingChanged -= OnAccelerometerReadingChanged;
+                _accelerometer.ReportInterval = 0;
+            }
+        }
+        catch
+        {
+            // Ignore cleanup exceptions on stale COM handle
+        }
+        finally
+        {
+            _accelerometer = null;
+        }
+    }
+
+    private void RebindSensorsInternal()
+    {
+        UnbindSensors();
+        BindSensors();
+        Interlocked.Increment(ref _sensorRecoveryCount);
+    }
+
+    private void CheckSensorHealthAndPollFallback(long nowTicks)
+    {
+        if (!IsGyroAvailable && !IsAccelerometerAvailable)
+            return;
+
+        long lastGyro = Interlocked.Read(ref _lastGyroEventTimestamp);
+        long lastAccel = Interlocked.Read(ref _lastAccelEventTimestamp);
+        double gyroSilenceMs = lastGyro > 0 ? (nowTicks - lastGyro) * 1000.0 / Stopwatch.Frequency : 9999.0;
+        double accelSilenceMs = lastAccel > 0 ? (nowTicks - lastAccel) * 1000.0 / Stopwatch.Frequency : 9999.0;
+
+        if (gyroSilenceMs < 3500.0 && accelSilenceMs < 3500.0)
+            return;
+
+        try
+        {
+            if (_gyrometer is not null)
+            {
+                GyrometerReading? g = _gyrometer.GetCurrentReading();
+                if (g is not null)
                 {
-                    _gyrometer.ReadingChanged -= OnGyrometerReadingChanged;
-                    _gyrometer.ReportInterval = 0;
-                }
-                if (_accelerometer is not null)
-                {
-                    _accelerometer.ReadingChanged -= OnAccelerometerReadingChanged;
-                    _accelerometer.ReportInterval = 0;
+                    float gx = (float)g.AngularVelocityX;
+                    float gy = (float)g.AngularVelocityY;
+                    float gz = (float)g.AngularVelocityZ;
+
+                    // If hardware is actively moving (> 2.5 deg/s) while ReadingChanged stayed silent for > 3.5s,
+                    // the WinRT event subscription was dropped after Modern Standby — rebind it.
+                    if (MathF.Abs(gx - _rawGyroX) > 2.5f ||
+                        MathF.Abs(gy - _rawGyroY) > 2.5f ||
+                        MathF.Abs(gz - _rawGyroZ) > 2.5f)
+                    {
+                        RebindSensorsInternal();
+                        return;
+                    }
                 }
             }
-            catch
+
+            if (_accelerometer is not null)
             {
-                // Ignore cleanup exceptions on shutdown
+                AccelerometerReading? a = _accelerometer.GetCurrentReading();
+                if (a is not null)
+                {
+                    lock (_lock)
+                    {
+                        _rawAccX = (float)a.AccelerationX;
+                        _rawAccY = (float)a.AccelerationY;
+                        _rawAccZ = (float)a.AccelerationZ;
+                    }
+                }
             }
+        }
+        catch
+        {
+            // COM / WinRT sensor handle invalidated after sleep or driver reset — rebind immediately
+            RebindSensorsInternal();
         }
     }
 
@@ -253,6 +382,7 @@ public sealed class SensorService : IDisposable
             _rawAccY = (float)reading.AccelerationY;
             _rawAccZ = (float)reading.AccelerationZ;
         }
+        Interlocked.Exchange(ref _lastAccelEventTimestamp, Stopwatch.GetTimestamp());
         Interlocked.Increment(ref _accelEventsReceived);
     }
 
