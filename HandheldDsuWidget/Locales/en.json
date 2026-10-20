@@ -130,13 +130,13 @@
   "ToastSettingsResetTitle": "SETTINGS RESTORED TO DEFAULTS",
   "ToastSettingsResetDesc": "UDP 26760 • Standard Landscape • Default tray & HUD preferences",
   "TrayMenuShowWindow": "Show Window",
-  "TrayMenuHideWindow": "Hide to System Tray",
-  "TrayMenuStreamActive": "● DSU Stream: Active (Click to Pause)",
-  "TrayMenuStreamPaused": "○ DSU Stream: Paused (Click to Resume)",
-  "TrayMenuCalibrate": "Calibrate Sensor (1s)",
-  "TrayMenuProfiles": "Profiles...",
-  "TrayMenuSettings": "Settings...",
-  "TrayMenuExit": "Exit Handheld Gyro DSU",
+  "TrayMenuHideWindow": "Hide Window",
+  "TrayMenuStream": "DSU Stream",
+  "TrayBadgeOn": "ON",
+  "TrayBadgeOff": "OFF",
+  "TrayMenuCalibrate": "Calibrate",
+  "TrayMenuSettings": "Settings",
+  "TrayMenuExit": "Exit",
 
   "GamepadHint": "[D-PAD] Navigate   [A] Toggle/Select   [Y] Calibrate   [LB/RB] Switch Tab"
 }
