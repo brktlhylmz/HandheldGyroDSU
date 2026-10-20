@@ -26,6 +26,9 @@ public sealed class AppSettings
     public bool InvertZ { get; set; } = true;
     public bool SwapAxes { get; set; } = false;
     public bool UsePitchOffset { get; set; } = true;
+    public float Sensitivity { get; set; } = 1.0f;
+    public float Deadzone { get; set; } = 0.0f;
+    public float RestAccX { get; set; }
     public float RestAccY { get; set; }
     public float RestAccZ { get; set; } = -1.0f;
     public float BiasX { get; set; }
@@ -69,6 +72,9 @@ public sealed class AppSettings
                         loaded.SecondaryUdpPort = 26762;
                     if (string.IsNullOrWhiteSpace(loaded.Language))
                         loaded.Language = GetDefaultSystemLanguage();
+                    if (loaded.Sensitivity <= 0.05f)
+                        loaded.Sensitivity = 1.0f;
+                    loaded.Deadzone = Math.Clamp(loaded.Deadzone, 0f, 5f);
                     return loaded;
                 }
             }

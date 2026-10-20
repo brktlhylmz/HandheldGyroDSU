@@ -41,6 +41,8 @@ public sealed class SensorService : IDisposable
     private float _restAccY;
     private float _restAccZ = -1.0f;
     private volatile bool _usePitchOffset = true;
+    private float _sensitivity = 1.0f;
+    private float _deadzone;
     private volatile bool _isCalibrating;
     private volatile int _calibrationProgressPercent = 100;
 
@@ -55,6 +57,9 @@ public sealed class SensorService : IDisposable
     public int CalibrationProgressPercent => _calibrationProgressPercent;
     public GyroBias CurrentBias => _gyroBias;
     public bool UsePitchOffset => _usePitchOffset;
+    public float Sensitivity => _sensitivity;
+    public float Deadzone => _deadzone;
+    public float RestAccX => _restAccX;
     public float RestAccY => _restAccY;
     public float RestAccZ => _restAccZ;
 
@@ -80,9 +85,12 @@ public sealed class SensorService : IDisposable
             _activeProfile.InvertZ = settings.InvertZ;
             _activeProfile.SwapAxes = settings.SwapAxes;
             _usePitchOffset = settings.UsePitchOffset;
+            _sensitivity = settings.Sensitivity > 0.05f ? Math.Clamp(settings.Sensitivity, 0.2f, 3.0f) : 1.0f;
+            _deadzone = Math.Clamp(settings.Deadzone, 0f, 5.0f);
 
-            if (settings.RestAccY != 0f || settings.RestAccZ != 0f)
+            if (settings.RestAccX != 0f || settings.RestAccY != 0f || settings.RestAccZ != 0f)
             {
+                _restAccX = settings.RestAccX;
                 _restAccY = settings.RestAccY;
                 _restAccZ = settings.RestAccZ;
             }
@@ -94,7 +102,9 @@ public sealed class SensorService : IDisposable
         bool? invertY = null,
         bool? invertZ = null,
         bool? swapAxes = null,
-        bool? usePitchOffset = null)
+        bool? usePitchOffset = null,
+        float? sensitivity = null,
+        float? deadzone = null)
     {
         lock (_lock)
         {
@@ -108,6 +118,10 @@ public sealed class SensorService : IDisposable
                 _activeProfile.SwapAxes = swapAxes.Value;
             if (usePitchOffset.HasValue)
                 _usePitchOffset = usePitchOffset.Value;
+            if (sensitivity.HasValue)
+                _sensitivity = Math.Clamp(sensitivity.Value, 0.2f, 3.0f);
+            if (deadzone.HasValue)
+                _deadzone = Math.Clamp(deadzone.Value, 0f, 5.0f);
 
             return _activeProfile;
         }
@@ -119,6 +133,8 @@ public sealed class SensorService : IDisposable
         {
             _activeProfile.ResetToDefaults();
             _usePitchOffset = true;
+            _sensitivity = 1.0f;
+            _deadzone = 0.0f;
             return _activeProfile;
         }
     }
@@ -307,6 +323,7 @@ public sealed class SensorService : IDisposable
         float rawAx, rawAy, rawAz;
         float rawGx, rawGy, rawGz;
         float restAx, restAy, restAz;
+        float sensitivity, deadzone;
         DeviceProfile profile;
         GyroBias bias = _gyroBias;
 
@@ -323,6 +340,9 @@ public sealed class SensorService : IDisposable
             restAx = _restAccX;
             restAy = _restAccY;
             restAz = _restAccZ;
+
+            sensitivity = _sensitivity;
+            deadzone = _deadzone;
 
             profile = _activeProfile;
         }
@@ -361,7 +381,22 @@ public sealed class SensorService : IDisposable
             }
         }
 
+        // Apply soft-knee deadzone filter and sensitivity gain multiplier
+        calGx = ApplyDeadzoneAndSensitivity(calGx, deadzone, sensitivity);
+        calGy = ApplyDeadzoneAndSensitivity(calGy, deadzone, sensitivity);
+        calGz = ApplyDeadzoneAndSensitivity(calGz, deadzone, sensitivity);
+
         return profile.Transform(rawAx, rawAy, rawAz, calGx, calGy, calGz, timestampUs);
+    }
+
+    private static float ApplyDeadzoneAndSensitivity(float value, float deadzone, float sensitivity)
+    {
+        float abs = MathF.Abs(value);
+        if (abs <= deadzone)
+            return 0f;
+
+        float sign = value >= 0f ? 1f : -1f;
+        return sign * (abs - deadzone) * sensitivity;
     }
 
     public void Dispose()

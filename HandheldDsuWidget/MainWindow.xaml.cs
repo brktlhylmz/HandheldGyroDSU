@@ -200,6 +200,8 @@ public partial class MainWindow : Window
             InvertYToggle,
             InvertZToggle,
             SwapAxesToggle,
+            SensitivitySlider,
+            DeadzoneSlider,
             ResetAxesButton,
             CalibrateButton
         ];
@@ -550,18 +552,32 @@ public partial class MainWindow : Window
             CloseToTrayToggle.IsChecked = status.CloseToTray;
             HudNotificationsToggle.IsChecked = status.HudNotificationsEnabled;
 
-            // 3. Axis orientation switches and active badge highlights
+            // 3. Axis orientation switches, sensitivity/deadzone sliders, and active badge highlights
             PitchOffsetToggle.IsChecked = status.UsePitchOffset;
             InvertXToggle.IsChecked = status.InvertX;
             InvertYToggle.IsChecked = status.InvertY;
             InvertZToggle.IsChecked = status.InvertZ;
             SwapAxesToggle.IsChecked = status.SwapAxes;
 
+            if (!SensitivitySlider.IsMouseCaptureWithin)
+            {
+                SensitivitySlider.Value = Math.Clamp(status.Sensitivity, 0.2f, 3.0f);
+            }
+            SensitivityValueText.Text = $"{status.Sensitivity:0.0}x";
+
+            if (!DeadzoneSlider.IsMouseCaptureWithin)
+            {
+                DeadzoneSlider.Value = Math.Clamp(status.Deadzone, 0.0f, 3.0f);
+            }
+            DeadzoneValueText.Text = $"{status.Deadzone:0.0}°/s";
+
             UpdateAxisBadgeVisual(BadgePitchOffset, BadgePitchOffsetText, status.UsePitchOffset);
             UpdateAxisBadgeVisual(BadgeInvertX, BadgeInvertXText, status.InvertX);
             UpdateAxisBadgeVisual(BadgeInvertY, BadgeInvertYText, status.InvertY);
             UpdateAxisBadgeVisual(BadgeInvertZ, BadgeInvertZText, status.InvertZ);
             UpdateAxisBadgeVisual(BadgeSwapAxes, BadgeSwapAxesText, status.SwapAxes);
+            UpdateAxisBadgeVisual(BadgeSensitivity, BadgeSensitivityText, Math.Abs(status.Sensitivity - 1.0f) > 0.04f);
+            UpdateAxisBadgeVisual(BadgeDeadzone, BadgeDeadzoneText, status.Deadzone > 0.04f);
 
             UpdateProfileIndicatorUi(ProfileComboBox.SelectedItem as HandheldProfile, status);
 
@@ -1225,7 +1241,31 @@ public partial class MainWindow : Window
             invertY: InvertYToggle.IsChecked == true,
             invertZ: InvertZToggle.IsChecked == true,
             swapAxes: SwapAxesToggle.IsChecked == true,
-            usePitchOffset: PitchOffsetToggle.IsChecked == true);
+            usePitchOffset: PitchOffsetToggle.IsChecked == true,
+            sensitivity: (float)Math.Round(SensitivitySlider.Value, 1),
+            deadzone: (float)Math.Round(DeadzoneSlider.Value, 1));
+
+        await SyncActiveProfileAfterAxisChangeAsync(status);
+    }
+
+    private async void AxisSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+    {
+        if (_suppressUiEvents || !IsLoaded)
+            return;
+
+        float sensitivity = (float)Math.Round(SensitivitySlider.Value, 1);
+        float deadzone = (float)Math.Round(DeadzoneSlider.Value, 1);
+        SensitivityValueText.Text = $"{sensitivity:0.0}x";
+        DeadzoneValueText.Text = $"{deadzone:0.0}°/s";
+
+        DsuStatusDto status = await _ipcClient.UpdateAxesAsync(
+            invertX: InvertXToggle.IsChecked == true,
+            invertY: InvertYToggle.IsChecked == true,
+            invertZ: InvertZToggle.IsChecked == true,
+            swapAxes: SwapAxesToggle.IsChecked == true,
+            usePitchOffset: PitchOffsetToggle.IsChecked == true,
+            sensitivity: sensitivity,
+            deadzone: deadzone);
 
         await SyncActiveProfileAfterAxisChangeAsync(status);
     }
@@ -1248,6 +1288,8 @@ public partial class MainWindow : Window
             selected.InvertZ = status.InvertZ;
             selected.SwapAxes = status.SwapAxes;
             selected.UsePitchOffset = status.UsePitchOffset;
+            selected.Sensitivity = (float)status.Sensitivity;
+            selected.Deadzone = (float)status.Deadzone;
             status = await _ipcClient.SaveProfileAsync(selected);
             UpdateSelectedProfileDetails(selected);
         }
@@ -1272,7 +1314,9 @@ public partial class MainWindow : Window
             && profile.InvertY == status.InvertY
             && profile.InvertZ == status.InvertZ
             && profile.SwapAxes == status.SwapAxes
-            && profile.UsePitchOffset == status.UsePitchOffset;
+            && profile.UsePitchOffset == status.UsePitchOffset
+            && Math.Abs(profile.Sensitivity - status.Sensitivity) <= 0.04f
+            && Math.Abs(profile.Deadzone - status.Deadzone) <= 0.04f;
     }
 
     private void UpdateProfileIndicatorUi(HandheldProfile? activeProfile, DsuStatusDto? status)
@@ -1322,10 +1366,12 @@ public partial class MainWindow : Window
         if (profile.InvertY) tags.Add("INV-Y");
         if (profile.InvertZ) tags.Add("INV-Z");
         if (profile.SwapAxes) tags.Add("SWAP X⇄Y");
+        if (Math.Abs(profile.Sensitivity - 1.0f) > 0.04f) tags.Add($"{profile.Sensitivity:0.0}x");
+        if (profile.Deadzone > 0.04f) tags.Add($"DZ {profile.Deadzone:0.0}°/s");
 
         return tags.Count > 0
             ? string.Join("  •  ", tags)
-            : "RAW (NO OFFSET / NO INVERSION)";
+            : "RAW (1.0x / 0.0° DZ)";
     }
 
     private void UpdateSelectedProfileDetails(HandheldProfile profile)
@@ -1488,7 +1534,9 @@ public partial class MainWindow : Window
             InvertY = InvertYToggle.IsChecked == true,
             InvertZ = InvertZToggle.IsChecked == true,
             SwapAxes = SwapAxesToggle.IsChecked == true,
-            UsePitchOffset = PitchOffsetToggle.IsChecked == true
+            UsePitchOffset = PitchOffsetToggle.IsChecked == true,
+            Sensitivity = (float)Math.Round(SensitivitySlider.Value, 1),
+            Deadzone = (float)Math.Round(DeadzoneSlider.Value, 1)
         };
 
         SaveProfileButton.IsEnabled = false;
@@ -1518,7 +1566,9 @@ public partial class MainWindow : Window
                 InvertY = InvertYToggle.IsChecked == true,
                 InvertZ = InvertZToggle.IsChecked == true,
                 SwapAxes = SwapAxesToggle.IsChecked == true,
-                UsePitchOffset = PitchOffsetToggle.IsChecked == true
+                UsePitchOffset = PitchOffsetToggle.IsChecked == true,
+                Sensitivity = (float)Math.Round(SensitivitySlider.Value, 1),
+                Deadzone = (float)Math.Round(DeadzoneSlider.Value, 1)
             };
         }
 

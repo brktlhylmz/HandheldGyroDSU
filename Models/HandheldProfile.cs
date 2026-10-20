@@ -33,6 +33,12 @@ public sealed class HandheldProfile
     [JsonPropertyName("usePitchOffset")]
     public bool UsePitchOffset { get; set; } = true;
 
+    [JsonPropertyName("sensitivity")]
+    public float Sensitivity { get; set; } = 1.0f;
+
+    [JsonPropertyName("deadzone")]
+    public float Deadzone { get; set; } = 0.0f;
+
     [JsonPropertyName("preferredSlot")]
     public int PreferredSlot { get; set; }
 

@@ -90,6 +90,9 @@ public sealed class IpcHttpServer : IDisposable
         _settings.InvertZ = profile.InvertZ;
         _settings.SwapAxes = profile.SwapAxes;
         _settings.UsePitchOffset = _sensorService.UsePitchOffset;
+        _settings.Sensitivity = _sensorService.Sensitivity;
+        _settings.Deadzone = _sensorService.Deadzone;
+        _settings.RestAccX = _sensorService.RestAccX;
         _settings.RestAccY = _sensorService.RestAccY;
         _settings.RestAccZ = _sensorService.RestAccZ;
         _settings.IsStreamingEnabled = _udpServer.IsStreamingEnabled;
@@ -251,7 +254,9 @@ public sealed class IpcHttpServer : IDisposable
                         bool? invZ = ExtractBooleanParameter(query, body, "invertZ");
                         bool? swap = ExtractBooleanParameter(query, body, "swapAxes");
                         bool? pitchOff = ExtractBooleanParameter(query, body, "usePitchOffset");
-                        _sensorService.UpdateAxisSettings(invX, invY, invZ, swap, pitchOff);
+                        float? sens = ExtractFloatParameter(body, "sensitivity");
+                        float? dz = ExtractFloatParameter(body, "deadzone");
+                        _sensorService.UpdateAxisSettings(invX, invY, invZ, swap, pitchOff, sens, dz);
                     }
                     SaveCurrentSettings();
                     string json = BuildStatusJson("Axis orientation settings updated");
@@ -279,7 +284,9 @@ public sealed class IpcHttpServer : IDisposable
                             target.InvertY,
                             target.InvertZ,
                             target.SwapAxes,
-                            target.UsePitchOffset);
+                            target.UsePitchOffset,
+                            target.Sensitivity,
+                            target.Deadzone);
                         _settings.ActiveProfileName = target.Name;
                         SaveCurrentSettings();
                         string json = BuildStatusJson($"Profile applied: {target.Name}");
@@ -308,7 +315,9 @@ public sealed class IpcHttpServer : IDisposable
                             InvertY = _sensorService.ActiveProfile.InvertY,
                             InvertZ = _sensorService.ActiveProfile.InvertZ,
                             SwapAxes = _sensorService.ActiveProfile.SwapAxes,
-                            UsePitchOffset = _sensorService.UsePitchOffset
+                            UsePitchOffset = _sensorService.UsePitchOffset,
+                            Sensitivity = _sensorService.Sensitivity,
+                            Deadzone = _sensorService.Deadzone
                         };
                     }
 
@@ -436,6 +445,8 @@ public sealed class IpcHttpServer : IDisposable
             invertZ = profile.InvertZ,
             swapAxes = profile.SwapAxes,
             usePitchOffset = _sensorService.UsePitchOffset,
+            sensitivity = Math.Round(_sensorService.Sensitivity, 2),
+            deadzone = Math.Round(_sensorService.Deadzone, 2),
             isCalibrating = _sensorService.IsCalibrating,
             calibrationProgress = _sensorService.CalibrationProgressPercent,
             gyroPitch = Math.Round(motion.GyroPitch, 2),
@@ -574,6 +585,28 @@ public sealed class IpcHttpServer : IDisposable
             }
         }
 
+        return null;
+    }
+
+    private static float? ExtractFloatParameter(string body, string key)
+    {
+        if (!string.IsNullOrWhiteSpace(body) && body.TrimStart().StartsWith('{'))
+        {
+            try
+            {
+                using JsonDocument doc = JsonDocument.Parse(body.Trim());
+                if (doc.RootElement.TryGetProperty(key, out JsonElement prop) &&
+                    prop.ValueKind == JsonValueKind.Number &&
+                    prop.TryGetSingle(out float val))
+                {
+                    return val;
+                }
+            }
+            catch
+            {
+                // Ignore malformed JSON
+            }
+        }
         return null;
     }
 
