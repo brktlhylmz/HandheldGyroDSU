@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -14,6 +15,7 @@ public partial class MainWindow : Window
     private readonly DsuIpcClient _ipcClient = new();
     private readonly GameBarWidgetAdapter _gameBarAdapter = new();
     private readonly SystemTrayService _trayService = new();
+    private readonly GamepadNavigationService _gamepadService;
     private readonly LocalizationService _loc = LocalizationService.Instance;
     private readonly DispatcherTimer _pollTimer;
     private readonly bool _startedMinimized;
@@ -39,6 +41,8 @@ public partial class MainWindow : Window
     {
         _startedMinimized = startMinimized;
         InitializeComponent();
+
+        _gamepadService = new GamepadNavigationService(this);
 
         LanguageComboBox.ItemsSource = _loc.AvailableLanguages;
         LanguageComboBox.SelectedValue = _loc.CurrentLanguage;
@@ -73,14 +77,51 @@ public partial class MainWindow : Window
             _loc.SetLanguage(status.Language);
             UpdateUiFromStatus(status);
             _pollTimer.Start();
+            _gamepadService.Start();
         };
 
         Closed += (_, _) =>
         {
+            _gamepadService.Dispose();
             _pollTimer.Stop();
             _trayService.Dispose();
             _ipcClient.Dispose();
         };
+    }
+
+    public IReadOnlyList<Control> GetActiveTabNavigableControls()
+    {
+        if (SettingsTabButton.IsChecked == true)
+        {
+            return
+            [
+                LanguageComboBox,
+                ApplyPortButton,
+                StartupToggle,
+                CalibrateButton
+            ];
+        }
+
+        return
+        [
+            GyroStreamToggle,
+            PitchOffsetToggle,
+            InvertXToggle,
+            InvertYToggle,
+            InvertZToggle,
+            SwapAxesToggle,
+            ResetAxesButton,
+            CalibrateButton
+        ];
+    }
+
+    public void ScrollByVerticalOffset(double delta)
+    {
+        if (MainScrollViewer is null)
+            return;
+
+        double target = Math.Clamp(MainScrollViewer.VerticalOffset + delta, 0, MainScrollViewer.ScrollableHeight);
+        MainScrollViewer.ScrollToVerticalOffset(target);
     }
 
     public void HideToTray()
