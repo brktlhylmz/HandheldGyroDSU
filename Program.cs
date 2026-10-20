@@ -27,7 +27,7 @@ public static class Program
 
         // Load persistent settings (%LocalAppData%\HandheldDsu\settings.json)
         AppSettings settings = AppSettings.Load();
-        DeviceProfile defaultProfile = DeviceProfile.CreateLandscapeStandard();
+        DeviceProfile defaultProfile = DeviceProfile.CreateAsusRogAlly();
 
         using var sensorService = new SensorService(defaultProfile, settings);
         sensorService.Initialize();

@@ -27,10 +27,10 @@ public sealed class DeviceProfile
     }
 
     /// <summary>
-    /// Default axis profile for standard landscape-mounted IMU sensors (ASUS, Acer, Ayaneo, GPD, etc.).
+    /// Default axis profile for Asus ROG Ally / ROG Ally X (Landscape).
     /// </summary>
-    public static DeviceProfile CreateLandscapeStandard() => new(
-        name: "Standard Landscape",
+    public static DeviceProfile CreateAsusRogAlly() => new(
+        name: "Asus ROG Ally",
         invertX: false,
         invertY: true,
         invertZ: true,
@@ -38,10 +38,10 @@ public sealed class DeviceProfile
     );
 
     /// <summary>
-    /// Axis profile for handhelds with portrait-native display/sensor mounting (e.g., Lenovo Legion Go).
+    /// Axis profile for Lenovo Legion Go (Portrait-native display sensor layout).
     /// </summary>
-    public static DeviceProfile CreatePortraitNative() => new(
-        name: "Portrait Sensor",
+    public static DeviceProfile CreateLenovoLegionGo() => new(
+        name: "Lenovo Legion Go",
         invertX: true,
         invertY: false,
         invertZ: true,
@@ -49,10 +49,10 @@ public sealed class DeviceProfile
     );
 
     /// <summary>
-    /// Alternative landscape axis profile (e.g., MSI Claw / Inverted Y-axis sensors).
+    /// Axis profile for MSI Claw.
     /// </summary>
-    public static DeviceProfile CreateAlternativeLandscape() => new(
-        name: "Alternative Landscape",
+    public static DeviceProfile CreateMsiClaw() => new(
+        name: "MSI Claw",
         invertX: false,
         invertY: false,
         invertZ: true,

@@ -43,7 +43,7 @@ public sealed class DsuStatusDto
     public long TotalPacketsSent { get; set; }
 
     [JsonPropertyName("activeProfile")]
-    public string ActiveProfile { get; set; } = "Standard Landscape";
+    public string ActiveProfile { get; set; } = "Asus ROG Ally";
 
     [JsonPropertyName("invertX")]
     public bool InvertX { get; set; }
@@ -132,7 +132,7 @@ public sealed class DsuIpcClient : IDisposable
             _embeddedCts = new CancellationTokenSource();
             _embeddedSettings = AppSettings.Load();
 
-            _embeddedSensor = new SensorService(DeviceProfile.CreateLandscapeStandard(), _embeddedSettings);
+            _embeddedSensor = new SensorService(DeviceProfile.CreateAsusRogAlly(), _embeddedSettings);
             _embeddedSensor.Initialize();
 
             _embeddedUdpServer = new DsuUdpServer(_embeddedSensor, _embeddedSettings.UdpPort);

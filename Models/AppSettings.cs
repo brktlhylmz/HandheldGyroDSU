@@ -10,7 +10,7 @@ namespace HandheldDsuServer.Models;
 public sealed class AppSettings
 {
     public int UdpPort { get; set; } = 26760;
-    public string ActiveProfileKey { get; set; } = "landscape_standard";
+    public string ActiveProfileKey { get; set; } = "rog_ally";
     public string Language { get; set; } = "tr";
     public bool IsStreamingEnabled { get; set; } = true;
     public bool StartWithWindows { get; set; }
