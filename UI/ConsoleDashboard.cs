@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Net;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using HandheldDsuServer.Models;
@@ -10,7 +9,8 @@ using HandheldDsuServer.Services;
 namespace HandheldDsuServer.UI;
 
 /// <summary>
-/// Manages a flicker-free live console status dashboard and keyboard shortcuts.
+/// Flicker-free real-time console dashboard displaying sensor telemetry,
+/// connected emulator clients, axis orientation, and keyboard shortcuts.
 /// </summary>
 public sealed class ConsoleDashboard
 {
@@ -18,19 +18,22 @@ public sealed class ConsoleDashboard
     private readonly DsuUdpServer _udpServer;
     private readonly IpcHttpServer _ipcServer;
 
-    public ConsoleDashboard(SensorService sensorService, DsuUdpServer udpServer, IpcHttpServer ipcServer)
+    public ConsoleDashboard(
+        SensorService sensorService,
+        DsuUdpServer udpServer,
+        IpcHttpServer ipcServer)
     {
         _sensorService = sensorService;
         _udpServer = udpServer;
         _ipcServer = ipcServer;
     }
 
-    public async Task RunAsync(CancellationTokenSource cts)
+    public async Task RunAsync(CancellationTokenSource appCts)
     {
-        Console.OutputEncoding = Encoding.UTF8;
-        bool isInteractive = !Console.IsOutputRedirected && !Console.IsInputRedirected;
+        CancellationToken token = appCts.Token;
+        bool hasConsole = !Console.IsOutputRedirected && !Console.IsInputRedirected;
 
-        if (isInteractive)
+        if (hasConsole)
         {
             try
             {
@@ -39,43 +42,32 @@ public sealed class ConsoleDashboard
             }
             catch
             {
-                isInteractive = false;
+                hasConsole = false;
             }
         }
 
-        // Run an automatic 1-second calibration on startup
-        Task initialCalTask = Task.Run(() => _sensorService.CalibrateAsync(cts.Token), cts.Token);
-
-        if (!isInteractive)
+        // Start an automatic 1-second calibration on startup if no prior bias offsets were saved
+        GyroBias initialBias = _sensorService.CurrentBias;
+        if (initialBias.BiasX == 0f && initialBias.BiasY == 0f && initialBias.BiasZ == 0f)
         {
-            await initialCalTask;
-            RenderScreen(useCursorPositioning: false);
-
-            using var daemonTimer = new PeriodicTimer(TimeSpan.FromSeconds(5));
-            while (!cts.Token.IsCancellationRequested && await daemonTimer.WaitForNextTickAsync(cts.Token))
+            _ = Task.Run(async () =>
             {
-                MotionData m = _sensorService.GetProcessedMotionData();
-                IReadOnlyList<IPEndPoint> clients = _udpServer.GetActiveClients();
-                string clientInfo = clients.Count > 0 ? string.Join(", ", clients) : "Waiting";
-                Console.WriteLine(
-                    $"[{DateTime.Now:HH:mm:ss}] UDP:{_udpServer.Port} | IPC:{_ipcServer.Port} | Stream:{(_udpServer.IsStreamingEnabled ? "ON" : "OFF")} | " +
-                    $"Client:{clientInfo} | Profile:{_sensorService.ActiveProfile.Name} | " +
-                    $"Gyro(P/Y/R): {m.GyroPitch,6:F2}, {m.GyroYaw,6:F2}, {m.GyroRoll,6:F2} deg/s");
-            }
-            return;
+                await _sensorService.CalibrateAsync(token);
+                _ipcServer.SaveCurrentSettings();
+            }, token);
         }
-
-        using var uiTimer = new PeriodicTimer(TimeSpan.FromMilliseconds(100)); // 10 FPS refresh rate
 
         try
         {
-            while (!cts.Token.IsCancellationRequested)
+            while (!token.IsCancellationRequested)
             {
-                HandleKeyboardInput(cts);
-                RenderScreen(useCursorPositioning: true);
+                if (hasConsole)
+                {
+                    HandleKeyboardShortcuts(appCts);
+                    RenderFrame();
+                }
 
-                if (!await uiTimer.WaitForNextTickAsync(cts.Token))
-                    break;
+                await Task.Delay(100, token);
             }
         }
         catch (OperationCanceledException)
@@ -84,75 +76,88 @@ public sealed class ConsoleDashboard
         }
         finally
         {
-            try
+            if (hasConsole)
             {
-                Console.ResetColor();
-                Console.CursorVisible = true;
-            }
-            catch
-            {
-                // Ignore console state errors
+                try
+                {
+                    Console.ResetColor();
+                    Console.CursorVisible = true;
+                    Console.WriteLine();
+                    Console.WriteLine("[INFO] Handheld Cemuhook DSU Server stopped.");
+                }
+                catch
+                {
+                    // Ignore console reset errors
+                }
             }
         }
     }
 
-    private void HandleKeyboardInput(CancellationTokenSource cts)
+    private void HandleKeyboardShortcuts(CancellationTokenSource appCts)
     {
         while (Console.KeyAvailable)
         {
             ConsoleKeyInfo keyInfo = Console.ReadKey(intercept: true);
-            switch (char.ToUpperInvariant(keyInfo.KeyChar))
+            switch (keyInfo.Key)
             {
-                case 'C':
+                case ConsoleKey.C:
                     if (!_sensorService.IsCalibrating)
                     {
-                        _ = Task.Run(() => _sensorService.CalibrateAsync(cts.Token), cts.Token);
+                        _ = Task.Run(async () =>
+                        {
+                            await _sensorService.CalibrateAsync(appCts.Token);
+                            _ipcServer.SaveCurrentSettings();
+                        }, appCts.Token);
                     }
                     break;
 
-                case 'P':
-                    _sensorService.SetOrCycleProfile();
+                case ConsoleKey.R:
+                    _sensorService.ResetAxisSettings();
+                    _ipcServer.SaveCurrentSettings();
                     break;
 
-                case 'T':
+                case ConsoleKey.T:
                     _udpServer.ToggleStreaming();
+                    _ipcServer.SaveCurrentSettings();
                     break;
 
-                case 'X':
+                case ConsoleKey.X:
                     _sensorService.ActiveProfile.InvertX = !_sensorService.ActiveProfile.InvertX;
+                    _ipcServer.SaveCurrentSettings();
                     break;
 
-                case 'Y':
+                case ConsoleKey.Y:
                     _sensorService.ActiveProfile.InvertY = !_sensorService.ActiveProfile.InvertY;
+                    _ipcServer.SaveCurrentSettings();
                     break;
 
-                case 'Z':
+                case ConsoleKey.Z:
                     _sensorService.ActiveProfile.InvertZ = !_sensorService.ActiveProfile.InvertZ;
+                    _ipcServer.SaveCurrentSettings();
                     break;
 
-                case 'S':
+                case ConsoleKey.S:
                     _sensorService.ActiveProfile.SwapAxes = !_sensorService.ActiveProfile.SwapAxes;
+                    _ipcServer.SaveCurrentSettings();
                     break;
 
-                case 'Q':
-                    cts.Cancel();
-                    break;
+                case ConsoleKey.Q:
+                case ConsoleKey.Escape:
+                    appCts.Cancel();
+                    return;
             }
         }
     }
 
-    private void RenderScreen(bool useCursorPositioning)
+    private void RenderFrame()
     {
-        if (useCursorPositioning)
+        try
         {
-            try
-            {
-                Console.SetCursorPosition(0, 0);
-            }
-            catch
-            {
-                // Ignore cursor positioning errors
-            }
+            Console.SetCursorPosition(0, 0);
+        }
+        catch
+        {
+            return;
         }
 
         MotionData motion = _sensorService.GetProcessedMotionData();
@@ -162,12 +167,12 @@ public sealed class ConsoleDashboard
 
         WriteColoredLine("======================================================================", ConsoleColor.DarkCyan);
         WriteColoredLine("   HANDHELD CEMUHOOK DSU (GYRO/MOTION) SERVER - .NET 10 (WinRT)       ", ConsoleColor.Cyan);
-        WriteColoredLine("   Universal Windows Handheld IMU Server + Xbox Game Bar IPC          ", ConsoleColor.DarkGray);
+        WriteColoredLine("   Universal Windows Handheld IMU Server + Local HTTP IPC             ", ConsoleColor.DarkGray);
         WriteColoredLine("======================================================================", ConsoleColor.DarkCyan);
 
         // 1. Server and IPC Status
         WriteLabelValue("  UDP Server Address: ", $"0.0.0.0:{_udpServer.Port} (DSUS v1001 | ID: 0x{_udpServer.ServerId:X8})", ConsoleColor.Green);
-        WriteLabelValue("  Game Bar IPC API  : ", $"http://127.0.0.1:{_ipcServer.Port} (/status, /calibrate, /profile, /toggle)", ConsoleColor.Cyan);
+        WriteLabelValue("  Local IPC API     : ", $"http://127.0.0.1:{_ipcServer.Port} (/status, /calibrate, /axes, /toggle)", ConsoleColor.Cyan);
         WriteLabelValue(
             "  DSU Data Stream   : ",
             _udpServer.IsStreamingEnabled ? "ENABLED (Active Broadcast)" : "PAUSED (Disabled)",
@@ -197,8 +202,7 @@ public sealed class ConsoleDashboard
 
         WriteColoredLine("----------------------------------------------------------------------", ConsoleColor.DarkGray);
 
-        // 3. Device Profile and Axis Orientation
-        WriteLabelValue("  Active Profile    : ", profile.Name, ConsoleColor.Magenta);
+        // 3. Axis Orientation
         WriteLabelValue(
             "  Axis Orientation  : ",
             $"InvertX: {(profile.InvertX ? "ON " : "OFF")} | InvertY: {(profile.InvertY ? "ON " : "OFF")} | InvertZ: {(profile.InvertZ ? "ON " : "OFF")} | SwapAxes: {(profile.SwapAxes ? "ON " : "OFF")}",
@@ -236,8 +240,7 @@ public sealed class ConsoleDashboard
         }
 
         WriteColoredLine("======================================================================", ConsoleColor.DarkCyan);
-        WriteColoredLine("  [C] Calibrate (Hold stationary for 1s)                              ", ConsoleColor.Green);
-        WriteColoredLine("  [P] Cycle Device Profile (Standard -> Portrait -> Alternative)      ", ConsoleColor.Gray);
+        WriteColoredLine("  [C] Calibrate (Hold stationary for 1s) | [R] Reset Axis Defaults    ", ConsoleColor.Green);
         WriteColoredLine("  [T] Toggle Stream | [X/Y/Z] Invert Axis | [S] Swap Axes | [Q] Quit  ", ConsoleColor.Gray);
         WriteColoredLine("======================================================================", ConsoleColor.DarkCyan);
         Console.ResetColor();

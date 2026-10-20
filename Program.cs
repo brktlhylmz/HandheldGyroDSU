@@ -27,7 +27,7 @@ public static class Program
 
         // Load persistent settings (%LocalAppData%\HandheldDsu\settings.json)
         AppSettings settings = AppSettings.Load();
-        DeviceProfile defaultProfile = DeviceProfile.CreateAsusRogAlly();
+        DeviceProfile defaultProfile = DeviceProfile.CreateDefault();
 
         using var sensorService = new SensorService(defaultProfile, settings);
         sensorService.Initialize();
@@ -64,7 +64,7 @@ public static class Program
 
     /// <summary>
     /// Verifies 0x100000, 0x100001, and 0x100002 Cemuhook DSU packets as well as
-    /// local HTTP IPC endpoints (/status, /calibrate, /profile, /toggle) on 127.0.0.1:26761.
+    /// local HTTP IPC endpoints (/status, /calibrate, /axes, /toggle) on 127.0.0.1:26761.
     /// </summary>
     private static async Task<int> RunSelfTestAsync(
         DsuUdpServer udpServer,
@@ -117,9 +117,9 @@ public static class Program
         string statusJson = await http.GetStringAsync("/status", cts.Token);
         Console.WriteLine($"[TEST] GET /status succeeded: {statusJson[..Math.Min(110, statusJson.Length)]}...");
 
-        var profileResp = await http.PostAsync("/profile", new StringContent("{\"profile\":\"legion\"}", Encoding.UTF8, "application/json"), cts.Token);
-        _ = await profileResp.Content.ReadAsStringAsync(cts.Token);
-        Console.WriteLine($"[TEST] POST /profile (Legion Go) succeeded: Active={sensorService.ActiveProfile.Name}");
+        var axesResp = await http.PostAsync("/axes", new StringContent("{\"reset\":true}", Encoding.UTF8, "application/json"), cts.Token);
+        _ = await axesResp.Content.ReadAsStringAsync(cts.Token);
+        Console.WriteLine($"[TEST] POST /axes (reset) succeeded: InvertY={sensorService.ActiveProfile.InvertY}");
 
         var toggleResp = await http.PostAsync("/toggle", new StringContent("{\"enabled\":true}", Encoding.UTF8, "application/json"), cts.Token);
         _ = await toggleResp.Content.ReadAsStringAsync(cts.Token);
@@ -131,7 +131,7 @@ public static class Program
 
         cts.Cancel();
         await Task.WhenAll(serverTask, ipcTask);
-        Console.WriteLine("[TEST] All Cemuhook DSU and Xbox Game Bar IPC self-tests passed!");
+        Console.WriteLine("[TEST] All Cemuhook DSU and local IPC self-tests passed!");
         return 0;
     }
 

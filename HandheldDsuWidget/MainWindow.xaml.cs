@@ -25,6 +25,11 @@ public partial class MainWindow : Window
     private Brush StatusOnlineBrush => (Brush)FindResource("BrushStatusOnline");
     private Brush StatusOfflineBrush => (Brush)FindResource("BrushStatusOffline");
     private Brush TextSecondaryBrush => (Brush)FindResource("BrushTextSecondary");
+    private Brush TextOnAccentBrush => (Brush)FindResource("BrushTextOnAccent");
+    private Brush AccentPrimaryBrush => (Brush)FindResource("BrushAccentPrimary");
+    private Brush AccentDimBrush => (Brush)FindResource("BrushAccentDim");
+    private Brush BgSubPanelBrush => (Brush)FindResource("BrushBgSubPanel");
+    private Brush BorderInputBrush => (Brush)FindResource("BrushBorderInput");
 
     public MainWindow() : this(startMinimized: false)
     {
@@ -148,6 +153,13 @@ public partial class MainWindow : Window
         }
     }
 
+    private void UpdateAxisBadgeVisual(Border badgeBorder, TextBlock badgeText, bool isActive)
+    {
+        badgeBorder.Background = isActive ? AccentDimBrush : BgSubPanelBrush;
+        badgeBorder.BorderBrush = isActive ? AccentPrimaryBrush : BorderInputBrush;
+        badgeText.Foreground = isActive ? TextOnAccentBrush : TextSecondaryBrush;
+    }
+
     private void UpdateUiFromStatus(DsuStatusDto status)
     {
         _lastStatus = status;
@@ -202,23 +214,18 @@ public partial class MainWindow : Window
                 ? _loc["StartupEnabledDesc"]
                 : _loc["StartupDisabledDesc"];
 
-            // 3. Active device profile selection
-            int targetIndex = 0;
-            if (status.ActiveProfile.Contains("Legion", StringComparison.OrdinalIgnoreCase))
-                targetIndex = 1;
-            else if (status.ActiveProfile.Contains("Claw", StringComparison.OrdinalIgnoreCase))
-                targetIndex = 2;
-
-            if (DeviceProfileComboBox.SelectedIndex != targetIndex && !DeviceProfileComboBox.IsDropDownOpen)
-            {
-                DeviceProfileComboBox.SelectedIndex = targetIndex;
-            }
-
+            // 3. Axis orientation switches and active badge highlights
+            PitchOffsetToggle.IsChecked = status.UsePitchOffset;
             InvertXToggle.IsChecked = status.InvertX;
             InvertYToggle.IsChecked = status.InvertY;
             InvertZToggle.IsChecked = status.InvertZ;
             SwapAxesToggle.IsChecked = status.SwapAxes;
-            PitchOffsetToggle.IsChecked = status.UsePitchOffset;
+
+            UpdateAxisBadgeVisual(BadgePitchOffset, BadgePitchOffsetText, status.UsePitchOffset);
+            UpdateAxisBadgeVisual(BadgeInvertX, BadgeInvertXText, status.InvertX);
+            UpdateAxisBadgeVisual(BadgeInvertY, BadgeInvertYText, status.InvertY);
+            UpdateAxisBadgeVisual(BadgeInvertZ, BadgeInvertZText, status.InvertZ);
+            UpdateAxisBadgeVisual(BadgeSwapAxes, BadgeSwapAxesText, status.SwapAxes);
 
             // 4. Live IMU values (deg/s & G)
             PitchValueText.Text = $"{status.GyroPitch:+0.00;-0.00;0.00}°/s";
@@ -368,18 +375,6 @@ public partial class MainWindow : Window
         UpdateUiFromStatus(status);
     }
 
-    private async void DeviceProfileComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
-    {
-        if (_suppressUiEvents || !IsLoaded)
-            return;
-
-        if (DeviceProfileComboBox.SelectedItem is ComboBoxItem item && item.Tag is string profileKey)
-        {
-            DsuStatusDto status = await _ipcClient.SetProfileAsync(profileKey);
-            UpdateUiFromStatus(status);
-        }
-    }
-
     private async void AxisConfigToggle_Click(object sender, RoutedEventArgs e)
     {
         if (_suppressUiEvents || !IsLoaded)
@@ -391,6 +386,15 @@ public partial class MainWindow : Window
             invertZ: InvertZToggle.IsChecked == true,
             swapAxes: SwapAxesToggle.IsChecked == true,
             usePitchOffset: PitchOffsetToggle.IsChecked == true);
+        UpdateUiFromStatus(status);
+    }
+
+    private async void ResetAxesButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_suppressUiEvents || !IsLoaded)
+            return;
+
+        DsuStatusDto status = await _ipcClient.ResetAxesAsync();
         UpdateUiFromStatus(status);
     }
 

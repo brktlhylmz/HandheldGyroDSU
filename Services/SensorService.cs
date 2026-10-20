@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
@@ -9,14 +8,12 @@ using Windows.Devices.Sensors;
 namespace HandheldDsuServer.Services;
 
 /// <summary>
-/// Manages internal WinRT IMU sensors (Bosch BOSC0200 / Gyrometer + Accelerometer),
+/// Manages internal WinRT IMU sensors (Gyrometer + Accelerometer),
 /// providing high-frequency event-driven sampling, drift bias calibration, and resting pitch compensation.
 /// </summary>
 public sealed class SensorService : IDisposable
 {
     private readonly object _lock = new();
-    private readonly DeviceProfile[] _presets;
-    private int _currentPresetIndex;
     private DeviceProfile _activeProfile;
 
     private Gyrometer? _gyrometer;
@@ -59,7 +56,6 @@ public sealed class SensorService : IDisposable
     public bool UsePitchOffset => _usePitchOffset;
     public float RestAccY => _restAccY;
     public float RestAccZ => _restAccZ;
-    public IReadOnlyList<DeviceProfile> Presets => _presets;
 
     public DeviceProfile ActiveProfile
     {
@@ -69,14 +65,7 @@ public sealed class SensorService : IDisposable
 
     public SensorService(DeviceProfile? initialProfile = null, AppSettings? settings = null)
     {
-        _presets =
-        [
-            DeviceProfile.CreateAsusRogAlly(),
-            DeviceProfile.CreateLenovoLegionGo(),
-            DeviceProfile.CreateMsiClaw()
-        ];
-        _currentPresetIndex = 0;
-        _activeProfile = initialProfile ?? _presets[0];
+        _activeProfile = initialProfile ?? DeviceProfile.CreateDefault();
 
         if (settings is not null)
         {
@@ -84,20 +73,13 @@ public sealed class SensorService : IDisposable
             {
                 _gyroBias = new GyroBias(settings.BiasX, settings.BiasY, settings.BiasZ);
             }
-            if (!string.IsNullOrWhiteSpace(settings.ActiveProfileKey))
-            {
-                SetOrCycleProfile(settings.ActiveProfileKey);
-            }
-            if (settings.InvertX.HasValue)
-                _activeProfile.InvertX = settings.InvertX.Value;
-            if (settings.InvertY.HasValue)
-                _activeProfile.InvertY = settings.InvertY.Value;
-            if (settings.InvertZ.HasValue)
-                _activeProfile.InvertZ = settings.InvertZ.Value;
-            if (settings.SwapAxes.HasValue)
-                _activeProfile.SwapAxes = settings.SwapAxes.Value;
 
+            _activeProfile.InvertX = settings.InvertX;
+            _activeProfile.InvertY = settings.InvertY;
+            _activeProfile.InvertZ = settings.InvertZ;
+            _activeProfile.SwapAxes = settings.SwapAxes;
             _usePitchOffset = settings.UsePitchOffset;
+
             if (settings.RestAccY != 0f || settings.RestAccZ != 0f)
             {
                 _restAccY = settings.RestAccY;
@@ -130,39 +112,12 @@ public sealed class SensorService : IDisposable
         }
     }
 
-    public static string GetProfileKey(DeviceProfile profile)
-    {
-        if (profile.Name.Contains("Legion", StringComparison.OrdinalIgnoreCase))
-            return "legion_go";
-        if (profile.Name.Contains("Claw", StringComparison.OrdinalIgnoreCase))
-            return "msi_claw";
-        return "rog_ally";
-    }
-
-    public DeviceProfile SetOrCycleProfile(string? profileKey = null)
+    public DeviceProfile ResetAxisSettings()
     {
         lock (_lock)
         {
-            if (string.IsNullOrWhiteSpace(profileKey))
-            {
-                _currentPresetIndex = (_currentPresetIndex + 1) % _presets.Length;
-                DeviceProfile p = _presets[_currentPresetIndex];
-                _activeProfile = new DeviceProfile(p.Name, p.InvertX, p.InvertY, p.InvertZ, p.SwapAxes);
-                return _activeProfile;
-            }
-
-            string key = profileKey.Trim().ToLowerInvariant();
-            if (key.Contains("ally") || key == "0")
-                _currentPresetIndex = 0;
-            else if (key.Contains("legion") || key == "1")
-                _currentPresetIndex = 1;
-            else if (key.Contains("claw") || key == "2")
-                _currentPresetIndex = 2;
-            else
-                _currentPresetIndex = (_currentPresetIndex + 1) % _presets.Length;
-
-            DeviceProfile preset = _presets[_currentPresetIndex];
-            _activeProfile = new DeviceProfile(preset.Name, preset.InvertX, preset.InvertY, preset.InvertZ, preset.SwapAxes);
+            _activeProfile.ResetToDefaults();
+            _usePitchOffset = true;
             return _activeProfile;
         }
     }
@@ -387,7 +342,7 @@ public sealed class SensorService : IDisposable
         float calGy = rawGy - bias.BiasY;
         float calGz = rawGz - bias.BiasZ;
 
-        // Zero angular velocity if the Bosch BOSC0200 driver stops firing ReadingChanged while stationary (> 200ms)
+        // Zero angular velocity if the IMU driver stops firing ReadingChanged while stationary (> 200ms)
         long lastGyroTicks = Interlocked.Read(ref _lastGyroEventTimestamp);
         if (lastGyroTicks > 0)
         {

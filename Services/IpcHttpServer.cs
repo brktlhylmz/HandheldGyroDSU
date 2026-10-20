@@ -13,7 +13,7 @@ namespace HandheldDsuServer.Services;
 
 /// <summary>
 /// Lightweight local HTTP/JSON IPC server running on http://127.0.0.1:26761
-/// allowing the Xbox Game Bar Widget and external tools to monitor and control the DSU engine.
+/// allowing the desktop/overlay widget and external tools to monitor and control the DSU engine.
 /// </summary>
 public sealed class IpcHttpServer : IDisposable
 {
@@ -57,7 +57,6 @@ public sealed class IpcHttpServer : IDisposable
         GyroBias bias = _sensorService.CurrentBias;
         DeviceProfile profile = _sensorService.ActiveProfile;
         _settings.UdpPort = _udpServer.Port;
-        _settings.ActiveProfileKey = SensorService.GetProfileKey(profile);
         _settings.InvertX = profile.InvertX;
         _settings.InvertY = profile.InvertY;
         _settings.InvertZ = profile.InvertZ;
@@ -177,14 +176,6 @@ public sealed class IpcHttpServer : IDisposable
                     string json = BuildStatusJson("Calibration started (1s)");
                     await WriteHttpResponseAsync(stream, 200, "OK", json, cancellationToken);
                 }
-                else if (method == "POST" && path == "/profile")
-                {
-                    string? requestedProfile = ExtractStringParameter(query, body, "profile", "name");
-                    DeviceProfile updated = _sensorService.SetOrCycleProfile(requestedProfile);
-                    SaveCurrentSettings();
-                    string json = BuildStatusJson($"Active profile updated: {updated.Name}");
-                    await WriteHttpResponseAsync(stream, 200, "OK", json, cancellationToken);
-                }
                 else if (method == "POST" && path == "/toggle")
                 {
                     bool? requestedState = ExtractBooleanParameter(query, body, "enabled");
@@ -220,12 +211,20 @@ public sealed class IpcHttpServer : IDisposable
                 }
                 else if (method == "POST" && path == "/axes")
                 {
-                    bool? invX = ExtractBooleanParameter(query, body, "invertX");
-                    bool? invY = ExtractBooleanParameter(query, body, "invertY");
-                    bool? invZ = ExtractBooleanParameter(query, body, "invertZ");
-                    bool? swap = ExtractBooleanParameter(query, body, "swapAxes");
-                    bool? pitchOff = ExtractBooleanParameter(query, body, "usePitchOffset");
-                    _sensorService.UpdateAxisSettings(invX, invY, invZ, swap, pitchOff);
+                    bool? reset = ExtractBooleanParameter(query, body, "reset");
+                    if (reset == true)
+                    {
+                        _sensorService.ResetAxisSettings();
+                    }
+                    else
+                    {
+                        bool? invX = ExtractBooleanParameter(query, body, "invertX");
+                        bool? invY = ExtractBooleanParameter(query, body, "invertY");
+                        bool? invZ = ExtractBooleanParameter(query, body, "invertZ");
+                        bool? swap = ExtractBooleanParameter(query, body, "swapAxes");
+                        bool? pitchOff = ExtractBooleanParameter(query, body, "usePitchOffset");
+                        _sensorService.UpdateAxisSettings(invX, invY, invZ, swap, pitchOff);
+                    }
                     SaveCurrentSettings();
                     string json = BuildStatusJson("Axis orientation settings updated");
                     await WriteHttpResponseAsync(stream, 200, "OK", json, cancellationToken);
@@ -241,7 +240,7 @@ public sealed class IpcHttpServer : IDisposable
                 {
                     string notFoundJson = JsonSerializer.Serialize(new
                     {
-                        error = "Endpoint not found. Supported: GET /status, POST /calibrate, POST /profile, POST /toggle, POST /port, POST /startup, POST /axes, POST /language"
+                        error = "Endpoint not found. Supported: GET /status, POST /calibrate, POST /toggle, POST /port, POST /startup, POST /axes, POST /language"
                     });
                     await WriteHttpResponseAsync(stream, 404, "Not Found", notFoundJson, cancellationToken);
                 }
@@ -284,7 +283,6 @@ public sealed class IpcHttpServer : IDisposable
             isEmulatorConnected = clients.Count > 0,
             connectedClients = clients.Select(c => c.ToString()).ToArray(),
             totalPacketsSent = _udpServer.TotalPacketsSent,
-            activeProfile = profile.Name,
             invertX = profile.InvertX,
             invertY = profile.InvertY,
             invertZ = profile.InvertZ,

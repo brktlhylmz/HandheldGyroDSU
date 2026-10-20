@@ -42,9 +42,6 @@ public sealed class DsuStatusDto
     [JsonPropertyName("totalPacketsSent")]
     public long TotalPacketsSent { get; set; }
 
-    [JsonPropertyName("activeProfile")]
-    public string ActiveProfile { get; set; } = "Asus ROG Ally";
-
     [JsonPropertyName("invertX")]
     public bool InvertX { get; set; }
 
@@ -132,7 +129,7 @@ public sealed class DsuIpcClient : IDisposable
             _embeddedCts = new CancellationTokenSource();
             _embeddedSettings = AppSettings.Load();
 
-            _embeddedSensor = new SensorService(DeviceProfile.CreateAsusRogAlly(), _embeddedSettings);
+            _embeddedSensor = new SensorService(DeviceProfile.CreateDefault(), _embeddedSettings);
             _embeddedSensor.Initialize();
 
             _embeddedUdpServer = new DsuUdpServer(_embeddedSensor, _embeddedSettings.UdpPort);
@@ -178,7 +175,6 @@ public sealed class DsuIpcClient : IDisposable
             IsEmulatorConnected = clients.Count > 0,
             ConnectedClients = clients.Select(c => c.ToString()).ToArray(),
             TotalPacketsSent = _embeddedUdpServer.TotalPacketsSent,
-            ActiveProfile = profile.Name,
             InvertX = profile.InvertX,
             InvertY = profile.InvertY,
             InvertZ = profile.InvertZ,
@@ -240,23 +236,6 @@ public sealed class DsuIpcClient : IDisposable
 
         await Task.Delay(30, cancellationToken);
         return BuildEmbeddedStatusDto("Calibration started");
-    }
-
-    public async Task<DsuStatusDto> SetProfileAsync(string profileKey, CancellationToken cancellationToken = default)
-    {
-        if (!_usingEmbeddedEngine)
-        {
-            string payload = JsonSerializer.Serialize(new { profile = profileKey });
-            DsuStatusDto? remote = await PostJsonAsync("/profile", payload, cancellationToken);
-            if (remote is not null)
-                return remote;
-
-            EnsureEmbeddedEngineStarted();
-        }
-
-        _embeddedSensor!.SetOrCycleProfile(profileKey);
-        _embeddedIpcServer?.SaveCurrentSettings();
-        return BuildEmbeddedStatusDto();
     }
 
     public async Task<DsuStatusDto> ToggleStreamingAsync(bool? enabled = null, CancellationToken cancellationToken = default)
@@ -341,6 +320,23 @@ public sealed class DsuIpcClient : IDisposable
         }
 
         _embeddedSensor!.UpdateAxisSettings(invertX, invertY, invertZ, swapAxes, usePitchOffset);
+        _embeddedIpcServer?.SaveCurrentSettings();
+        return BuildEmbeddedStatusDto();
+    }
+
+    public async Task<DsuStatusDto> ResetAxesAsync(CancellationToken cancellationToken = default)
+    {
+        if (!_usingEmbeddedEngine)
+        {
+            string payload = JsonSerializer.Serialize(new { reset = true });
+            DsuStatusDto? remote = await PostJsonAsync("/axes", payload, cancellationToken);
+            if (remote is not null)
+                return remote;
+
+            EnsureEmbeddedEngineStarted();
+        }
+
+        _embeddedSensor!.ResetAxisSettings();
         _embeddedIpcServer?.SaveCurrentSettings();
         return BuildEmbeddedStatusDto();
     }
