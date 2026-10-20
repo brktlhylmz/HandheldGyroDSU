@@ -47,13 +47,9 @@ public partial class App : Application
                 return;
             }
 
-            bool forceShow = e.Args.Any(a =>
-                string.Equals(a, "--show", StringComparison.OrdinalIgnoreCase));
-
-            bool startMinimized = !forceShow && (e.Args.Any(a =>
+            bool startMinimized = e.Args.Any(a =>
                 string.Equals(a, "--minimized", StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(a, "-m", StringComparison.OrdinalIgnoreCase)) ||
-                AppSettings.Load().StartMinimized);
+                string.Equals(a, "-m", StringComparison.OrdinalIgnoreCase));
 
             var window = new MainWindow(startMinimized);
             MainWindow = window;

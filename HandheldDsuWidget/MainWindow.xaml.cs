@@ -166,7 +166,6 @@ public partial class MainWindow : Window
                     SecondaryPortTextBox,
                     ApplySecondaryPortButton,
                     StartupToggle,
-                    StartMinimizedToggle,
                     CloseToTrayToggle,
                     HudNotificationsToggle,
                     OpenDataFolderButton,
@@ -182,7 +181,6 @@ public partial class MainWindow : Window
                 ApplyPortButton,
                 MultiPortClusterToggle,
                 StartupToggle,
-                StartMinimizedToggle,
                 CloseToTrayToggle,
                 HudNotificationsToggle,
                 OpenDataFolderButton,
@@ -546,7 +544,6 @@ public partial class MainWindow : Window
                 ? _loc["StartupEnabledDesc"]
                 : _loc["StartupDisabledDesc"];
 
-            StartMinimizedToggle.IsChecked = status.StartMinimized;
             CloseToTrayToggle.IsChecked = status.CloseToTray;
             HudNotificationsToggle.IsChecked = status.HudNotificationsEnabled;
 
@@ -1074,15 +1071,6 @@ public partial class MainWindow : Window
 
         bool targetState = StartupToggle.IsChecked == true;
         DsuStatusDto status = await _ipcClient.SetStartupAsync(targetState);
-        UpdateUiFromStatus(status);
-    }
-
-    private async void StartMinimizedToggle_Click(object sender, RoutedEventArgs e)
-    {
-        if (_suppressUiEvents)
-            return;
-
-        DsuStatusDto status = await _ipcClient.UpdatePreferencesAsync(startMinimized: StartMinimizedToggle.IsChecked == true);
         UpdateUiFromStatus(status);
     }
 
