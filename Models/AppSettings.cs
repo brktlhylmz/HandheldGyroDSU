@@ -11,6 +11,7 @@ public sealed class AppSettings
 {
     public int UdpPort { get; set; } = 26760;
     public string Language { get; set; } = "tr";
+    public string ActiveProfileName { get; set; } = "Standard Landscape";
     public bool IsStreamingEnabled { get; set; } = true;
     public bool StartWithWindows { get; set; }
     public bool InvertX { get; set; } = false;

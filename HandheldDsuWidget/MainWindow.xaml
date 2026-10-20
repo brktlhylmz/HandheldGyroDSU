@@ -599,6 +599,175 @@
                             </StackPanel>
                         </Border>
 
+                        <!-- Settings Card 2: Profile Management & Sharing -->
+                        <Border Style="{DynamicResource AppCardStyle}" Margin="0,0,0,10">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                                    <Border Width="3" Height="12" Background="{DynamicResource BrushAccentPrimary}" Margin="0,0,7,0" />
+                                    <TextBlock Text="{Binding [SectionProfiles], Source={x:Static services:LocalizationService.Instance}}"
+                                               Style="{DynamicResource AppSectionHeaderStyle}" />
+                                </StackPanel>
+
+                                <!-- 1. Active Profile Dropdown (Auto-Apply on Selection) + Compact Trash Icon Button -->
+                                <StackPanel Margin="0,0,0,4">
+                                    <TextBlock Text="{Binding [ProfileSelectTitle], Source={x:Static services:LocalizationService.Instance}}"
+                                               Foreground="{DynamicResource BrushTextPrimary}"
+                                               FontWeight="SemiBold"
+                                               FontSize="12"
+                                               Margin="0,0,0,5" />
+
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="8" />
+                                            <ColumnDefinition Width="32" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <ComboBox x:Name="ProfileComboBox"
+                                                  Grid.Column="0"
+                                                  Style="{DynamicResource AppComboBoxStyle}"
+                                                  DisplayMemberPath="Name"
+                                                  SelectedValuePath="Name"
+                                                  SelectionChanged="ProfileComboBox_SelectionChanged" />
+
+                                        <Button x:Name="DeleteProfileButton"
+                                                Grid.Column="2"
+                                                Style="{DynamicResource AppGhostButtonStyle}"
+                                                ToolTip="{Binding [DeleteProfileTooltip], Source={x:Static services:LocalizationService.Instance}}"
+                                                Height="30"
+                                                Padding="0"
+                                                Foreground="{DynamicResource BrushStatusOffline}"
+                                                Click="DeleteProfileButton_Click">
+                                            <Path Data="{DynamicResource IconTrash}"
+                                                  Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                                  StrokeThickness="1.4"
+                                                  StrokeStartLineCap="Round"
+                                                  StrokeEndLineCap="Round"
+                                                  StrokeLineJoin="Round"
+                                                  Width="12" Height="12" Stretch="Uniform" />
+                                        </Button>
+                                    </Grid>
+
+                                    <TextBlock x:Name="ProfileDescriptionText"
+                                               Text="{Binding [ProfileSelectDesc], Source={x:Static services:LocalizationService.Instance}}"
+                                               FontFamily="{DynamicResource FontMonospace}"
+                                               Foreground="{DynamicResource BrushTextSecondary}"
+                                               FontSize="9.5"
+                                               TextWrapping="Wrap"
+                                               Margin="1,5,0,0" />
+                                </StackPanel>
+
+                                <Border Style="{DynamicResource AppRowDividerStyle}" Margin="0,8,0,8" />
+
+                                <!-- 2. Save Current Settings as New Profile -->
+                                <StackPanel Margin="0,0,0,4">
+                                    <TextBlock Text="{Binding [SaveProfileTitle], Source={x:Static services:LocalizationService.Instance}}"
+                                               Foreground="{DynamicResource BrushTextPrimary}"
+                                               FontWeight="SemiBold"
+                                               FontSize="12"
+                                               Margin="0,0,0,5" />
+
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="8" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <TextBox x:Name="NewProfileNameTextBox"
+                                                 Grid.Column="0"
+                                                 Style="{DynamicResource AppTextBoxStyle}"
+                                                 FontFamily="{DynamicResource FontPrimary}"
+                                                 Foreground="{DynamicResource BrushTextPrimary}"
+                                                 FontWeight="Normal"
+                                                 FontSize="11.5"
+                                                 HorizontalContentAlignment="Left"
+                                                 Tag="{Binding [SaveProfilePlaceholder], Source={x:Static services:LocalizationService.Instance}}"
+                                                 Height="30"
+                                                 KeyDown="NewProfileNameTextBox_KeyDown" />
+
+                                        <Button x:Name="SaveProfileButton"
+                                                Grid.Column="2"
+                                                Style="{DynamicResource AppSecondaryButtonStyle}"
+                                                Height="30"
+                                                Padding="12,0"
+                                                Click="SaveProfileButton_Click">
+                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                <Path Data="{DynamicResource IconPlus}"
+                                                      Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                                      StrokeThickness="1.6"
+                                                      StrokeStartLineCap="Round"
+                                                      StrokeEndLineCap="Round"
+                                                      Width="10" Height="10" Stretch="Uniform" Margin="0,0,6,0" />
+                                                <TextBlock Text="{Binding [BtnSaveProfile], Source={x:Static services:LocalizationService.Instance}}"
+                                                           VerticalAlignment="Center" />
+                                            </StackPanel>
+                                        </Button>
+                                    </Grid>
+                                </StackPanel>
+
+                                <Border Style="{DynamicResource AppRowDividerStyle}" Margin="0,8,0,10" />
+
+                                <!-- 3. Clean 2-Column File Sharing Row: Import (.JSON) & Export (.JSON) -->
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="8" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <Button x:Name="ImportProfileButton"
+                                            Grid.Column="0"
+                                            Style="{DynamicResource AppGhostButtonStyle}"
+                                            FontSize="10.5"
+                                            Height="32"
+                                            Padding="8,0"
+                                            Click="ImportProfileButton_Click">
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                            <Path Data="{DynamicResource IconImport}"
+                                                  Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                                  StrokeThickness="1.5"
+                                                  StrokeStartLineCap="Round"
+                                                  StrokeEndLineCap="Round"
+                                                  StrokeLineJoin="Round"
+                                                  Width="12" Height="12" Stretch="Uniform" Margin="0,0,7,0" />
+                                            <TextBlock Text="{Binding [BtnImportFile], Source={x:Static services:LocalizationService.Instance}}"
+                                                       VerticalAlignment="Center" />
+                                        </StackPanel>
+                                    </Button>
+
+                                    <Button x:Name="ExportProfileButton"
+                                            Grid.Column="2"
+                                            Style="{DynamicResource AppGhostButtonStyle}"
+                                            FontSize="10.5"
+                                            Height="32"
+                                            Padding="8,0"
+                                            Click="ExportProfileButton_Click">
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                            <Path Data="{DynamicResource IconExport}"
+                                                  Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                                  StrokeThickness="1.5"
+                                                  StrokeStartLineCap="Round"
+                                                  StrokeEndLineCap="Round"
+                                                  StrokeLineJoin="Round"
+                                                  Width="12" Height="12" Stretch="Uniform" Margin="0,0,7,0" />
+                                            <TextBlock Text="{Binding [BtnExportFile], Source={x:Static services:LocalizationService.Instance}}"
+                                                       VerticalAlignment="Center" />
+                                        </StackPanel>
+                                    </Button>
+                                </Grid>
+
+                                <!-- Status / Feedback Message -->
+                                <TextBlock x:Name="ProfileStatusFeedbackText"
+                                           Foreground="{DynamicResource BrushStatusOnline}"
+                                           FontSize="10.5"
+                                           FontWeight="SemiBold"
+                                           Margin="1,8,0,0"
+                                           TextWrapping="Wrap"
+                                           Visibility="Collapsed" />
+                            </StackPanel>
+                        </Border>
+
                         <!-- Settings Card 2: Network & DSU UDP Port -->
                         <Border Style="{DynamicResource AppCardStyle}" Margin="0,0,0,10">
                             <StackPanel>

@@ -1,11 +1,16 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
+using Microsoft.Win32;
+using HandheldDsuServer.Models;
+using HandheldDsuServer.Services;
 using HandheldDsuWidget.Services;
 
 namespace HandheldDsuWidget;
@@ -20,6 +25,8 @@ public partial class MainWindow : Window
     private readonly DispatcherTimer _pollTimer;
     private readonly bool _startedMinimized;
 
+    private List<HandheldProfile> _profiles = [];
+    private DispatcherTimer? _profileFeedbackTimer;
     private bool _suppressUiEvents;
     private bool _isPollBusy;
     private DsuStatusDto? _lastStatus;
@@ -78,12 +85,14 @@ public partial class MainWindow : Window
             DsuStatusDto status = await _ipcClient.GetStatusAsync();
             _loc.SetLanguage(status.Language);
             UpdateUiFromStatus(status);
+            await RefreshProfilesAsync(status.ActiveProfileName);
             _pollTimer.Start();
             _gamepadService.Start();
         };
 
         Closed += (_, _) =>
         {
+            _profileFeedbackTimer?.Stop();
             _gamepadService.Dispose();
             _pollTimer.Stop();
             _trayService.Dispose();
@@ -98,6 +107,13 @@ public partial class MainWindow : Window
             return
             [
                 LanguageComboBox,
+                ProfileComboBox,
+                DeleteProfileButton,
+                NewProfileNameTextBox,
+                SaveProfileButton,
+                ImportProfileButton,
+                ExportProfileButton,
+                PortTextBox,
                 ApplyPortButton,
                 StartupToggle,
                 CalibrateButton
@@ -219,6 +235,19 @@ public partial class MainWindow : Window
             }
 
             EngineSubtitleText.Text = _loc.Format("HeaderSubtitleFormat", status.ServerPort, status.IpcPort);
+
+            if (!string.IsNullOrWhiteSpace(status.ActiveProfileName) && !ProfileComboBox.IsDropDownOpen)
+            {
+                if ((string?)ProfileComboBox.SelectedValue != status.ActiveProfileName)
+                {
+                    ProfileComboBox.SelectedValue = status.ActiveProfileName;
+                    var activeMatch = _profiles.FirstOrDefault(p => string.Equals(p.Name, status.ActiveProfileName, StringComparison.OrdinalIgnoreCase));
+                    if (activeMatch is not null)
+                    {
+                        UpdateSelectedProfileDetails(activeMatch);
+                    }
+                }
+            }
 
             // Update the port input field unless the user is actively typing in it
             if (!PortTextBox.IsKeyboardFocusWithin)
@@ -439,6 +468,231 @@ public partial class MainWindow : Window
 
         DsuStatusDto status = await _ipcClient.ResetAxesAsync();
         UpdateUiFromStatus(status);
+    }
+
+    private static bool IsSystemPreset(HandheldProfile profile)
+    {
+        return string.Equals(profile.Author, "System", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(profile.Name, "Standard Landscape", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private void UpdateSelectedProfileDetails(HandheldProfile profile)
+    {
+        var tags = new List<string>();
+        if (profile.UsePitchOffset) tags.Add("0° PITCH");
+        if (profile.InvertX) tags.Add("INV-X");
+        if (profile.InvertY) tags.Add("INV-Y");
+        if (profile.InvertZ) tags.Add("INV-Z");
+        if (profile.SwapAxes) tags.Add("SWAP X⇄Y");
+
+        ProfileDescriptionText.Text = tags.Count > 0
+            ? string.Join("  •  ", tags)
+            : "RAW (NO OFFSET / NO INVERSION)";
+
+        DeleteProfileButton.IsEnabled = !IsSystemPreset(profile);
+    }
+
+    private void ShowProfileStatus(string message, bool isError = false)
+    {
+        ProfileStatusFeedbackText.Text = message;
+        ProfileStatusFeedbackText.Foreground = isError ? StatusOfflineBrush : StatusOnlineBrush;
+        ProfileStatusFeedbackText.Visibility = Visibility.Visible;
+
+        _profileFeedbackTimer?.Stop();
+        _profileFeedbackTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(3.5) };
+        _profileFeedbackTimer.Tick += (_, _) =>
+        {
+            _profileFeedbackTimer?.Stop();
+            ProfileStatusFeedbackText.Visibility = Visibility.Collapsed;
+        };
+        _profileFeedbackTimer.Start();
+    }
+
+    private async Task RefreshProfilesAsync(string? selectProfileName = null)
+    {
+        _suppressUiEvents = true;
+        try
+        {
+            IReadOnlyList<HandheldProfile> loaded = await _ipcClient.GetProfilesAsync();
+            _profiles = loaded.ToList();
+            ProfileComboBox.ItemsSource = null;
+            ProfileComboBox.ItemsSource = _profiles;
+
+            string target = selectProfileName ?? _lastStatus?.ActiveProfileName ?? _profiles.FirstOrDefault()?.Name ?? "Standard Landscape";
+            var match = _profiles.FirstOrDefault(p => string.Equals(p.Name, target, StringComparison.OrdinalIgnoreCase))
+                        ?? _profiles.FirstOrDefault();
+
+            if (match is not null)
+            {
+                ProfileComboBox.SelectedValue = match.Name;
+                UpdateSelectedProfileDetails(match);
+            }
+        }
+        catch
+        {
+            // Ignore directory read error
+        }
+        finally
+        {
+            _suppressUiEvents = false;
+        }
+    }
+
+    private async void ProfileComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (ProfileComboBox.SelectedItem is not HandheldProfile selected)
+            return;
+
+        UpdateSelectedProfileDetails(selected);
+
+        if (_suppressUiEvents || !IsLoaded)
+            return;
+
+        DsuStatusDto status = await _ipcClient.ApplyProfileAsync(selected.Name);
+        UpdateUiFromStatus(status);
+        ShowProfileStatus(_loc.Format("ProfileAppliedFormat", selected.Name));
+    }
+
+    private async void DeleteProfileButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (ProfileComboBox.SelectedItem is not HandheldProfile profile || IsSystemPreset(profile))
+            return;
+
+        DeleteProfileButton.IsEnabled = false;
+        try
+        {
+            DsuStatusDto status = await _ipcClient.DeleteProfileAsync(profile.Name);
+            UpdateUiFromStatus(status);
+            await RefreshProfilesAsync("Standard Landscape");
+            ShowProfileStatus(_loc.Format("ProfileDeleteSuccess", profile.Name));
+        }
+        finally
+        {
+            if (ProfileComboBox.SelectedItem is HandheldProfile current)
+            {
+                DeleteProfileButton.IsEnabled = !IsSystemPreset(current);
+            }
+        }
+    }
+
+    private async void SaveProfileButton_Click(object sender, RoutedEventArgs e)
+    {
+        await SaveCurrentProfileAsync();
+    }
+
+    private async void NewProfileNameTextBox_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter)
+        {
+            e.Handled = true;
+            await SaveCurrentProfileAsync();
+            Keyboard.ClearFocus();
+        }
+    }
+
+    private async Task SaveCurrentProfileAsync()
+    {
+        string profileName = NewProfileNameTextBox.Text.Trim();
+        if (string.IsNullOrWhiteSpace(profileName))
+            return;
+
+        var profile = new HandheldProfile
+        {
+            Name = profileName,
+            Author = Environment.UserName,
+            Description = $"Custom user profile ({DateTime.Now:yyyy-MM-dd})",
+            InvertX = InvertXToggle.IsChecked == true,
+            InvertY = InvertYToggle.IsChecked == true,
+            InvertZ = InvertZToggle.IsChecked == true,
+            SwapAxes = SwapAxesToggle.IsChecked == true,
+            UsePitchOffset = PitchOffsetToggle.IsChecked == true
+        };
+
+        SaveProfileButton.IsEnabled = false;
+        try
+        {
+            DsuStatusDto status = await _ipcClient.SaveProfileAsync(profile);
+            NewProfileNameTextBox.Text = string.Empty;
+            UpdateUiFromStatus(status);
+            await RefreshProfilesAsync(profile.Name);
+            ShowProfileStatus(_loc.Format("ProfileSaveSuccess", profile.Name));
+        }
+        finally
+        {
+            SaveProfileButton.IsEnabled = true;
+        }
+    }
+
+    private void ExportProfileButton_Click(object sender, RoutedEventArgs e)
+    {
+        HandheldProfile? profile = ProfileComboBox.SelectedItem as HandheldProfile;
+        if (profile is null)
+        {
+            profile = new HandheldProfile
+            {
+                Name = "Custom Profile",
+                InvertX = InvertXToggle.IsChecked == true,
+                InvertY = InvertYToggle.IsChecked == true,
+                InvertZ = InvertZToggle.IsChecked == true,
+                SwapAxes = SwapAxesToggle.IsChecked == true,
+                UsePitchOffset = PitchOffsetToggle.IsChecked == true
+            };
+        }
+
+        var sfd = new SaveFileDialog
+        {
+            Title = _loc["BtnExportFile"],
+            Filter = "JSON Profile (*.json)|*.json|All files (*.*)|*.*",
+            FileName = $"{profile.Name}.json"
+        };
+
+        if (sfd.ShowDialog(this) == true)
+        {
+            try
+            {
+                string json = ProfileManager.SerializeProfile(profile);
+                File.WriteAllText(sfd.FileName, json);
+                ShowProfileStatus(_loc.Format("ProfileExportSuccess", Path.GetFileName(sfd.FileName)));
+            }
+            catch (Exception ex)
+            {
+                ShowProfileStatus($"Export failed: {ex.Message}", isError: true);
+            }
+        }
+    }
+
+    private async void ImportProfileButton_Click(object sender, RoutedEventArgs e)
+    {
+        var ofd = new OpenFileDialog
+        {
+            Title = _loc["BtnImportFile"],
+            Filter = "JSON Profile (*.json)|*.json|All files (*.*)|*.*",
+            Multiselect = false
+        };
+
+        if (ofd.ShowDialog(this) == true)
+        {
+            try
+            {
+                string json = File.ReadAllText(ofd.FileName);
+                HandheldProfile? imported = ProfileManager.DeserializeProfile(json);
+                if (imported is null)
+                {
+                    ShowProfileStatus(_loc["ProfileInvalidError"], isError: true);
+                    return;
+                }
+
+                DsuStatusDto status = await _ipcClient.SaveProfileAsync(imported);
+                await _ipcClient.ApplyProfileAsync(imported.Name);
+                UpdateUiFromStatus(status);
+                await RefreshProfilesAsync(imported.Name);
+                ShowProfileStatus(_loc.Format("ProfileImportSuccess", imported.Name));
+            }
+            catch (Exception ex)
+            {
+                ShowProfileStatus($"Import failed: {ex.Message}", isError: true);
+            }
+        }
     }
 
     private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
