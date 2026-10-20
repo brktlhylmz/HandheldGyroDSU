@@ -52,7 +52,11 @@ public sealed class IpcHttpServer : IDisposable
         return _settings.Language;
     }
 
-    public void SetPreferences(bool? closeToTray = null, bool? hudNotificationsEnabled = null, bool? syntheticWaveEnabled = null)
+    public void SetPreferences(
+        bool? closeToTray = null,
+        bool? hudNotificationsEnabled = null,
+        bool? syntheticWaveEnabled = null,
+        bool? rebindSensors = null)
     {
         if (closeToTray.HasValue)
             _settings.CloseToTray = closeToTray.Value;
@@ -60,6 +64,8 @@ public sealed class IpcHttpServer : IDisposable
             _settings.HudNotificationsEnabled = hudNotificationsEnabled.Value;
         if (syntheticWaveEnabled.HasValue)
             _sensorService.IsSyntheticWaveEnabled = syntheticWaveEnabled.Value;
+        if (rebindSensors == true)
+            _sensorService.RequestSensorRebind();
         SaveCurrentSettings();
     }
 
@@ -379,7 +385,8 @@ public sealed class IpcHttpServer : IDisposable
                     bool? closeTray = ExtractBooleanParameter(query, body, "closeToTray");
                     bool? hudNotif = ExtractBooleanParameter(query, body, "hudNotificationsEnabled");
                     bool? synthWave = ExtractBooleanParameter(query, body, "syntheticWaveEnabled");
-                    SetPreferences(closeTray, hudNotif, synthWave);
+                    bool? rebind = ExtractBooleanParameter(query, body, "rebindSensors");
+                    SetPreferences(closeTray, hudNotif, synthWave, rebind);
                     string json = BuildStatusJson("Preferences updated");
                     await WriteHttpResponseAsync(stream, 200, "OK", json, cancellationToken);
                 }

@@ -98,6 +98,13 @@ public partial class MainWindow : Window
             _trayService.Initialize(this, _loc["TrayTooltip"]);
             _trayService.TrayLeftClicked += (_, _) => ToggleWindowVisibility();
             _trayService.TrayRightClicked += (_, _) => ShowTrayContextMenu();
+            _trayService.PowerResumed += async (_, _) =>
+            {
+                DsuStatusDto resumedStatus = await _ipcClient.UpdatePreferencesAsync(rebindSensors: true);
+                UpdateUiFromStatus(resumedStatus);
+                _automationWatcher.ScanControllers(resumedStatus.ServerPort, resumedStatus.SecondaryPort);
+                RenderControllersAndRulesUi();
+            };
         };
 
         Loaded += async (_, _) =>
