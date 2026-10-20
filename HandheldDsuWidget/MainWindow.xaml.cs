@@ -25,7 +25,9 @@ public partial class MainWindow : Window
     private DsuStatusDto? _lastStatus;
 
     private Brush StatusOnlineBrush => (Brush)FindResource("BrushStatusOnline");
+    private Brush StatusOnlineDimBrush => (Brush)FindResource("BrushStatusOnlineDim");
     private Brush StatusOfflineBrush => (Brush)FindResource("BrushStatusOffline");
+    private Brush StatusOfflineDimBrush => (Brush)FindResource("BrushStatusOfflineDim");
     private Brush TextSecondaryBrush => (Brush)FindResource("BrushTextSecondary");
     private Brush TextOnAccentBrush => (Brush)FindResource("BrushTextOnAccent");
     private Brush AccentPrimaryBrush => (Brush)FindResource("BrushAccentPrimary");
@@ -227,18 +229,18 @@ public partial class MainWindow : Window
             // 1. Emulator connection status indicator
             if (status.IsEmulatorConnected)
             {
-                StatusLedGlow.Fill = StatusOnlineBrush;
-                StatusLedDot.Fill = StatusOnlineBrush;
+                StatusBadgeBorder.Background = StatusOnlineDimBrush;
+                StatusBadgeBorder.BorderBrush = StatusOnlineBrush;
+                StatusSignalIcon.Stroke = StatusOnlineBrush;
                 ConnectionStatusTitle.Text = _loc["StatusConnected"];
-                ConnectionStatusDetail.Text = string.Join(", ", status.ConnectedClients);
                 PacketCounterText.Text = _loc.Format("StatusPacketsFormat", status.TotalPacketsSent);
             }
             else
             {
-                StatusLedGlow.Fill = StatusOfflineBrush;
-                StatusLedDot.Fill = StatusOfflineBrush;
+                StatusBadgeBorder.Background = StatusOfflineDimBrush;
+                StatusBadgeBorder.BorderBrush = StatusOfflineBrush;
+                StatusSignalIcon.Stroke = StatusOfflineBrush;
                 ConnectionStatusTitle.Text = _loc["StatusWaiting"];
-                ConnectionStatusDetail.Text = $"Eden / Yuzu / Cemu -> 127.0.0.1:{status.ServerPort}";
                 PacketCounterText.Text = status.TotalPacketsSent > 0
                     ? _loc.Format("StatusPacketsFormat", status.TotalPacketsSent)
                     : _loc["StatusReadyBadge"];
