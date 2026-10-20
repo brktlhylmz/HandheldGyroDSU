@@ -511,10 +511,11 @@ public partial class MainWindow : Window
 
         string cleanProc = rawInput.Replace(".exe", "", StringComparison.OrdinalIgnoreCase);
         string activeProfile = _lastStatus?.ActiveProfileName ?? "Standard Landscape";
+        string friendlyDisplayName = AutomationConfig.ResolveFriendlyProcessDisplayName(cleanProc);
 
         _automationWatcher.AddOrUpdateEmulatorRule(
             processName: cleanProc,
-            displayName: $"{cleanProc}.exe",
+            displayName: friendlyDisplayName,
             profileName: activeProfile,
             isEnabled: true);
 
@@ -675,6 +676,29 @@ public partial class MainWindow : Window
 
         // Populate Emulator (.exe) Rules List
         EmulatorRulesListPanel.Children.Clear();
+        if (_automationWatcher.Config.EmulatorRules.Count == 0)
+        {
+            var emptyBorder = new Border
+            {
+                CornerRadius = new CornerRadius(7),
+                Padding = new Thickness(12, 10, 12, 10),
+                Margin = new Thickness(0, 0, 0, 6),
+                Background = BgSubPanelBrush,
+                BorderBrush = BorderInputBrush,
+                BorderThickness = new Thickness(1),
+                Child = new TextBlock
+                {
+                    Text = _loc["EmulatorEmptyStateDesc"],
+                    FontSize = 10,
+                    Foreground = TextMutedBrush,
+                    TextWrapping = TextWrapping.Wrap,
+                    TextAlignment = TextAlignment.Center
+                }
+            };
+            EmulatorRulesListPanel.Children.Add(emptyBorder);
+            return;
+        }
+
         foreach (EmulatorProfileRule rule in _automationWatcher.Config.EmulatorRules)
         {
             var ruleBorder = new Border
@@ -690,7 +714,8 @@ public partial class MainWindow : Window
             var rowGrid = new Grid();
             rowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             rowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            rowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(148) });
+            rowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(136) });
+            rowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
             var ruleToggle = new CheckBox
             {
@@ -737,7 +762,8 @@ public partial class MainWindow : Window
                 DisplayMemberPath = "Name",
                 SelectedValuePath = "Name",
                 SelectedValue = rule.ProfileName,
-                VerticalAlignment = VerticalAlignment.Center
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(0, 0, 6, 0)
             };
             ruleProfileCombo.SelectionChanged += (_, _) =>
             {
@@ -752,6 +778,22 @@ public partial class MainWindow : Window
             };
             Grid.SetColumn(ruleProfileCombo, 2);
             rowGrid.Children.Add(ruleProfileCombo);
+
+            var removeBtn = new Button
+            {
+                Content = "✕",
+                Style = (Style)FindResource("AppButtonStyle"),
+                Width = 26,
+                Height = 26,
+                Padding = new Thickness(0),
+                FontSize = 10,
+                VerticalAlignment = VerticalAlignment.Center,
+                ToolTip = _loc["EmulatorRemoveTooltip"]
+            };
+            string procKey = rule.ProcessName;
+            removeBtn.Click += (_, _) => _automationWatcher.RemoveEmulatorRule(procKey);
+            Grid.SetColumn(removeBtn, 3);
+            rowGrid.Children.Add(removeBtn);
 
             ruleBorder.Child = rowGrid;
             EmulatorRulesListPanel.Children.Add(ruleBorder);

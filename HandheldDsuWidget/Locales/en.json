@@ -82,6 +82,8 @@
   "SectionEmulatorAuto": "EMULATOR & GAME (.EXE) AUTO-PROFILE",
   "AutoEmulatorTitle": "Auto-Switch Profile for Active Emulator",
   "AutoEmulatorDesc": "Automatically activates bound profile when target emulator/game is focused",
+  "EmulatorEmptyStateDesc": "No emulator or game (.exe) rules added yet. Enter a process name below to add one.",
+  "EmulatorRemoveTooltip": "Remove this emulator/game rule",
   "CustomExePlaceholder": "Custom process name (e.g. cemu, totk)...",
   "BtnAddRule": "ADD",
   "ToastEmulatorDetectedTitleFormat": "🚀 {0} Detected",

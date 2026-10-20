@@ -102,7 +102,12 @@ public sealed class AutomationConfig
                 AutomationConfig? loaded = JsonSerializer.Deserialize<AutomationConfig>(json, JsonOptions);
                 if (loaded is not null)
                 {
-                    EnsureDefaultEmulatorRules(loaded);
+                    // Remove legacy pre-populated disabled default rules if none were enabled by the user
+                    if (loaded.EmulatorRules.Count == 5 && loaded.EmulatorRules.TrueForAll(r => !r.IsEnabled))
+                    {
+                        loaded.EmulatorRules.Clear();
+                        loaded.Save();
+                    }
                     return loaded;
                 }
             }
@@ -113,24 +118,25 @@ public sealed class AutomationConfig
         }
 
         var config = new AutomationConfig();
-        EnsureDefaultEmulatorRules(config);
         config.Save();
         return config;
     }
 
-    private static void EnsureDefaultEmulatorRules(AutomationConfig config)
+    public static string ResolveFriendlyProcessDisplayName(string cleanProcessName)
     {
-        if (config.EmulatorRules.Count > 0)
-            return;
-
-        config.EmulatorRules.AddRange(
-        [
-            new EmulatorProfileRule { ProcessName = "eden", DisplayName = "Eden (Switch)", ProfileName = "Standard Landscape", IsEnabled = false },
-            new EmulatorProfileRule { ProcessName = "yuzu", DisplayName = "Yuzu (Switch)", ProfileName = "Standard Landscape", IsEnabled = false },
-            new EmulatorProfileRule { ProcessName = "cemu", DisplayName = "Cemu (Wii U)", ProfileName = "Standard Landscape", IsEnabled = false },
-            new EmulatorProfileRule { ProcessName = "ryujinx", DisplayName = "Ryujinx (Switch)", ProfileName = "Standard Landscape", IsEnabled = false },
-            new EmulatorProfileRule { ProcessName = "dolphin", DisplayName = "Dolphin (Wii / GC)", ProfileName = "Standard Landscape", IsEnabled = false }
-        ]);
+        return cleanProcessName.ToLowerInvariant() switch
+        {
+            "eden" => "Eden (Switch)",
+            "yuzu" => "Yuzu (Switch)",
+            "sudachi" => "Sudachi (Switch)",
+            "citron" => "Citron (Switch)",
+            "ryujinx" => "Ryujinx (Switch)",
+            "cemu" => "Cemu (Wii U)",
+            "dolphin" => "Dolphin (Wii / GC)",
+            "citra" => "Citra / Azahar (3DS)",
+            "rpcs3" => "RPCS3 (PS3)",
+            _ => $"{cleanProcessName}.exe"
+        };
     }
 
     public void Save()
