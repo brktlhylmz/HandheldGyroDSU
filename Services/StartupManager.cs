@@ -68,14 +68,14 @@ public static class StartupManager
     {
         string currentExe = Environment.ProcessPath
             ?? Process.GetCurrentProcess().MainModule?.FileName
-            ?? Path.Combine(AppContext.BaseDirectory, "HandheldDsuWidget.exe");
+            ?? Path.Combine(AppContext.BaseDirectory, "HandheldGyroDSU.exe");
 
-        // If called from the console server binary and HandheldDsuWidget.exe exists alongside, prefer the Widget binary
+        // If called from the console server binary and HandheldGyroDSU.exe exists alongside, prefer the GUI binary
         if (currentExe.EndsWith("HandheldDsuServer.exe", StringComparison.OrdinalIgnoreCase))
         {
             string baseDir = AppContext.BaseDirectory;
             string candidateWidget = Path.GetFullPath(Path.Combine(
-                baseDir, "..", "..", "..", "HandheldDsuWidget", "bin", "Debug", "net10.0-windows10.0.19041.0", "HandheldDsuWidget.exe"));
+                baseDir, "..", "..", "..", "HandheldDsuWidget", "bin", "Debug", "net10.0-windows10.0.19041.0", "HandheldGyroDSU.exe"));
             if (File.Exists(candidateWidget))
                 return candidateWidget;
         }

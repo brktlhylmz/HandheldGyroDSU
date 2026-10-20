@@ -8,6 +8,10 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <RootNamespace>HandheldDsuServer</RootNamespace>
     <AssemblyName>HandheldDsuServer</AssemblyName>
+    <Product>HandheldGyroDSU</Product>
+    <Title>HandheldGyroDSU Server</Title>
+    <Version>1.0.0</Version>
+    <Description>250 Hz Cemuhook DSU v1001 UDP motion server and hardware IMU engine for Windows handhelds and motion controllers.</Description>
     <DefaultItemExcludes>$(DefaultItemExcludes);HandheldDsuWidget\**</DefaultItemExcludes>
   </PropertyGroup>
 
