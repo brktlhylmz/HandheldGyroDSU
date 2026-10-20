@@ -98,7 +98,7 @@ foreach ($logoName in @("StoreLogo.png", "Square150x150Logo.png", "Square44x44Lo
 Write-Host "[4/5] Building solution (.NET 10)..." -ForegroundColor Green
 Push-Location $ProjectRoot
 try {
-    dotnet build HandheldDsu.sln -c $Configuration
+    dotnet build HandheldGyroDSU.sln -c $Configuration
     if ($LASTEXITCODE -ne 0) {
         throw "dotnet build failed!"
     }
@@ -122,13 +122,13 @@ try {
     Write-Host "=====================================================================" -ForegroundColor Green
     Write-Host " [OK] INSTALLATION COMPLETED!" -ForegroundColor Green
     Write-Host "  1. Start DSU Console Server : dotnet run --project HandheldDsuServer.csproj" -ForegroundColor White
-    Write-Host "  2. Open Xbox Game Bar       : Win + G (Widget Menu > Handheld Gyro DSU)" -ForegroundColor White
-    Write-Host "  3. Launch Desktop Widget    : .\HandheldDsuWidget\bin\$Configuration\net10.0-windows10.0.19041.0\HandheldDsuWidget.exe" -ForegroundColor White
+    Write-Host "  2. Open Xbox Game Bar       : Win + G (Widget Menu > HandheldGyroDSU)" -ForegroundColor White
+    Write-Host "  3. Launch Desktop App       : .\HandheldDsuWidget\bin\$Configuration\net10.0-windows10.0.19041.0\HandheldGyroDSU.exe" -ForegroundColor White
     Write-Host "=====================================================================" -ForegroundColor Green
 } catch {
     Write-Host ""
     Write-Host "[!] Add-AppxPackage warning: $($_.Exception.Message)" -ForegroundColor Yellow
     Write-Host "    Note: Ensure 'Developer Mode' is enabled under Windows Settings > System > For developers." -ForegroundColor Yellow
-    Write-Host "    You can run the Widget directly in desktop mode via:" -ForegroundColor Cyan
-    Write-Host "    .\HandheldDsuWidget\bin\$Configuration\net10.0-windows10.0.19041.0\HandheldDsuWidget.exe" -ForegroundColor White
+    Write-Host "    You can run HandheldGyroDSU directly in desktop mode via:" -ForegroundColor Cyan
+    Write-Host "    .\HandheldDsuWidget\bin\$Configuration\net10.0-windows10.0.19041.0\HandheldGyroDSU.exe" -ForegroundColor White
 }

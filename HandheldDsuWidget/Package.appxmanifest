@@ -16,7 +16,7 @@
   <mp:PhoneIdentity PhoneProductId="d82e4150-98a4-4f6a-8c34-127600267601" PhonePublisherId="00000000-0000-0000-0000-000000000000" />
 
   <Properties>
-    <DisplayName>Handheld Gyro DSU (Xbox Game Bar Widget)</DisplayName>
+    <DisplayName>HandheldGyroDSU (Xbox Game Bar Widget)</DisplayName>
     <PublisherDisplayName>HandheldDsuDev</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>
@@ -26,30 +26,30 @@
   </Dependencies>
 
   <Resources>
-    <Resource Language="tr-TR" />
     <Resource Language="en-US" />
+    <Resource Language="tr-TR" />
   </Resources>
 
   <Applications>
     <Application Id="App"
-      Executable="HandheldDsuWidget.exe"
+      Executable="HandheldGyroDSU.exe"
       EntryPoint="Windows.FullTrustApplication">
       <uap:VisualElements
-        DisplayName="Handheld Gyro DSU Widget"
-        Description="Asus ROG Ally, Lenovo Legion Go ve MSI Claw için Cemuhook DSU Gyro Kontrol Widget'ı"
+        DisplayName="HandheldGyroDSU"
+        Description="Zero-config Cemuhook DSU gyro motion server and companion overlay for ASUS ROG Ally, Lenovo Legion Go, MSI Claw, and motion controllers"
         BackgroundColor="#101216"
         Square150x150Logo="Assets\Square150x150Logo.png"
         Square44x44Logo="Assets\Square44x44Logo.png">
       </uap:VisualElements>
 
       <Extensions>
-        <!-- Xbox Game Bar Widget Uzantısı (windows.xboxGameBarWidget / microsoft.gameBarUI) -->
+        <!-- Xbox Game Bar Widget Extension (windows.xboxGameBarWidget / microsoft.gameBarUI) -->
         <uap3:Extension Category="windows.appExtension">
           <uap3:AppExtension
             Name="microsoft.gameBarUI"
             Id="HandheldDsuWidget"
-            DisplayName="Handheld Gyro DSU"
-            Description="ROG Ally / Legion Go / MSI Claw Cemuhook DSU Kontrolcüsü"
+            DisplayName="HandheldGyroDSU"
+            Description="Zero-config Cemuhook DSU motion controller server and overlay"
             PublicFolder="GameBar">
             <uap3:Properties>
               <GameBarWidget Type="Standard">

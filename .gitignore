@@ -3,16 +3,44 @@
 [Oo]bj/
 [Ll]og/
 [Ll]ogs/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+publish/
+dist/
+artifacts/
+TestResults/
 
-# Visual Studio / .NET user-specific files
+# Visual Studio / Rider / VS Code user-specific files
 .vs/
+.idea/
+.vscode/
 *.user
 *.suo
 *.userosscache
 *.sln.docstates
+*.DotSettings.user
 
-# Certificates & local artifacts
+# NuGet & Packaging artifacts
+*.nupkg
+*.snupkg
+project.lock.json
+project.assets.json
+*.nuget.props
+*.nuget.targets
+
+# Certificates, MSIX & local crash logs
 *.pfx
 *.cer
 *.msix
 *.appx
+*.appxbundle
+widget_error.log
+
+# OS-generated files
+.DS_Store
+Thumbs.db
+Desktop.ini
