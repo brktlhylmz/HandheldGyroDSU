@@ -53,6 +53,7 @@
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
 
                     <!-- Brand Emblem Vector Icon -->
@@ -66,20 +67,51 @@
                           Margin="0,0,10,0" />
 
                     <!-- App Title & Live Endpoint Subtitle -->
-                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,8,0">
                         <TextBlock Text="{Binding [AppTitle], Source={x:Static services:LocalizationService.Instance}}"
                                    Foreground="{DynamicResource BrushTextPrimary}"
                                    FontSize="13"
-                                   FontWeight="Bold" />
+                                   FontWeight="Bold"
+                                   TextTrimming="CharacterEllipsis" />
                         <TextBlock x:Name="EngineSubtitleText"
                                    Text="UDP 0.0.0.0:26760 • IPC 127.0.0.1:26761"
                                    Foreground="{DynamicResource BrushTextSecondary}"
                                    FontFamily="{DynamicResource FontMonospace}"
-                                   FontSize="10" />
+                                   FontSize="10"
+                                   TextTrimming="CharacterEllipsis" />
                     </StackPanel>
 
+                    <!-- Active Profile Indicator Pill in AppBar (shows 'ProfileName' or 'ProfileName *' when modified) -->
+                    <Button x:Name="AppBarProfileButton"
+                            Grid.Column="2"
+                            Style="{DynamicResource AppGhostButtonStyle}"
+                            Height="26"
+                            Padding="9,0"
+                            Margin="0,0,8,0"
+                            VerticalAlignment="Center"
+                            ToolTip="{Binding [AppBarProfileTooltip], Source={x:Static services:LocalizationService.Instance}}"
+                            Click="AppBarProfileButton_Click">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <Path x:Name="AppBarProfileIcon"
+                                  Data="{DynamicResource IconProfiles}"
+                                  Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                  StrokeThickness="1.4"
+                                  StrokeStartLineCap="Round"
+                                  StrokeEndLineCap="Round"
+                                  StrokeLineJoin="Round"
+                                  Width="11" Height="11" Stretch="Uniform" Margin="0,0,6,0" />
+                            <TextBlock x:Name="AppBarProfileNameText"
+                                       Text="Standard Landscape"
+                                       FontSize="10"
+                                       FontWeight="Bold"
+                                       MaxWidth="135"
+                                       TextTrimming="CharacterEllipsis"
+                                       VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+
                     <!-- Window Control Buttons (Pin, Minimize to Tray, Maximize/Restore, Close) -->
-                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                    <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center">
                         <Button x:Name="PinButton"
                                 Style="{DynamicResource AppWindowButtonStyle}"
                                 Foreground="{DynamicResource BrushStatusOnline}"
@@ -713,11 +745,28 @@
 
                                     <!-- 1. Active Profile Dropdown (Auto-Apply on Selection) + Compact Trash Icon Button -->
                                     <StackPanel Margin="0,0,0,4">
-                                        <TextBlock Text="{Binding [ProfileSelectTitle], Source={x:Static services:LocalizationService.Instance}}"
-                                                   Foreground="{DynamicResource BrushTextPrimary}"
-                                                   FontWeight="SemiBold"
-                                                   FontSize="12"
-                                                   Margin="0,0,0,5" />
+                                        <Grid Margin="0,0,0,5">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+
+                                            <TextBlock Grid.Column="0"
+                                                       Text="{Binding [ProfileSelectTitle], Source={x:Static services:LocalizationService.Instance}}"
+                                                       Foreground="{DynamicResource BrushTextPrimary}"
+                                                       FontWeight="SemiBold"
+                                                       FontSize="12"
+                                                       VerticalAlignment="Center" />
+
+                                            <TextBlock x:Name="ProfileStatusBadgeText"
+                                                       Grid.Column="1"
+                                                       Text="{Binding [ProfileBadgeSystem], Source={x:Static services:LocalizationService.Instance}}"
+                                                       FontFamily="{DynamicResource FontMonospace}"
+                                                       Foreground="{DynamicResource BrushTextSecondary}"
+                                                       FontSize="9"
+                                                       FontWeight="Bold"
+                                                       VerticalAlignment="Center" />
+                                        </Grid>
 
                                         <Grid>
                                             <Grid.ColumnDefinitions>

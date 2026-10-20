@@ -4,6 +4,8 @@
 
   "AppTitle": "HANDHELD GYRO DSU",
   "HeaderSubtitleFormat": "UDP 0.0.0.0:{0} • IPC 127.0.0.1:{1}",
+  "AppBarProfileTooltip": "Active Profile (Click to manage profiles)",
+  "AppBarProfileModifiedTooltip": "Active preset has unsaved axis changes (*) — Click to save as a new profile",
   "TabDashboard": "PANEL",
   "TabControllers": "PADS",
   "TabProfiles": "PROFILES",
@@ -23,7 +25,11 @@
   "StreamActiveDesc": "Active • Broadcasting motion data to emulator",
   "StreamPausedDesc": "Paused • DSU motion output is muted",
 
-  "SectionProfileAxes": "AXIS ORIENTATION & HOLD ANGLE",
+  "SectionProfileAxes": "PROFILE & AXIS ORIENTATION",
+  "ProfileBadgeSystem": "SYSTEM PRESET",
+  "ProfileBadgeCustom": "CUSTOM PROFILE • AUTO-SAVE",
+  "ProfileBadgeModified": "● MODIFIED (SAVE AS NEW PROFILE)",
+  "ProfileBadgeAutoSaved": "✓ SAVED TO PROFILE",
   "ResetAxesButton": "RESET DEFAULTS",
   "ResetAxesTooltip": "Restore default axis inversions and hold angle compensation",
   "PitchOffsetTitle": "Zero Resting Pitch Angle",
