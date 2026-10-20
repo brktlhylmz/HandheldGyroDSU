@@ -577,7 +577,13 @@ public partial class MainWindow : Window
                 _radarX = (_radarX * 0.68) + (targetX * 0.32);
                 _radarY = (_radarY * 0.68) + (targetY * 0.32);
 
-                double accelRollDeg = Math.Atan2(status.AccX, Math.Max(0.15, Math.Abs(status.AccZ))) * (180.0 / Math.PI);
+                double gravityYZ = Math.Max(0.35, Math.Sqrt((status.AccY * status.AccY) + (status.AccZ * status.AccZ)));
+                double accelRollDeg = Math.Atan2(status.AccX, gravityYZ) * (180.0 / Math.PI);
+                if (Math.Abs(accelRollDeg) < 2.0 && Math.Abs(status.GyroRoll) < 1.5)
+                {
+                    accelRollDeg = 0.0;
+                }
+
                 double targetRoll = Math.Clamp(accelRollDeg + (status.GyroRoll * 0.22), -45.0, 45.0);
                 _radarRoll = (_radarRoll * 0.72) + (targetRoll * 0.28);
             }

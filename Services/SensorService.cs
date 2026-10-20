@@ -37,6 +37,7 @@ public sealed class SensorService : IDisposable
 
     // Calibration offsets (Drift Bias and Resting Pitch Attitude)
     private GyroBias _gyroBias = GyroBias.Zero;
+    private float _restAccX;
     private float _restAccY;
     private float _restAccZ = -1.0f;
     private volatile bool _usePitchOffset = true;
@@ -250,6 +251,7 @@ public sealed class SensorService : IDisposable
             double sumX = 0;
             double sumY = 0;
             double sumZ = 0;
+            double sumAccX = 0;
             double sumAccY = 0;
             double sumAccZ = 0;
             int sampleCount = 0;
@@ -263,6 +265,7 @@ public sealed class SensorService : IDisposable
                     sumX += _rawGyroX;
                     sumY += _rawGyroY;
                     sumZ += _rawGyroZ;
+                    sumAccX += _rawAccX;
                     sumAccY += _rawAccY;
                     sumAccZ += _rawAccZ;
                 }
@@ -283,6 +286,7 @@ public sealed class SensorService : IDisposable
 
                 lock (_lock)
                 {
+                    _restAccX = (float)(sumAccX / sampleCount);
                     _restAccY = (float)(sumAccY / sampleCount);
                     _restAccZ = (float)(sumAccZ / sampleCount);
                 }
@@ -302,7 +306,7 @@ public sealed class SensorService : IDisposable
 
         float rawAx, rawAy, rawAz;
         float rawGx, rawGy, rawGz;
-        float restAy, restAz;
+        float restAx, restAy, restAz;
         DeviceProfile profile;
         GyroBias bias = _gyroBias;
 
@@ -316,6 +320,7 @@ public sealed class SensorService : IDisposable
             rawGy = _rawGyroY;
             rawGz = _rawGyroZ;
 
+            restAx = _restAccX;
             restAy = _restAccY;
             restAz = _restAccZ;
 
@@ -326,6 +331,7 @@ public sealed class SensorService : IDisposable
         // so the calibrated holding angle acts as the 0-degree neutral reference (ay = 0, az = -1G)
         if (_usePitchOffset)
         {
+            rawAx -= restAx;
             float mag = MathF.Sqrt((restAy * restAy) + (restAz * restAz));
             if (mag > 0.2f)
             {
