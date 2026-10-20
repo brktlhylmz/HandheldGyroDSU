@@ -37,6 +37,8 @@ public partial class MainWindow : Window
     private bool _suppressUiEvents;
     private bool _isPollBusy;
     private DsuStatusDto? _lastStatus;
+    private int _lastSyncedServerPort = -1;
+    private int _lastSyncedSecondaryPort = -1;
     private double _radarX;
     private double _radarY;
     private double _radarRoll;
@@ -521,15 +523,18 @@ public partial class MainWindow : Window
                 }
             }
 
-            // Update the port input fields unless the user is actively typing in them
-            if (!PortTextBox.IsKeyboardFocusWithin)
+            // Only sync the port input fields when the backend port value actually changed
+            // (prevents 45ms poll ticks from overwriting user edits when clicking the APPLY button)
+            if (_lastSyncedServerPort != status.ServerPort && !PortTextBox.IsKeyboardFocusWithin)
             {
-                PortTextBox.Text = status.ServerPort.ToString();
+                _lastSyncedServerPort = status.ServerPort;
+                PortTextBox.Text = FormattableString.Invariant($"{status.ServerPort}");
             }
 
-            if (!SecondaryPortTextBox.IsKeyboardFocusWithin)
+            if (_lastSyncedSecondaryPort != status.SecondaryPort && !SecondaryPortTextBox.IsKeyboardFocusWithin)
             {
-                SecondaryPortTextBox.Text = status.SecondaryPort.ToString();
+                _lastSyncedSecondaryPort = status.SecondaryPort;
+                SecondaryPortTextBox.Text = FormattableString.Invariant($"{status.SecondaryPort}");
             }
 
             // 1. Emulator connection status indicator
@@ -703,6 +708,8 @@ public partial class MainWindow : Window
             var (success, status) = await _ipcClient.ChangePortAsync(newPort);
             if (success)
             {
+                _lastSyncedServerPort = status.ServerPort;
+                PortTextBox.Text = FormattableString.Invariant($"{status.ServerPort}");
                 PortStatusSubtitle.Text = _loc.Format("PortSavedFormat", newPort);
                 PortStatusSubtitle.Foreground = StatusOnlineBrush;
             }
@@ -712,6 +719,7 @@ public partial class MainWindow : Window
                 PortStatusSubtitle.Foreground = StatusOfflineBrush;
             }
             UpdateUiFromStatus(status);
+            RenderControllersAndRulesUi();
         }
         finally
         {
@@ -765,6 +773,8 @@ public partial class MainWindow : Window
             var (success, status) = await _ipcClient.ChangeSecondaryPortAsync(newSecPort);
             if (success)
             {
+                _lastSyncedSecondaryPort = status.SecondaryPort;
+                SecondaryPortTextBox.Text = FormattableString.Invariant($"{status.SecondaryPort}");
                 SecondaryPortStatusSubtitle.Text = _loc.Format("SecondaryPortSavedFormat", newSecPort);
                 SecondaryPortStatusSubtitle.Foreground = StatusOnlineBrush;
             }
@@ -1181,6 +1191,8 @@ public partial class MainWindow : Window
         {
             _loopbackTester.Stop();
             _automationWatcher.ClearSimulatedControllers();
+            _lastSyncedServerPort = -1;
+            _lastSyncedSecondaryPort = -1;
 
             DsuStatusDto status = await _ipcClient.ResetAllSettingsAsync();
             _automationWatcher.Config.AutoSwitchByController = true;
