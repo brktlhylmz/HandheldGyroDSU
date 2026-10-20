@@ -152,14 +152,27 @@ public partial class MainWindow : Window
 
         if (SettingsTabButton.IsChecked == true)
         {
+            if (MultiPortClusterToggle.IsChecked == true)
+            {
+                return
+                [
+                    LanguageComboBox,
+                    PortTextBox,
+                    ApplyPortButton,
+                    MultiPortClusterToggle,
+                    SecondaryPortTextBox,
+                    ApplySecondaryPortButton,
+                    StartupToggle,
+                    CalibrateButton
+                ];
+            }
+
             return
             [
                 LanguageComboBox,
                 PortTextBox,
                 ApplyPortButton,
                 MultiPortClusterToggle,
-                SecondaryPortTextBox,
-                ApplySecondaryPortButton,
                 StartupToggle,
                 CalibrateButton
             ];
@@ -298,6 +311,7 @@ public partial class MainWindow : Window
 
             EngineSubtitleText.Text = _loc.Format("HeaderSubtitleFormat", status.ServerPort, status.IpcPort);
             MultiPortClusterToggle.IsChecked = status.IsSecondaryClusterActive;
+            SecondaryPortRowGrid.Visibility = status.IsSecondaryClusterActive ? Visibility.Visible : Visibility.Collapsed;
 
             if (status.WasPortFallbackTriggered && PortStatusSubtitle.Text == _loc["PortDefaultDesc"])
             {
