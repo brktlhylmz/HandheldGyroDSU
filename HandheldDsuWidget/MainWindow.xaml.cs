@@ -520,7 +520,7 @@ public partial class MainWindow : Window
 
         CustomExeTextBox.Text = string.Empty;
         RenderControllersAndRulesUi();
-        ShowToastNotification("OYUN / EMÜLATÖR KURALI EKLENDİ", $"{cleanProc}.exe → {activeProfile}");
+        ShowToastNotification(_loc["ToastEmulatorRuleAddedTitle"], $"{cleanProc}.exe → {activeProfile}");
     }
 
     private void RenderControllersAndRulesUi()
@@ -572,8 +572,8 @@ public partial class MainWindow : Window
             var statusBadgeText = new TextBlock
             {
                 Text = ctrl.IsConnected
-                    ? _loc.Format("BadgeControllerOnlineFormat", ctrl.AssignedPlayerIndex + 1, ctrl.AssignedUdpPort)
-                    : _loc["BadgeControllerOffline"],
+                    ? _loc.Format("ControllerBadgeConnectedFormat", ctrl.AssignedPlayerIndex + 1, ctrl.AssignedUdpPort)
+                    : _loc["ControllerBadgeOffline"],
                 FontSize = 9.5,
                 FontWeight = FontWeights.Bold,
                 Foreground = ctrl.IsConnected ? StatusOnlineBrush : TextMutedBrush,
@@ -605,7 +605,7 @@ public partial class MainWindow : Window
                     Padding = new Thickness(0),
                     FontSize = 10,
                     VerticalAlignment = VerticalAlignment.Top,
-                    ToolTip = "Kayıtlı kolu listeden kaldır"
+                    ToolTip = _loc["ControllerForgetTooltip"]
                 };
                 string hwKey = ctrl.HardwareId;
                 forgetBtn.Click += (_, _) => _automationWatcher.ForgetController(hwKey);
@@ -622,7 +622,7 @@ public partial class MainWindow : Window
 
             var profileLabel = new TextBlock
             {
-                Text = "Otomatik Profil:",
+                Text = _loc["ControllerAutoProfileLabel"],
                 FontSize = 10,
                 FontWeight = FontWeights.SemiBold,
                 Foreground = TextSecondaryBrush,
@@ -654,13 +654,13 @@ public partial class MainWindow : Window
                         UpdateUiFromStatus(status);
                         ShowToastNotification(
                             $"🎮 {ctrl.DisplayName}",
-                            $"Profil atandı ve uygulandı: {selectedProf.Name}");
+                            _loc.Format("ToastControllerProfileAppliedFormat", selectedProf.Name));
                     }
                     else
                     {
                         ShowToastNotification(
                             $"🎮 {ctrl.DisplayName}",
-                            $"Kayıtlı kol profili güncellendi: {selectedProf.Name}");
+                            _loc.Format("ToastControllerProfileSavedFormat", selectedProf.Name));
                     }
                 }
             };
@@ -747,7 +747,7 @@ public partial class MainWindow : Window
                     _automationWatcher.SaveConfig();
                     ShowToastNotification(
                         $"🚀 {rule.DisplayName}",
-                        $"Otomatik profil kuralı: {selectedProf.Name}");
+                        _loc.Format("ToastEmulatorRuleUpdatedFormat", selectedProf.Name));
                 }
             };
             Grid.SetColumn(ruleProfileCombo, 2);

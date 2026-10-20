@@ -19,7 +19,7 @@ public sealed class LocalizationService : INotifyPropertyChanged
 
     private readonly Dictionary<string, Dictionary<string, string>> _locales = new(StringComparer.OrdinalIgnoreCase);
     private readonly List<LanguageOption> _availableLanguages = [];
-    private string _currentLanguage = "tr";
+    private string _currentLanguage = "en";
 
     public event PropertyChangedEventHandler? PropertyChanged;
     public event EventHandler? LanguageChanged;
@@ -48,7 +48,7 @@ public sealed class LocalizationService : INotifyPropertyChanged
 
         if (!_locales.ContainsKey(_currentLanguage) && _locales.Count > 0)
         {
-            _currentLanguage = _locales.ContainsKey("tr") ? "tr" : _locales.Keys.First();
+            _currentLanguage = _locales.ContainsKey("en") ? "en" : _locales.Keys.First();
         }
     }
 
@@ -144,12 +144,12 @@ public sealed class LocalizationService : INotifyPropertyChanged
 
     public bool SetLanguage(string? languageCode)
     {
-        string normalized = (languageCode ?? "tr").Trim().ToLowerInvariant();
+        string normalized = (languageCode ?? "en").Trim().ToLowerInvariant();
         if (!_locales.ContainsKey(normalized))
         {
             // Match prefix (e.g., "en-US" -> "en")
             string? prefixMatch = _locales.Keys.FirstOrDefault(k => normalized.StartsWith(k, StringComparison.OrdinalIgnoreCase));
-            normalized = prefixMatch ?? (_locales.ContainsKey("tr") ? "tr" : _locales.Keys.FirstOrDefault() ?? "tr");
+            normalized = prefixMatch ?? (_locales.ContainsKey("en") ? "en" : _locales.Keys.FirstOrDefault() ?? "en");
         }
 
         if (string.Equals(_currentLanguage, normalized, StringComparison.OrdinalIgnoreCase))

@@ -19,7 +19,7 @@ public sealed class DsuStatusDto
     public string Message { get; set; } = string.Empty;
 
     [JsonPropertyName("language")]
-    public string Language { get; set; } = "tr";
+    public string Language { get; set; } = "en";
 
     [JsonPropertyName("activeProfileName")]
     public string ActiveProfileName { get; set; } = "Standard Landscape";
@@ -182,7 +182,7 @@ public sealed class DsuIpcClient : IDisposable
         return new DsuStatusDto
         {
             Message = customMessage ?? "OK",
-            Language = _embeddedSettings?.Language ?? "tr",
+            Language = _embeddedSettings?.Language ?? "en",
             ActiveProfileName = _embeddedSettings?.ActiveProfileName ?? "Standard Landscape",
             ServerPort = _embeddedUdpServer.Port,
             ActiveSlot = _embeddedUdpServer.ActiveSlot,

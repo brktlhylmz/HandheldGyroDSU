@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.IO;
 using System.Text.Json;
 
@@ -11,7 +12,7 @@ public sealed class AppSettings
 {
     public int UdpPort { get; set; } = 26760;
     public int ActiveSlot { get; set; }
-    public string Language { get; set; } = "tr";
+    public string Language { get; set; } = GetDefaultSystemLanguage();
     public string ActiveProfileName { get; set; } = "Standard Landscape";
     public bool AutoSwitchProfiles { get; set; } = true;
     public bool IsStreamingEnabled { get; set; } = true;
@@ -26,6 +27,12 @@ public sealed class AppSettings
     public float BiasX { get; set; }
     public float BiasY { get; set; }
     public float BiasZ { get; set; }
+
+    public static string GetDefaultSystemLanguage()
+    {
+        string iso = CultureInfo.InstalledUICulture.TwoLetterISOLanguageName;
+        return string.Equals(iso, "tr", StringComparison.OrdinalIgnoreCase) ? "tr" : "en";
+    }
 
     public static string SettingsFilePath
     {
@@ -53,7 +60,7 @@ public sealed class AppSettings
                     if (loaded.UdpPort is < 1024 or > 65535)
                         loaded.UdpPort = 26760;
                     if (string.IsNullOrWhiteSpace(loaded.Language))
-                        loaded.Language = "tr";
+                        loaded.Language = GetDefaultSystemLanguage();
                     return loaded;
                 }
             }
