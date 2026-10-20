@@ -14,11 +14,13 @@ public partial class MainWindow : Window
     private readonly DsuIpcClient _ipcClient = new();
     private readonly GameBarWidgetAdapter _gameBarAdapter = new();
     private readonly SystemTrayService _trayService = new();
+    private readonly LocalizationService _loc = LocalizationService.Instance;
     private readonly DispatcherTimer _pollTimer;
     private readonly bool _startedMinimized;
 
     private bool _suppressUiEvents;
     private bool _isPollBusy;
+    private DsuStatusDto? _lastStatus;
 
     private static readonly SolidColorBrush GreenLedBrush = new(Color.FromRgb(0x00, 0xE6, 0x76));
     private static readonly SolidColorBrush RedLedBrush = new(Color.FromRgb(0xFF, 0x4D, 0x4F));
@@ -33,6 +35,20 @@ public partial class MainWindow : Window
         _startedMinimized = startMinimized;
         InitializeComponent();
 
+        LanguageComboBox.ItemsSource = _loc.AvailableLanguages;
+        LanguageComboBox.SelectedValue = _loc.CurrentLanguage;
+
+        _loc.LanguageChanged += (_, _) =>
+        {
+            _trayService.UpdateTooltip(_loc["TrayTooltip"]);
+            PortStatusSubtitle.Text = _loc["PortDefaultDesc"];
+            PortStatusSubtitle.Foreground = MutedBrush;
+            if (_lastStatus is not null)
+            {
+                UpdateUiFromStatus(_lastStatus);
+            }
+        };
+
         _pollTimer = new DispatcherTimer
         {
             Interval = TimeSpan.FromMilliseconds(80)
@@ -41,7 +57,7 @@ public partial class MainWindow : Window
 
         SourceInitialized += (_, _) =>
         {
-            _trayService.Initialize(this, "Handheld Gyro DSU (Click to Show/Hide)");
+            _trayService.Initialize(this, _loc["TrayTooltip"]);
             _trayService.TrayLeftClicked += (_, _) => ToggleWindowVisibility();
             _trayService.TrayRightClicked += (_, _) => ShowFromTray();
         };
@@ -49,6 +65,7 @@ public partial class MainWindow : Window
         Loaded += async (_, _) =>
         {
             DsuStatusDto status = await _ipcClient.GetStatusAsync();
+            _loc.SetLanguage(status.Language);
             UpdateUiFromStatus(status);
             _pollTimer.Start();
         };
@@ -108,10 +125,20 @@ public partial class MainWindow : Window
 
     private void UpdateUiFromStatus(DsuStatusDto status)
     {
+        _lastStatus = status;
         _suppressUiEvents = true;
         try
         {
-            EngineSubtitleText.Text = $"UDP 0.0.0.0:{status.ServerPort} • IPC 127.0.0.1:{status.IpcPort}";
+            if (!string.IsNullOrWhiteSpace(status.Language))
+            {
+                _loc.SetLanguage(status.Language);
+                if (!LanguageComboBox.IsDropDownOpen)
+                {
+                    LanguageComboBox.SelectedValue = _loc.CurrentLanguage;
+                }
+            }
+
+            EngineSubtitleText.Text = _loc.Format("HeaderSubtitleFormat", status.ServerPort, status.IpcPort);
 
             // Update the port input field unless the user is actively typing in it
             if (!PortTextBox.IsKeyboardFocusWithin)
@@ -124,31 +151,31 @@ public partial class MainWindow : Window
             {
                 StatusLedGlow.Fill = GreenLedBrush;
                 StatusLedDot.Fill = GreenLedBrush;
-                ConnectionStatusTitle.Text = "Emülatör Bağlı (Aktif Yayın)";
+                ConnectionStatusTitle.Text = _loc["StatusConnected"];
                 ConnectionStatusDetail.Text = string.Join(", ", status.ConnectedClients);
-                PacketCounterText.Text = $"{status.TotalPacketsSent:N0} pkt";
+                PacketCounterText.Text = _loc.Format("StatusPacketsFormat", status.TotalPacketsSent);
             }
             else
             {
                 StatusLedGlow.Fill = RedLedBrush;
                 StatusLedDot.Fill = RedLedBrush;
-                ConnectionStatusTitle.Text = "DSU Motoru Aktif • Emülatör Bekleniyor";
+                ConnectionStatusTitle.Text = _loc["StatusWaiting"];
                 ConnectionStatusDetail.Text = $"Eden / Yuzu / Cemu -> 127.0.0.1:{status.ServerPort}";
                 PacketCounterText.Text = status.TotalPacketsSent > 0
-                    ? $"{status.TotalPacketsSent:N0} pkt"
-                    : "HAZIR";
+                    ? _loc.Format("StatusPacketsFormat", status.TotalPacketsSent)
+                    : _loc["StatusReadyBadge"];
             }
 
             // 2. DSU stream and Start with Windows switches
             GyroStreamToggle.IsChecked = status.IsStreamingEnabled;
             GyroToggleSubtitle.Text = status.IsStreamingEnabled
-                ? "Aktif • Emülatöre hareket verisi gönderiliyor"
-                : "Duraklatıldı • DSU veri akışı kapalı";
+                ? _loc["StreamActiveDesc"]
+                : _loc["StreamPausedDesc"];
 
             StartupToggle.IsChecked = status.StartWithWindows;
             StartupToggleSubtitle.Text = status.StartWithWindows
-                ? "Açık • Windows başlangıcında tepside (gizli) başlar"
-                : "Kapalı • Yalnızca manuel çalıştırıldığında açılır";
+                ? _loc["StartupEnabledDesc"]
+                : _loc["StartupDisabledDesc"];
 
             // 3. Active device profile selection
             int targetIndex = 0;
@@ -173,24 +200,43 @@ public partial class MainWindow : Window
             YawValueText.Text = $"{status.GyroYaw:+0.00;-0.00;0.00}°/s";
             RollValueText.Text = $"{status.GyroRoll:+0.00;-0.00;0.00}°/s";
 
-            BiasStatusText.Text =
-                $"Acc (X/Y/Z): {status.AccX:F2}, {status.AccY:F2}, {status.AccZ:F2}G | Bias: {status.BiasX:+0.00;-0.00;0.00}, {status.BiasY:+0.00;-0.00;0.00}, {status.BiasZ:+0.00;-0.00;0.00}";
+            BiasStatusText.Text = _loc.Format(
+                "TelemetryFooterFormat",
+                status.AccX,
+                status.AccY,
+                status.AccZ,
+                status.BiasX,
+                status.BiasY,
+                status.BiasZ);
 
             // 5. Calibration button state
             if (status.IsCalibrating)
             {
                 CalibrateButton.IsEnabled = false;
-                CalibrateButton.Content = $"⏳ %{status.CalibrationProgress}";
+                CalibrateButton.Content = _loc.Format("CalibratingFormat", status.CalibrationProgress);
             }
             else
             {
                 CalibrateButton.IsEnabled = true;
-                CalibrateButton.Content = "🎯 KALİBRE ET";
+                CalibrateButton.Content = _loc["CalibrateButton"];
             }
         }
         finally
         {
             _suppressUiEvents = false;
+        }
+    }
+
+    private async void LanguageComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_suppressUiEvents || !IsLoaded)
+            return;
+
+        if (LanguageComboBox.SelectedValue is string langCode)
+        {
+            _loc.SetLanguage(langCode);
+            DsuStatusDto status = await _ipcClient.SetLanguageAsync(langCode);
+            UpdateUiFromStatus(status);
         }
     }
 
@@ -213,7 +259,7 @@ public partial class MainWindow : Window
     {
         if (!int.TryParse(PortTextBox.Text.Trim(), out int newPort) || newPort is < 1024 or > 65535)
         {
-            PortStatusSubtitle.Text = "Hata: Port 1024 - 65535 arasında olmalı!";
+            PortStatusSubtitle.Text = _loc["PortInvalidError"];
             PortStatusSubtitle.Foreground = RedLedBrush;
             return;
         }
@@ -224,7 +270,7 @@ public partial class MainWindow : Window
             var (success, status) = await _ipcClient.ChangePortAsync(newPort);
             if (success)
             {
-                PortStatusSubtitle.Text = $"Aktif Port: {newPort} (settings.json kaydedildi)";
+                PortStatusSubtitle.Text = _loc.Format("PortSavedFormat", newPort);
                 PortStatusSubtitle.Foreground = GreenLedBrush;
             }
             else
@@ -253,7 +299,7 @@ public partial class MainWindow : Window
     private async void CalibrateButton_Click(object sender, RoutedEventArgs e)
     {
         CalibrateButton.IsEnabled = false;
-        CalibrateButton.Content = "⏳ %0";
+        CalibrateButton.Content = _loc.Format("CalibratingFormat", 0);
 
         try
         {
@@ -269,7 +315,7 @@ public partial class MainWindow : Window
             if (!CalibrateButton.IsEnabled)
             {
                 CalibrateButton.IsEnabled = true;
-                CalibrateButton.Content = "🎯 KALİBRE ET";
+                CalibrateButton.Content = _loc["CalibrateButton"];
             }
         }
     }

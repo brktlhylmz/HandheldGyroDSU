@@ -39,6 +39,19 @@ public sealed class IpcHttpServer : IDisposable
         _port = port;
     }
 
+    public string CurrentLanguage => _settings.Language;
+
+    public string SetLanguage(string? language)
+    {
+        string normalized = (language ?? "tr").Trim().ToLowerInvariant();
+        if (string.IsNullOrWhiteSpace(normalized))
+            normalized = "tr";
+
+        _settings.Language = normalized;
+        SaveCurrentSettings();
+        return _settings.Language;
+    }
+
     public void SaveCurrentSettings()
     {
         GyroBias bias = _sensorService.CurrentBias;
@@ -217,11 +230,18 @@ public sealed class IpcHttpServer : IDisposable
                     string json = BuildStatusJson("Axis orientation settings updated");
                     await WriteHttpResponseAsync(stream, 200, "OK", json, cancellationToken);
                 }
+                else if (method == "POST" && path == "/language")
+                {
+                    string? requestedLang = ExtractStringParameter(query, body, "language", "lang");
+                    string updatedLang = SetLanguage(requestedLang);
+                    string json = BuildStatusJson($"Language updated: {updatedLang}");
+                    await WriteHttpResponseAsync(stream, 200, "OK", json, cancellationToken);
+                }
                 else
                 {
                     string notFoundJson = JsonSerializer.Serialize(new
                     {
-                        error = "Endpoint not found. Supported: GET /status, POST /calibrate, POST /profile, POST /toggle, POST /port, POST /startup, POST /axes"
+                        error = "Endpoint not found. Supported: GET /status, POST /calibrate, POST /profile, POST /toggle, POST /port, POST /startup, POST /axes, POST /language"
                     });
                     await WriteHttpResponseAsync(stream, 404, "Not Found", notFoundJson, cancellationToken);
                 }
@@ -256,6 +276,7 @@ public sealed class IpcHttpServer : IDisposable
         var payload = new
         {
             message = message ?? "OK",
+            language = _settings.Language,
             serverPort = _udpServer.Port,
             ipcPort = _port,
             isStreamingEnabled = _udpServer.IsStreamingEnabled,
