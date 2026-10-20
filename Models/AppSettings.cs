@@ -19,6 +19,9 @@ public sealed class AppSettings
     public bool AutoSwitchProfiles { get; set; } = true;
     public bool IsStreamingEnabled { get; set; } = true;
     public bool StartWithWindows { get; set; }
+    public bool StartMinimized { get; set; }
+    public bool CloseToTray { get; set; }
+    public bool HudNotificationsEnabled { get; set; } = true;
     public bool InvertX { get; set; } = false;
     public bool InvertY { get; set; } = true;
     public bool InvertZ { get; set; } = true;
@@ -36,7 +39,7 @@ public sealed class AppSettings
         return string.Equals(iso, "tr", StringComparison.OrdinalIgnoreCase) ? "tr" : "en";
     }
 
-    public static string SettingsFilePath
+    public static string DataDirectoryPath
     {
         get
         {
@@ -44,9 +47,11 @@ public sealed class AppSettings
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
                 "HandheldDsu");
             Directory.CreateDirectory(dir);
-            return Path.Combine(dir, "settings.json");
+            return dir;
         }
     }
+
+    public static string SettingsFilePath => Path.Combine(DataDirectoryPath, "settings.json");
 
     public static AppSettings Load()
     {

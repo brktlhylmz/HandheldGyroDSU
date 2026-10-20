@@ -113,10 +113,22 @@
   "ToastClusterDisabledTitle": "5–8 CONTROLLER CLUSTER DISABLED",
   "ToastClusterEnabledSubFormat": "Secondary Cluster Active: UDP 0.0.0.0:{0}",
   "ToastClusterDisabledSubFormat": "Primary Port Only: UDP 0.0.0.0:{0}",
-  "SectionSystem": "SYSTEM INTEGRATION",
+  "SectionSystem": "SYSTEM & TRAY BEHAVIOR",
   "StartupTitle": "Launch on Windows Startup",
   "StartupEnabledDesc": "Enabled • Starts minimized in the system tray",
   "StartupDisabledDesc": "Disabled • Only runs when launched manually",
+  "StartMinimizedTitle": "Start Minimized in System Tray",
+  "StartMinimizedDesc": "Launches directly in the background tray without opening the main window",
+  "CloseToTrayTitle": "Close ('✕') Button Minimizes to Tray",
+  "CloseToTrayDesc": "Hides the window to the system tray instead of stopping the DSU server",
+  "HudNotificationsTitle": "In-Game HUD Overlay Notifications",
+  "HudNotificationsDesc": "Shows click-through top-right notifications when controllers or profiles switch",
+  "SectionDataMaintenance": "DATA & MAINTENANCE",
+  "DataMaintenanceDesc": "Access configuration files (%LocalAppData%\\HandheldDsu) or restore factory defaults",
+  "BtnOpenDataFolder": "OPEN CONFIG FOLDER",
+  "BtnResetAllSettings": "RESET ALL SETTINGS",
+  "ToastSettingsResetTitle": "SETTINGS RESTORED TO DEFAULTS",
+  "ToastSettingsResetDesc": "UDP 26760 • Standard Landscape • Default tray & HUD preferences",
 
   "GamepadHint": "[D-PAD] Navigate   [A] Toggle/Select   [Y] Calibrate   [LB/RB] Switch Tab"
 }

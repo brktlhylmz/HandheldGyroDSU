@@ -48,6 +48,15 @@ public sealed class DsuStatusDto
     [JsonPropertyName("startWithWindows")]
     public bool StartWithWindows { get; set; }
 
+    [JsonPropertyName("startMinimized")]
+    public bool StartMinimized { get; set; }
+
+    [JsonPropertyName("closeToTray")]
+    public bool CloseToTray { get; set; }
+
+    [JsonPropertyName("hudNotificationsEnabled")]
+    public bool HudNotificationsEnabled { get; set; } = true;
+
     [JsonPropertyName("isEmulatorConnected")]
     public bool IsEmulatorConnected { get; set; }
 
@@ -200,6 +209,9 @@ public sealed class DsuIpcClient : IDisposable
             IpcPort = IpcHttpServer.DefaultIpcPort,
             IsStreamingEnabled = _embeddedUdpServer.IsStreamingEnabled,
             StartWithWindows = StartupManager.IsStartupEnabled(),
+            StartMinimized = _embeddedSettings?.StartMinimized ?? false,
+            CloseToTray = _embeddedSettings?.CloseToTray ?? false,
+            HudNotificationsEnabled = _embeddedSettings?.HudNotificationsEnabled ?? true,
             IsEmulatorConnected = clients.Count > 0,
             ConnectedClients = clients.Select(c => c.ToString()).ToArray(),
             TotalPacketsSent = _embeddedUdpServer.TotalPacketsSent,
@@ -520,6 +532,46 @@ public sealed class DsuIpcClient : IDisposable
             _embeddedIpcServer?.SaveCurrentSettings();
         }
         return (ok, BuildEmbeddedStatusDto(ok ? $"Secondary UDP port {newSecondaryPort} saved" : err));
+    }
+
+    public async Task<DsuStatusDto> UpdatePreferencesAsync(
+        bool? startMinimized = null,
+        bool? closeToTray = null,
+        bool? hudNotificationsEnabled = null,
+        CancellationToken cancellationToken = default)
+    {
+        if (!_usingEmbeddedEngine)
+        {
+            string payload = JsonSerializer.Serialize(new
+            {
+                startMinimized,
+                closeToTray,
+                hudNotificationsEnabled
+            });
+            DsuStatusDto? remote = await PostJsonAsync("/preferences", payload, cancellationToken);
+            if (remote is not null)
+                return remote;
+
+            EnsureEmbeddedEngineStarted();
+        }
+
+        _embeddedIpcServer?.SetPreferences(startMinimized, closeToTray, hudNotificationsEnabled);
+        return BuildEmbeddedStatusDto();
+    }
+
+    public async Task<DsuStatusDto> ResetAllSettingsAsync(CancellationToken cancellationToken = default)
+    {
+        if (!_usingEmbeddedEngine)
+        {
+            DsuStatusDto? remote = await PostJsonAsync("/reset", "{}", cancellationToken);
+            if (remote is not null)
+                return remote;
+
+            EnsureEmbeddedEngineStarted();
+        }
+
+        _embeddedIpcServer?.ResetToFactoryDefaults();
+        return BuildEmbeddedStatusDto("All settings reset to defaults");
     }
 
     private async Task<DsuStatusDto?> PostJsonAsync(string path, string jsonBody, CancellationToken cancellationToken)

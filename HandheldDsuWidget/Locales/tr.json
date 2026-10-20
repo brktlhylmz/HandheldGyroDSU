@@ -113,10 +113,22 @@
   "ToastClusterDisabledTitle": "5–8 KOL KÜMESİ KAPATILDI",
   "ToastClusterEnabledSubFormat": "2. Küme Portu Aktif: UDP 0.0.0.0:{0}",
   "ToastClusterDisabledSubFormat": "Yalnızca Birincil Port Aktif: UDP 0.0.0.0:{0}",
-  "SectionSystem": "SİSTEM ENTEGRASYONU",
+  "SectionSystem": "SİSTEM & TEPSİ DAVRANIŞI",
   "StartupTitle": "Windows Açılışında Otomatik Başlat",
   "StartupEnabledDesc": "Açık • Windows başlangıcında tepside (gizli) başlar",
   "StartupDisabledDesc": "Kapalı • Yalnızca manuel çalıştırıldığında açılır",
+  "StartMinimizedTitle": "Uygulamayı Tepside (Gizli) Başlat",
+  "StartMinimizedDesc": "Açılışta ana pencereyi ekrana getirmeden doğrudan sistem tepsisinde başlatır",
+  "CloseToTrayTitle": "Kapat ('✕') Tuşu Tepsiye Küçültsün",
+  "CloseToTrayDesc": "Kapatma tuşuna basıldığında DSU sunucusunu durdurmak yerine arka plana gizler",
+  "HudNotificationsTitle": "Oyun İçi HUD Bildirimleri",
+  "HudNotificationsDesc": "Tam ekran oyunlarda kol veya profil değiştiğinde ekranın üstünde bildirim gösterir",
+  "SectionDataMaintenance": "VERİ & SIFIRLAMA",
+  "DataMaintenanceDesc": "Yapılandırma dosyalarına (%LocalAppData%\\HandheldDsu) erişin veya tüm ayarları sıfırlayın",
+  "BtnOpenDataFolder": "AYAR KLASÖRÜNÜ AÇ",
+  "BtnResetAllSettings": "TÜM AYARLARI SIFIRLA",
+  "ToastSettingsResetTitle": "TÜM AYARLAR SIFIRLANDI",
+  "ToastSettingsResetDesc": "UDP 26760 • Standard Landscape • Varsayılan tepsi ve bildirim ayarları",
 
   "GamepadHint": "[D-PAD] Gezin   [A] Seç/Değiştir   [Y] Kalibre Et   [LB/RB] Sekme Değiştir"
 }

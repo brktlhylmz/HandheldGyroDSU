@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -163,6 +164,11 @@ public partial class MainWindow : Window
                     SecondaryPortTextBox,
                     ApplySecondaryPortButton,
                     StartupToggle,
+                    StartMinimizedToggle,
+                    CloseToTrayToggle,
+                    HudNotificationsToggle,
+                    OpenDataFolderButton,
+                    ResetAllSettingsButton,
                     CalibrateButton
                 ];
             }
@@ -174,6 +180,11 @@ public partial class MainWindow : Window
                 ApplyPortButton,
                 MultiPortClusterToggle,
                 StartupToggle,
+                StartMinimizedToggle,
+                CloseToTrayToggle,
+                HudNotificationsToggle,
+                OpenDataFolderButton,
+                ResetAllSettingsButton,
                 CalibrateButton
             ];
         }
@@ -373,6 +384,10 @@ public partial class MainWindow : Window
             StartupToggleSubtitle.Text = status.StartWithWindows
                 ? _loc["StartupEnabledDesc"]
                 : _loc["StartupDisabledDesc"];
+
+            StartMinimizedToggle.IsChecked = status.StartMinimized;
+            CloseToTrayToggle.IsChecked = status.CloseToTray;
+            HudNotificationsToggle.IsChecked = status.HudNotificationsEnabled;
 
             // 3. Axis orientation switches and active badge highlights
             PitchOffsetToggle.IsChecked = status.UsePitchOffset;
@@ -901,6 +916,78 @@ public partial class MainWindow : Window
         UpdateUiFromStatus(status);
     }
 
+    private async void StartMinimizedToggle_Click(object sender, RoutedEventArgs e)
+    {
+        if (_suppressUiEvents)
+            return;
+
+        DsuStatusDto status = await _ipcClient.UpdatePreferencesAsync(startMinimized: StartMinimizedToggle.IsChecked == true);
+        UpdateUiFromStatus(status);
+    }
+
+    private async void CloseToTrayToggle_Click(object sender, RoutedEventArgs e)
+    {
+        if (_suppressUiEvents)
+            return;
+
+        DsuStatusDto status = await _ipcClient.UpdatePreferencesAsync(closeToTray: CloseToTrayToggle.IsChecked == true);
+        UpdateUiFromStatus(status);
+    }
+
+    private async void HudNotificationsToggle_Click(object sender, RoutedEventArgs e)
+    {
+        if (_suppressUiEvents)
+            return;
+
+        DsuStatusDto status = await _ipcClient.UpdatePreferencesAsync(hudNotificationsEnabled: HudNotificationsToggle.IsChecked == true);
+        UpdateUiFromStatus(status);
+    }
+
+    private void OpenDataFolderButton_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = AppSettings.DataDirectoryPath,
+                UseShellExecute = true
+            });
+        }
+        catch
+        {
+            // Ignore shell launch errors
+        }
+    }
+
+    private async void ResetAllSettingsButton_Click(object sender, RoutedEventArgs e)
+    {
+        ResetAllSettingsButton.IsEnabled = false;
+        try
+        {
+            DsuStatusDto status = await _ipcClient.ResetAllSettingsAsync();
+            _automationWatcher.Config.AutoSwitchByController = true;
+            _automationWatcher.Config.AutoSwitchByEmulator = true;
+            _automationWatcher.SaveConfig();
+
+            _suppressUiEvents = true;
+            AutoControllerSwitchToggle.IsChecked = true;
+            AutoEmulatorSwitchToggle.IsChecked = true;
+            PortStatusSubtitle.Text = _loc["PortDefaultDesc"];
+            PortStatusSubtitle.Foreground = TextSecondaryBrush;
+            SecondaryPortStatusSubtitle.Text = _loc["SecondaryPortDefaultDesc"];
+            SecondaryPortStatusSubtitle.Foreground = TextSecondaryBrush;
+            _suppressUiEvents = false;
+
+            UpdateUiFromStatus(status);
+            await RefreshProfilesAsync("Standard Landscape");
+            ShowToastNotification(_loc["ToastSettingsResetTitle"], _loc["ToastSettingsResetDesc"]);
+        }
+        finally
+        {
+            ResetAllSettingsButton.IsEnabled = true;
+        }
+    }
+
     public async Task TriggerCalibrationFromControllerAsync()
     {
         if (!CalibrateButton.IsEnabled)
@@ -1106,7 +1193,8 @@ public partial class MainWindow : Window
         };
         _snackbarTimer.Start();
 
-        if (!IsVisible || WindowState == WindowState.Minimized || showHudOverlay)
+        if ((_lastStatus?.HudNotificationsEnabled ?? true) &&
+            (!IsVisible || WindowState == WindowState.Minimized || showHudOverlay))
         {
             _hudToastService.ShowHudToast(title, subtitle, isError);
         }
@@ -1349,6 +1437,12 @@ public partial class MainWindow : Window
 
     private void CloseButton_Click(object sender, RoutedEventArgs e)
     {
+        if (CloseToTrayToggle.IsChecked == true && Keyboard.Modifiers != ModifierKeys.Shift)
+        {
+            HideToTray();
+            return;
+        }
+
         Close();
     }
 }
