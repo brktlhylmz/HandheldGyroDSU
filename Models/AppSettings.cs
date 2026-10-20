@@ -11,6 +11,8 @@ namespace HandheldDsuServer.Models;
 public sealed class AppSettings
 {
     public int UdpPort { get; set; } = 26760;
+    public int SecondaryUdpPort { get; set; } = 26762;
+    public bool IsSecondaryClusterActive { get; set; }
     public int ActiveSlot { get; set; }
     public string Language { get; set; } = GetDefaultSystemLanguage();
     public string ActiveProfileName { get; set; } = "Standard Landscape";
@@ -59,6 +61,8 @@ public sealed class AppSettings
                 {
                     if (loaded.UdpPort is < 1024 or > 65535)
                         loaded.UdpPort = 26760;
+                    if (loaded.SecondaryUdpPort is < 1024 or > 65535 || loaded.SecondaryUdpPort == loaded.UdpPort)
+                        loaded.SecondaryUdpPort = 26762;
                     if (string.IsNullOrWhiteSpace(loaded.Language))
                         loaded.Language = GetDefaultSystemLanguage();
                     return loaded;

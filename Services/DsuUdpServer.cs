@@ -48,12 +48,14 @@ public sealed class DsuUdpServer : IDisposable
     public long TotalPacketsSent => Interlocked.Read(ref _totalPacketsSent);
     public bool IsStreamingEnabled => _isStreamingEnabled;
 
-    public DsuUdpServer(SensorService sensorService, int port = DefaultPort, byte activeSlot = 0)
+    public DsuUdpServer(SensorService sensorService, int port = DefaultPort, byte activeSlot = 0, int secondaryPort = 26762)
     {
         _sensorService = sensorService;
         _port = port is >= 1024 and <= 65535 ? port : DefaultPort;
         _activeSlot = (byte)Math.Clamp((int)activeSlot, 0, 3);
-        _secondaryPort = _port + 2;
+        _secondaryPort = (secondaryPort is >= 1024 and <= 65535 && secondaryPort != _port && secondaryPort != 26761)
+            ? secondaryPort
+            : 26762;
         _serverId = BinaryPrimitives.ReadUInt32LittleEndian(RandomNumberGenerator.GetBytes(4));
     }
 
@@ -64,13 +66,18 @@ public sealed class DsuUdpServer : IDisposable
     }
 
     /// <summary>
-    /// Enables or disables the secondary DSU UDP cluster port (Port + 2, e.g., 26762)
+    /// Enables or disables the secondary DSU UDP cluster port (customizable port, default 26762)
     /// when 5 to 8 controllers are connected simultaneously.
     /// </summary>
-    public bool SetSecondaryClusterActive(bool enabled)
+    public bool SetSecondaryClusterActive(bool enabled, int? customPort = null)
     {
         lock (_socketLock)
         {
+            if (customPort.HasValue && customPort.Value is >= 1024 and <= 65535 && customPort.Value != _port && customPort.Value != 26761)
+            {
+                _secondaryPort = customPort.Value;
+            }
+
             if (enabled == _isSecondaryClusterActive && (!enabled || _secondaryClusterClient is not null))
                 return _isSecondaryClusterActive;
 
@@ -91,26 +98,91 @@ public sealed class DsuUdpServer : IDisposable
                 return false;
             }
 
-            for (int candidate = _port + 2; candidate <= _port + 20 && candidate <= 65535; candidate++)
+            // Try binding the user's configured secondary port first
+            try
             {
-                if (candidate == 26761) // Skip IPC port
-                    continue;
+                _secondaryClusterClient = CreateConfiguredUdpClient(_secondaryPort);
+                _isSecondaryClusterActive = true;
+                return true;
+            }
+            catch
+            {
+                // Fallback to next available port if the configured secondary port is occupied
+                for (int candidate = 26762; candidate <= 26785; candidate++)
+                {
+                    if (candidate == _port || candidate == 26761)
+                        continue;
 
-                try
-                {
-                    _secondaryClusterClient = CreateConfiguredUdpClient(candidate);
-                    _secondaryPort = candidate;
-                    _isSecondaryClusterActive = true;
-                    return true;
-                }
-                catch
-                {
-                    // Try next candidate port
+                    try
+                    {
+                        _secondaryClusterClient = CreateConfiguredUdpClient(candidate);
+                        _secondaryPort = candidate;
+                        _isSecondaryClusterActive = true;
+                        return true;
+                    }
+                    catch
+                    {
+                        // Try next candidate port
+                    }
                 }
             }
 
             _isSecondaryClusterActive = false;
             return false;
+        }
+    }
+
+    /// <summary>
+    /// Hot-swaps the secondary cluster UDP port to any user-specified port (1024..65535).
+    /// </summary>
+    public bool TryChangeSecondaryPort(int newSecondaryPort, out string errorMessage)
+    {
+        errorMessage = string.Empty;
+        if (newSecondaryPort is < 1024 or > 65535 || newSecondaryPort == _port || newSecondaryPort == 26761)
+        {
+            errorMessage = "Secondary port must be between 1024 and 65535 and cannot equal the primary or IPC port.";
+            return false;
+        }
+
+        lock (_socketLock)
+        {
+            if (!_isSecondaryClusterActive)
+            {
+                _secondaryPort = newSecondaryPort;
+                return true;
+            }
+
+            if (newSecondaryPort == _secondaryPort && _secondaryClusterClient is not null)
+                return true;
+
+            UdpClient? newClient = null;
+            try
+            {
+                newClient = CreateConfiguredUdpClient(newSecondaryPort);
+            }
+            catch (Exception ex)
+            {
+                newClient?.Dispose();
+                errorMessage = $"Failed to bind secondary UDP port {newSecondaryPort}: {ex.Message}";
+                return false;
+            }
+
+            UdpClient? oldClient = _secondaryClusterClient;
+            _secondaryPort = newSecondaryPort;
+            _secondaryClusterClient = newClient;
+            _secondarySubscribedClients.Clear();
+
+            try
+            {
+                oldClient?.Close();
+                oldClient?.Dispose();
+            }
+            catch
+            {
+                // Ignore old socket disposal errors
+            }
+
+            return true;
         }
     }
 

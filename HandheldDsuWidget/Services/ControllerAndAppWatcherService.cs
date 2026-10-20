@@ -133,7 +133,7 @@ public sealed class ControllerAndAppWatcherService : IDisposable
         CheckForegroundEmulator();
     }
 
-    public IReadOnlyList<KnownControllerConfig> ScanControllers(int basePort)
+    public IReadOnlyList<KnownControllerConfig> ScanControllers(int basePort = 26760, int secondaryPort = 26762)
     {
         lock (_syncLock)
         {
@@ -184,7 +184,7 @@ public sealed class ControllerAndAppWatcherService : IDisposable
                 known.IsConnected = true;
                 known.LastSeenUtc = DateTime.UtcNow;
                 known.AssignedPlayerIndex = playerIndex;
-                known.AssignedUdpPort = playerIndex < 4 ? basePort : basePort + 2;
+                known.AssignedUdpPort = playerIndex < 4 ? basePort : secondaryPort;
                 known.AssignedDsuSlot = playerIndex % 4;
 
                 if (!_isInitialScan && !_previousConnectedHwIds.Contains(uniqueKey))

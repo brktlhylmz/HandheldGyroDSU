@@ -948,6 +948,72 @@
                                                 Height="30"
                                                 Click="ApplyPortButton_Click" />
                                     </Grid>
+
+                                    <Border Style="{DynamicResource AppRowDividerStyle}" Margin="0,10,0,10" />
+
+                                    <!-- 5-8 Controller Secondary Cluster Port Toggle (UDP 26762) -->
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,10,0">
+                                            <TextBlock Text="{Binding [ClusterPortTitle], Source={x:Static services:LocalizationService.Instance}}"
+                                                       Foreground="{DynamicResource BrushTextPrimary}"
+                                                       FontWeight="SemiBold"
+                                                       FontSize="11.5" />
+                                            <TextBlock Text="{Binding [ClusterPortDesc], Source={x:Static services:LocalizationService.Instance}}"
+                                                       Foreground="{DynamicResource BrushTextSecondary}"
+                                                       FontSize="9.5"
+                                                       TextWrapping="Wrap"
+                                                       Margin="0,2,0,0" />
+                                        </StackPanel>
+
+                                        <CheckBox x:Name="MultiPortClusterToggle"
+                                                  Grid.Column="1"
+                                                  Style="{DynamicResource AppToggleSwitchStyle}"
+                                                  IsChecked="False"
+                                                  VerticalAlignment="Center"
+                                                  Click="MultiPortClusterToggle_Click" />
+                                    </Grid>
+
+                                    <!-- Customizable Secondary Cluster Port Input Row -->
+                                    <Grid Margin="0,10,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="86" />
+                                            <ColumnDefinition Width="8" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,8,0">
+                                            <TextBlock Text="{Binding [SecondaryPortTitle], Source={x:Static services:LocalizationService.Instance}}"
+                                                       Foreground="{DynamicResource BrushTextPrimary}"
+                                                       FontWeight="SemiBold"
+                                                       FontSize="11.5" />
+                                            <TextBlock x:Name="SecondaryPortStatusSubtitle"
+                                                       Text="{Binding [SecondaryPortDefaultDesc], Source={x:Static services:LocalizationService.Instance}}"
+                                                       Foreground="{DynamicResource BrushTextSecondary}"
+                                                       FontSize="9.5"
+                                                       TextWrapping="Wrap"
+                                                       Margin="0,2,0,0" />
+                                        </StackPanel>
+
+                                        <TextBox x:Name="SecondaryPortTextBox"
+                                                 Grid.Column="1"
+                                                 Style="{DynamicResource AppTextBoxStyle}"
+                                                 Text="26762"
+                                                 Height="30"
+                                                 KeyDown="SecondaryPortTextBox_KeyDown" />
+
+                                        <Button x:Name="ApplySecondaryPortButton"
+                                                Grid.Column="3"
+                                                Style="{DynamicResource AppSecondaryButtonStyle}"
+                                                Content="{Binding [ApplyButton], Source={x:Static services:LocalizationService.Instance}}"
+                                                Height="30"
+                                                Click="ApplySecondaryPortButton_Click" />
+                                    </Grid>
                                 </StackPanel>
                             </Border>
 

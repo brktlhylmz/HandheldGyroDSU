@@ -69,6 +69,8 @@ public partial class MainWindow : Window
             _trayService.UpdateTooltip(_loc["TrayTooltip"]);
             PortStatusSubtitle.Text = _loc["PortDefaultDesc"];
             PortStatusSubtitle.Foreground = TextSecondaryBrush;
+            SecondaryPortStatusSubtitle.Text = _loc["SecondaryPortDefaultDesc"];
+            SecondaryPortStatusSubtitle.Foreground = TextSecondaryBrush;
             if (_lastStatus is not null)
             {
                 UpdateUiFromStatus(_lastStatus);
@@ -155,6 +157,9 @@ public partial class MainWindow : Window
                 LanguageComboBox,
                 PortTextBox,
                 ApplyPortButton,
+                MultiPortClusterToggle,
+                SecondaryPortTextBox,
+                ApplySecondaryPortButton,
                 StartupToggle,
                 CalibrateButton
             ];
@@ -292,6 +297,7 @@ public partial class MainWindow : Window
             }
 
             EngineSubtitleText.Text = _loc.Format("HeaderSubtitleFormat", status.ServerPort, status.IpcPort);
+            MultiPortClusterToggle.IsChecked = status.IsSecondaryClusterActive;
 
             if (status.WasPortFallbackTriggered && PortStatusSubtitle.Text == _loc["PortDefaultDesc"])
             {
@@ -312,10 +318,15 @@ public partial class MainWindow : Window
                 }
             }
 
-            // Update the port input field unless the user is actively typing in it
+            // Update the port input fields unless the user is actively typing in them
             if (!PortTextBox.IsKeyboardFocusWithin)
             {
                 PortTextBox.Text = status.ServerPort.ToString();
+            }
+
+            if (!SecondaryPortTextBox.IsKeyboardFocusWithin)
+            {
+                SecondaryPortTextBox.Text = status.SecondaryPort.ToString();
             }
 
             // 1. Emulator connection status indicator
@@ -453,6 +464,78 @@ public partial class MainWindow : Window
         }
     }
 
+    private async void MultiPortClusterToggle_Click(object sender, RoutedEventArgs e)
+    {
+        if (_suppressUiEvents)
+            return;
+
+        bool enableCluster = MultiPortClusterToggle.IsChecked == true;
+        bool active = _ipcClient.SetSecondaryClusterActive(enableCluster);
+        DsuStatusDto status = await _ipcClient.GetStatusAsync();
+        UpdateUiFromStatus(status);
+        RenderControllersAndRulesUi();
+
+        ShowToastNotification(
+            active ? _loc["ToastClusterEnabledTitle"] : _loc["ToastClusterDisabledTitle"],
+            active
+                ? _loc.Format("ToastClusterEnabledSubFormat", status.SecondaryPort)
+                : _loc.Format("ToastClusterDisabledSubFormat", status.ServerPort));
+    }
+
+    private async void ApplySecondaryPortButton_Click(object sender, RoutedEventArgs e)
+    {
+        await ApplySecondaryPortChangeAsync();
+    }
+
+    private async void SecondaryPortTextBox_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter)
+        {
+            e.Handled = true;
+            await ApplySecondaryPortChangeAsync();
+            Keyboard.ClearFocus();
+        }
+    }
+
+    private async Task ApplySecondaryPortChangeAsync()
+    {
+        int primaryPort = _lastStatus?.ServerPort ?? 26760;
+        if (!int.TryParse(SecondaryPortTextBox.Text.Trim(), out int newSecPort) ||
+            newSecPort is < 1024 or > 65535 ||
+            newSecPort == primaryPort ||
+            newSecPort == 26761)
+        {
+            SecondaryPortStatusSubtitle.Text = _loc["PortInvalidError"];
+            SecondaryPortStatusSubtitle.Foreground = StatusOfflineBrush;
+            return;
+        }
+
+        ApplySecondaryPortButton.IsEnabled = false;
+        try
+        {
+            var (success, status) = await _ipcClient.ChangeSecondaryPortAsync(newSecPort);
+            if (success)
+            {
+                SecondaryPortStatusSubtitle.Text = _loc.Format("SecondaryPortSavedFormat", newSecPort);
+                SecondaryPortStatusSubtitle.Foreground = StatusOnlineBrush;
+                ShowToastNotification(
+                    _loc["ToastClusterEnabledTitle"],
+                    _loc.Format("SecondaryPortSavedFormat", newSecPort));
+            }
+            else
+            {
+                SecondaryPortStatusSubtitle.Text = status.Message;
+                SecondaryPortStatusSubtitle.Foreground = StatusOfflineBrush;
+            }
+            UpdateUiFromStatus(status);
+            RenderControllersAndRulesUi();
+        }
+        finally
+        {
+            ApplySecondaryPortButton.IsEnabled = true;
+        }
+    }
+
     private async void OnAutomationNotification(object? sender, (string Title, string Subtitle, string? ProfileToApply, int ConnectedCount) args)
     {
         if (args.ConnectedCount > 4)
@@ -530,7 +613,8 @@ public partial class MainWindow : Window
             return;
 
         int basePort = _lastStatus?.ServerPort ?? 26760;
-        IReadOnlyList<KnownControllerConfig> controllers = _automationWatcher.ScanControllers(basePort);
+        int secondaryPort = _lastStatus?.SecondaryPort ?? 26762;
+        IReadOnlyList<KnownControllerConfig> controllers = _automationWatcher.ScanControllers(basePort, secondaryPort);
 
         int connectedCount = controllers.Count(c => c.IsConnected);
         if (connectedCount > 4 && _lastStatus?.IsSecondaryClusterActive == false)
