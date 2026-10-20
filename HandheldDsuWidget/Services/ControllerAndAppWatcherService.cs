@@ -27,6 +27,7 @@ public sealed class ControllerAndAppWatcherService : IDisposable
     private string _lastDetectedEmulatorProcess = string.Empty;
     private HashSet<string> _previousConnectedHwIds = [];
     private bool _isInitialScan = true;
+    private bool _isScanning;
 
     public AutomationConfig Config => _config;
 
@@ -135,116 +136,169 @@ public sealed class ControllerAndAppWatcherService : IDisposable
 
     public IReadOnlyList<KnownControllerConfig> ScanControllers(int basePort = 26760, int secondaryPort = 26762)
     {
+        List<(string Title, string Subtitle, string? ProfileToApply, int ConnectedCount)> pendingNotifications = [];
+        bool changed = false;
+        List<KnownControllerConfig> orderedSnapshot;
+
         lock (_syncLock)
         {
-            var rawSnapshot = RawGameController.RawGameControllers.ToList();
-            var currentConnectedHwIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-            foreach (var c in _config.Controllers)
+            if (_isScanning)
             {
-                c.IsConnected = false;
+                return _config.Controllers
+                    .OrderByDescending(c => c.IsConnected)
+                    .ThenBy(c => c.AssignedPlayerIndex)
+                    .ThenByDescending(c => c.LastSeenUtc)
+                    .ToList();
             }
 
-            // Ensure built-in handheld sensor entry always exists as primary fallback if no external pads are found
-            int playerIndex = 0;
-
-            foreach (RawGameController raw in rawSnapshot)
+            _isScanning = true;
+            try
             {
-                string hwId = $"VID_{raw.HardwareVendorId:X4}&PID_{raw.HardwareProductId:X4}";
-                // Distinguish multiple identical controllers by index if needed
-                string uniqueKey = hwId;
-                int suffix = 2;
-                while (!currentConnectedHwIds.Add(uniqueKey))
+                List<RawGameController> rawSnapshot;
+                try
                 {
-                    uniqueKey = $"{hwId}#{suffix++}";
+                    rawSnapshot = RawGameController.RawGameControllers.ToList();
+                }
+                catch
+                {
+                    rawSnapshot = [];
                 }
 
-                var known = _config.Controllers.FirstOrDefault(c =>
-                    string.Equals(c.HardwareId, uniqueKey, StringComparison.OrdinalIgnoreCase));
+                var currentConnectedHwIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-                string friendlyName = ResolveFriendlyControllerName(raw.HardwareVendorId, raw.HardwareProductId, raw.DisplayName);
-
-                if (known is null)
+                foreach (var c in _config.Controllers)
                 {
-                    known = new KnownControllerConfig
+                    c.IsConnected = false;
+                }
+
+                // Ensure built-in handheld sensor entry always exists as primary fallback if no external pads are found
+                int playerIndex = 0;
+
+                foreach (RawGameController raw in rawSnapshot)
+                {
+                    ushort vid;
+                    ushort pid;
+                    string? rawDisplayName;
+                    try
                     {
-                        HardwareId = uniqueKey,
-                        DisplayName = friendlyName,
-                        AssignedProfileName = "Standard Landscape",
-                        AutoSwitchProfile = true,
-                        LastSeenUtc = DateTime.UtcNow
-                    };
-                    _config.Controllers.Add(known);
-                }
-                else if (!string.IsNullOrWhiteSpace(friendlyName))
-                {
-                    known.DisplayName = friendlyName;
-                }
+                        vid = raw.HardwareVendorId;
+                        pid = raw.HardwareProductId;
+                        rawDisplayName = raw.DisplayName;
+                    }
+                    catch
+                    {
+                        continue;
+                    }
 
-                known.IsConnected = true;
-                known.LastSeenUtc = DateTime.UtcNow;
-                known.AssignedPlayerIndex = playerIndex;
-                known.AssignedUdpPort = playerIndex < 4 ? basePort : secondaryPort;
-                known.AssignedDsuSlot = playerIndex % 4;
+                    string hwId = $"VID_{vid:X4}&PID_{pid:X4}";
+                    // Distinguish multiple identical controllers by index if needed
+                    string uniqueKey = hwId;
+                    int suffix = 2;
+                    while (!currentConnectedHwIds.Add(uniqueKey))
+                    {
+                        uniqueKey = $"{hwId}#{suffix++}";
+                    }
 
-                if (!_isInitialScan && !_previousConnectedHwIds.Contains(uniqueKey))
-                {
-                    string? profileToApply = (_config.AutoSwitchByController && known.AutoSwitchProfile)
-                        ? known.AssignedProfileName
-                        : null;
+                    var known = _config.Controllers.FirstOrDefault(c =>
+                        string.Equals(c.HardwareId, uniqueKey, StringComparison.OrdinalIgnoreCase));
 
-                    var loc = LocalizationService.Instance;
-                    AutomationNotification?.Invoke(
-                        this,
-                        (
+                    string friendlyName = ResolveFriendlyControllerName(vid, pid, rawDisplayName);
+
+                    if (known is null)
+                    {
+                        known = new KnownControllerConfig
+                        {
+                            HardwareId = uniqueKey,
+                            DisplayName = friendlyName,
+                            AssignedProfileName = "Standard Landscape",
+                            AutoSwitchProfile = true,
+                            LastSeenUtc = DateTime.UtcNow
+                        };
+                        _config.Controllers.Add(known);
+                    }
+                    else if (!string.IsNullOrWhiteSpace(friendlyName))
+                    {
+                        known.DisplayName = friendlyName;
+                    }
+
+                    known.IsConnected = true;
+                    known.LastSeenUtc = DateTime.UtcNow;
+                    known.AssignedPlayerIndex = playerIndex;
+                    known.AssignedUdpPort = playerIndex < 4 ? basePort : secondaryPort;
+                    known.AssignedDsuSlot = playerIndex % 4;
+
+                    if (!_isInitialScan && !_previousConnectedHwIds.Contains(uniqueKey))
+                    {
+                        string? profileToApply = (_config.AutoSwitchByController && known.AutoSwitchProfile)
+                            ? known.AssignedProfileName
+                            : null;
+
+                        var loc = LocalizationService.Instance;
+                        pendingNotifications.Add((
                             loc.Format("ToastControllerConnectedTitleFormat", known.DisplayName),
                             loc.Format("ToastControllerConnectedSubFormat", playerIndex + 1, known.AssignedUdpPort, known.AssignedDsuSlot, known.AssignedProfileName),
                             profileToApply,
                             rawSnapshot.Count
                         ));
+                    }
+
+                    playerIndex++;
                 }
 
-                playerIndex++;
-            }
-
-            if (rawSnapshot.Count == 0)
-            {
-                const string builtInId = "BUILTIN_HANDHELD_IMU";
-                currentConnectedHwIds.Add(builtInId);
-                var builtIn = _config.Controllers.FirstOrDefault(c => c.HardwareId == builtInId);
-                if (builtIn is null)
+                if (rawSnapshot.Count == 0)
                 {
-                    builtIn = new KnownControllerConfig
+                    const string builtInId = "BUILTIN_HANDHELD_IMU";
+                    currentConnectedHwIds.Add(builtInId);
+                    var builtIn = _config.Controllers.FirstOrDefault(c => c.HardwareId == builtInId);
+                    if (builtIn is null)
                     {
-                        HardwareId = builtInId,
-                        DisplayName = "Handheld Built-in IMU Controller",
-                        AssignedProfileName = "Standard Landscape",
-                        AutoSwitchProfile = true,
-                        LastSeenUtc = DateTime.UtcNow
-                    };
-                    _config.Controllers.Insert(0, builtIn);
+                        builtIn = new KnownControllerConfig
+                        {
+                            HardwareId = builtInId,
+                            DisplayName = "Handheld Built-in IMU Controller",
+                            AssignedProfileName = "Standard Landscape",
+                            AutoSwitchProfile = true,
+                            LastSeenUtc = DateTime.UtcNow
+                        };
+                        _config.Controllers.Insert(0, builtIn);
+                    }
+                    builtIn.IsConnected = true;
+                    builtIn.AssignedPlayerIndex = 0;
+                    builtIn.AssignedUdpPort = basePort;
+                    builtIn.AssignedDsuSlot = 0;
                 }
-                builtIn.IsConnected = true;
-                builtIn.AssignedPlayerIndex = 0;
-                builtIn.AssignedUdpPort = basePort;
-                builtIn.AssignedDsuSlot = 0;
+
+                changed = !_previousConnectedHwIds.SetEquals(currentConnectedHwIds);
+                _previousConnectedHwIds = currentConnectedHwIds;
+
+                if (changed)
+                {
+                    _config.Save();
+                }
+
+                orderedSnapshot = _config.Controllers
+                    .OrderByDescending(c => c.IsConnected)
+                    .ThenBy(c => c.AssignedPlayerIndex)
+                    .ThenByDescending(c => c.LastSeenUtc)
+                    .ToList();
             }
-
-            bool changed = !_previousConnectedHwIds.SetEquals(currentConnectedHwIds);
-            _previousConnectedHwIds = currentConnectedHwIds;
-
-            if (changed)
+            finally
             {
-                _config.Save();
-                ControllersChanged?.Invoke(this, EventArgs.Empty);
+                _isScanning = false;
             }
-
-            return _config.Controllers
-                .OrderByDescending(c => c.IsConnected)
-                .ThenBy(c => c.AssignedPlayerIndex)
-                .ThenByDescending(c => c.LastSeenUtc)
-                .ToList();
         }
+
+        if (changed)
+        {
+            ControllersChanged?.Invoke(this, EventArgs.Empty);
+        }
+
+        foreach (var notification in pendingNotifications)
+        {
+            AutomationNotification?.Invoke(this, notification);
+        }
+
+        return orderedSnapshot;
     }
 
     private void CheckForegroundEmulator()
