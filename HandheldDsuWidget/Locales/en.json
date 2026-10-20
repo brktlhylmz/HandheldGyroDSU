@@ -11,7 +11,7 @@
   "CloseTooltip": "Exit Application",
   "TrayTooltip": "Handheld Gyro DSU (Click to Show/Hide)",
 
-  "SectionConnection": "EMULATOR TELEMETRY LINK",
+  "SectionConnection": "EMULATOR & LIVE IMU TELEMETRY",
   "StatusConnected": "Emulator Connected (Active Stream)",
   "StatusWaiting": "DSU Engine Ready • Awaiting Emulator",
   "StatusReadyBadge": "READY",

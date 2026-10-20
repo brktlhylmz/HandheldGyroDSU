@@ -173,7 +173,7 @@
                     <!-- ====================================================== -->
                     <StackPanel x:Name="DashboardViewPanel" Visibility="Visible">
 
-                        <!-- Card 1: Emulator Connection Status -->
+                        <!-- Card 1: Unified Emulator Link & Live IMU Telemetry -->
                         <Border Style="{DynamicResource AppCardStyle}" Margin="0,0,0,10">
                             <StackPanel>
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
@@ -182,7 +182,8 @@
                                                Style="{DynamicResource AppSectionHeaderStyle}" />
                                 </StackPanel>
 
-                                <Grid>
+                                <!-- Connection Status Row -->
+                                <Grid Margin="0,0,0,10">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="Auto" />
                                         <ColumnDefinition Width="*" />
@@ -225,6 +226,65 @@
                                                    FontSize="11" />
                                     </Border>
                                 </Grid>
+
+                                <!-- 3-Column Live Angular Velocity Readout (Pitch / Yaw / Roll) -->
+                                <UniformGrid Columns="3" Margin="0,0,0,6">
+                                    <Border Style="{DynamicResource AppSubPanelStyle}" Margin="0,0,4,0" Padding="8,7">
+                                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding [AxisPitchLabel], Source={x:Static services:LocalizationService.Instance}}"
+                                                       Foreground="{DynamicResource BrushTextSecondary}" FontSize="9.5" FontWeight="Bold" HorizontalAlignment="Center" />
+                                            <TextBlock x:Name="PitchValueText"
+                                                       Text="+0.00°/s"
+                                                       Foreground="{DynamicResource BrushTelemetryReadout}"
+                                                       FontFamily="{DynamicResource FontMonospace}"
+                                                       FontSize="13"
+                                                       FontWeight="Bold"
+                                                       HorizontalAlignment="Center"
+                                                       Margin="0,2,0,0" />
+                                        </StackPanel>
+                                    </Border>
+
+                                    <Border Style="{DynamicResource AppSubPanelStyle}" Margin="2,0,2,0" Padding="8,7">
+                                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding [AxisYawLabel], Source={x:Static services:LocalizationService.Instance}}"
+                                                       Foreground="{DynamicResource BrushTextSecondary}" FontSize="9.5" FontWeight="Bold" HorizontalAlignment="Center" />
+                                            <TextBlock x:Name="YawValueText"
+                                                       Text="+0.00°/s"
+                                                       Foreground="{DynamicResource BrushTelemetryReadout}"
+                                                       FontFamily="{DynamicResource FontMonospace}"
+                                                       FontSize="13"
+                                                       FontWeight="Bold"
+                                                       HorizontalAlignment="Center"
+                                                       Margin="0,2,0,0" />
+                                        </StackPanel>
+                                    </Border>
+
+                                    <Border Style="{DynamicResource AppSubPanelStyle}" Margin="4,0,0,0" Padding="8,7">
+                                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding [AxisRollLabel], Source={x:Static services:LocalizationService.Instance}}"
+                                                       Foreground="{DynamicResource BrushTextSecondary}" FontSize="9.5" FontWeight="Bold" HorizontalAlignment="Center" />
+                                            <TextBlock x:Name="RollValueText"
+                                                       Text="+0.00°/s"
+                                                       Foreground="{DynamicResource BrushTelemetryReadout}"
+                                                       FontFamily="{DynamicResource FontMonospace}"
+                                                       FontSize="13"
+                                                       FontWeight="Bold"
+                                                       HorizontalAlignment="Center"
+                                                       Margin="0,2,0,0" />
+                                        </StackPanel>
+                                    </Border>
+                                </UniformGrid>
+
+                                <!-- Accelerometer & Bias Footer -->
+                                <Border Style="{DynamicResource AppSubPanelStyle}" Padding="8,5">
+                                    <TextBlock x:Name="BiasStatusText"
+                                               Text="ACC (X/Y/Z): 0.00, 0.00, 0.00 G   |   BIAS: +0.00, +0.00, +0.00"
+                                               Foreground="{DynamicResource BrushTextSecondary}"
+                                               FontFamily="{DynamicResource FontMonospace}"
+                                               FontSize="9.5"
+                                               HorizontalAlignment="Center"
+                                               TextWrapping="Wrap" />
+                                </Border>
                             </StackPanel>
                         </Border>
 
@@ -258,7 +318,7 @@
                         </Border>
 
                         <!-- Card 3: Axis Orientation & Hold Angle Switches -->
-                        <Border Style="{DynamicResource AppCardStyle}" Margin="0,0,0,10">
+                        <Border Style="{DynamicResource AppCardStyle}">
                             <StackPanel>
                                 <!-- Header + Reset Button -->
                                 <Grid Margin="0,0,0,10">
@@ -479,74 +539,6 @@
                                               VerticalAlignment="Center"
                                               Click="AxisConfigToggle_Click" />
                                 </Grid>
-                            </StackPanel>
-                        </Border>
-
-                        <!-- Card 4: Live IMU Telemetry Readout -->
-                        <Border Style="{DynamicResource AppCardStyle}">
-                            <StackPanel>
-                                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                                    <Border Width="3" Height="12" Background="{DynamicResource BrushAccentPrimary}" Margin="0,0,7,0" />
-                                    <TextBlock Text="{Binding [SectionTelemetry], Source={x:Static services:LocalizationService.Instance}}"
-                                               Style="{DynamicResource AppSectionHeaderStyle}" />
-                                </StackPanel>
-
-                                <UniformGrid Columns="3" Margin="0,0,0,8">
-                                    <Border Style="{DynamicResource AppSubPanelStyle}" Margin="0,0,4,0" Padding="8,8">
-                                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                                            <TextBlock Text="{Binding [AxisPitchLabel], Source={x:Static services:LocalizationService.Instance}}"
-                                                       Foreground="{DynamicResource BrushTextSecondary}" FontSize="9.5" FontWeight="Bold" HorizontalAlignment="Center" />
-                                            <TextBlock x:Name="PitchValueText"
-                                                       Text="+0.00°/s"
-                                                       Foreground="{DynamicResource BrushTelemetryReadout}"
-                                                       FontFamily="{DynamicResource FontMonospace}"
-                                                       FontSize="13"
-                                                       FontWeight="Bold"
-                                                       HorizontalAlignment="Center"
-                                                       Margin="0,3,0,0" />
-                                        </StackPanel>
-                                    </Border>
-
-                                    <Border Style="{DynamicResource AppSubPanelStyle}" Margin="2,0,2,0" Padding="8,8">
-                                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                                            <TextBlock Text="{Binding [AxisYawLabel], Source={x:Static services:LocalizationService.Instance}}"
-                                                       Foreground="{DynamicResource BrushTextSecondary}" FontSize="9.5" FontWeight="Bold" HorizontalAlignment="Center" />
-                                            <TextBlock x:Name="YawValueText"
-                                                       Text="+0.00°/s"
-                                                       Foreground="{DynamicResource BrushTelemetryReadout}"
-                                                       FontFamily="{DynamicResource FontMonospace}"
-                                                       FontSize="13"
-                                                       FontWeight="Bold"
-                                                       HorizontalAlignment="Center"
-                                                       Margin="0,3,0,0" />
-                                        </StackPanel>
-                                    </Border>
-
-                                    <Border Style="{DynamicResource AppSubPanelStyle}" Margin="4,0,0,0" Padding="8,8">
-                                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                                            <TextBlock Text="{Binding [AxisRollLabel], Source={x:Static services:LocalizationService.Instance}}"
-                                                       Foreground="{DynamicResource BrushTextSecondary}" FontSize="9.5" FontWeight="Bold" HorizontalAlignment="Center" />
-                                            <TextBlock x:Name="RollValueText"
-                                                       Text="+0.00°/s"
-                                                       Foreground="{DynamicResource BrushTelemetryReadout}"
-                                                       FontFamily="{DynamicResource FontMonospace}"
-                                                       FontSize="13"
-                                                       FontWeight="Bold"
-                                                       HorizontalAlignment="Center"
-                                                       Margin="0,3,0,0" />
-                                        </StackPanel>
-                                    </Border>
-                                </UniformGrid>
-
-                                <Border Style="{DynamicResource AppSubPanelStyle}" Padding="8,5">
-                                    <TextBlock x:Name="BiasStatusText"
-                                               Text="ACC (X/Y/Z): 0.00, 0.00, 0.00 G   |   BIAS: +0.00, +0.00, +0.00"
-                                               Foreground="{DynamicResource BrushTextSecondary}"
-                                               FontFamily="{DynamicResource FontMonospace}"
-                                               FontSize="9.5"
-                                               HorizontalAlignment="Center"
-                                               TextWrapping="Wrap" />
-                                </Border>
                             </StackPanel>
                         </Border>
                     </StackPanel>
