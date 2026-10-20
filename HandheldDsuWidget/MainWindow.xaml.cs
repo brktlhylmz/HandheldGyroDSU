@@ -563,13 +563,13 @@ public partial class MainWindow : Window
             {
                 SensitivitySlider.Value = Math.Clamp(status.Sensitivity, 0.2f, 3.0f);
             }
-            SensitivityValueText.Text = $"{status.Sensitivity:0.0}x";
+            SensitivityValueText.Text = FormattableString.Invariant($"{status.Sensitivity:0.0}x");
 
             if (!DeadzoneSlider.IsMouseCaptureWithin)
             {
                 DeadzoneSlider.Value = Math.Clamp(status.Deadzone, 0.0f, 3.0f);
             }
-            DeadzoneValueText.Text = $"{status.Deadzone:0.0}°/s";
+            DeadzoneValueText.Text = FormattableString.Invariant($"{status.Deadzone:0.0}°/s");
 
             UpdateAxisBadgeVisual(BadgePitchOffset, BadgePitchOffsetText, status.UsePitchOffset);
             UpdateAxisBadgeVisual(BadgeInvertX, BadgeInvertXText, status.InvertX);
@@ -582,9 +582,9 @@ public partial class MainWindow : Window
             UpdateProfileIndicatorUi(ProfileComboBox.SelectedItem as HandheldProfile, status);
 
             // 4. Live IMU values (deg/s & G) and Live Gyro Crosshair / Horizon Radar Scope
-            PitchValueText.Text = $"{status.GyroPitch:+0.00;-0.00;0.00}°/s";
-            YawValueText.Text = $"{status.GyroYaw:+0.00;-0.00;0.00}°/s";
-            RollValueText.Text = $"{status.GyroRoll:+0.00;-0.00;0.00}°/s";
+            PitchValueText.Text = FormattableString.Invariant($"{status.GyroPitch:+0.00;-0.00;0.00}°/s");
+            YawValueText.Text = FormattableString.Invariant($"{status.GyroYaw:+0.00;-0.00;0.00}°/s");
+            RollValueText.Text = FormattableString.Invariant($"{status.GyroRoll:+0.00;-0.00;0.00}°/s");
 
             if (status.IsStreamingEnabled)
             {
@@ -1255,8 +1255,8 @@ public partial class MainWindow : Window
 
         float sensitivity = (float)Math.Round(SensitivitySlider.Value, 1);
         float deadzone = (float)Math.Round(DeadzoneSlider.Value, 1);
-        SensitivityValueText.Text = $"{sensitivity:0.0}x";
-        DeadzoneValueText.Text = $"{deadzone:0.0}°/s";
+        SensitivityValueText.Text = FormattableString.Invariant($"{sensitivity:0.0}x");
+        DeadzoneValueText.Text = FormattableString.Invariant($"{deadzone:0.0}°/s");
 
         DsuStatusDto status = await _ipcClient.UpdateAxesAsync(
             invertX: InvertXToggle.IsChecked == true,
@@ -1366,8 +1366,8 @@ public partial class MainWindow : Window
         if (profile.InvertY) tags.Add("INV-Y");
         if (profile.InvertZ) tags.Add("INV-Z");
         if (profile.SwapAxes) tags.Add("SWAP X⇄Y");
-        if (Math.Abs(profile.Sensitivity - 1.0f) > 0.04f) tags.Add($"{profile.Sensitivity:0.0}x");
-        if (profile.Deadzone > 0.04f) tags.Add($"DZ {profile.Deadzone:0.0}°/s");
+        if (Math.Abs(profile.Sensitivity - 1.0f) > 0.04f) tags.Add(FormattableString.Invariant($"{profile.Sensitivity:0.0}x"));
+        if (profile.Deadzone > 0.04f) tags.Add(FormattableString.Invariant($"DZ {profile.Deadzone:0.0}°/s"));
 
         return tags.Count > 0
             ? string.Join("  •  ", tags)

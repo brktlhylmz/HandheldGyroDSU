@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
@@ -134,7 +135,7 @@ public sealed class LocalizationService : INotifyPropertyChanged
     {
         try
         {
-            return string.Format(Get(key), args);
+            return string.Format(CultureInfo.InvariantCulture, Get(key), args);
         }
         catch
         {
