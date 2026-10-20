@@ -955,6 +955,54 @@
             </ScrollViewer>
 
             <!-- ============================================================== -->
+            <!-- 3B. FLOATING IN-APP SNACKBAR / TOAST OVERLAY                   -->
+            <!-- ============================================================== -->
+            <Border x:Name="AppSnackbarBorder"
+                    Grid.Row="3"
+                    VerticalAlignment="Bottom"
+                    HorizontalAlignment="Stretch"
+                    Margin="16,0,16,10"
+                    Background="#F513161E"
+                    BorderBrush="{DynamicResource BrushBorderInput}"
+                    BorderThickness="1"
+                    CornerRadius="6"
+                    Padding="12,9"
+                    Opacity="0"
+                    Visibility="Collapsed"
+                    IsHitTestVisible="False"
+                    SnapsToDevicePixels="True">
+                <Border.RenderTransform>
+                    <TranslateTransform x:Name="AppSnackbarTranslate" Y="14" />
+                </Border.RenderTransform>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <Border x:Name="AppSnackbarAccentBar"
+                            Grid.Column="0"
+                            Width="3.5"
+                            CornerRadius="2"
+                            Background="{DynamicResource BrushStatusOnline}"
+                            Margin="0,1,10,1" />
+
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                        <TextBlock x:Name="AppSnackbarTitleText"
+                                   Foreground="{DynamicResource BrushTextPrimary}"
+                                   FontSize="11.5"
+                                   FontWeight="Bold" />
+                        <TextBlock x:Name="AppSnackbarMessageText"
+                                   Foreground="{DynamicResource BrushTextSecondary}"
+                                   FontFamily="{DynamicResource FontMonospace}"
+                                   FontSize="10"
+                                   TextWrapping="Wrap"
+                                   Margin="0,1,0,0" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- ============================================================== -->
             <!-- 4. BOTTOM ACTION BAR (CALIBRATE + CONTROLLER HINT)             -->
             <!-- ============================================================== -->
             <Border Grid.Row="4"

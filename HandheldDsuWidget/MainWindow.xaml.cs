@@ -7,6 +7,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using System.Windows.Threading;
 using Microsoft.Win32;
 using HandheldDsuServer.Models;
@@ -20,13 +21,14 @@ public partial class MainWindow : Window
     private readonly DsuIpcClient _ipcClient = new();
     private readonly GameBarWidgetAdapter _gameBarAdapter = new();
     private readonly SystemTrayService _trayService = new();
+    private readonly HudToastService _hudToastService = new();
     private readonly GamepadNavigationService _gamepadService;
     private readonly LocalizationService _loc = LocalizationService.Instance;
     private readonly DispatcherTimer _pollTimer;
     private readonly bool _startedMinimized;
 
     private List<HandheldProfile> _profiles = [];
-    private DispatcherTimer? _profileFeedbackTimer;
+    private DispatcherTimer? _snackbarTimer;
     private bool _suppressUiEvents;
     private bool _isPollBusy;
     private DsuStatusDto? _lastStatus;
@@ -92,7 +94,8 @@ public partial class MainWindow : Window
 
         Closed += (_, _) =>
         {
-            _profileFeedbackTimer?.Stop();
+            _snackbarTimer?.Stop();
+            _hudToastService.Dispose();
             _gamepadService.Dispose();
             _pollTimer.Stop();
             _trayService.Dispose();
@@ -424,6 +427,9 @@ public partial class MainWindow : Window
         {
             DsuStatusDto status = await _ipcClient.SetActiveSlotAsync(slot);
             UpdateUiFromStatus(status);
+            ShowToastNotification(
+                $"DSU PAD {status.ActiveSlot} AKTİF",
+                $"UDP 0.0.0.0:{status.ServerPort} • MAC ..:0{status.ActiveSlot + 1}");
         }
     }
 
@@ -433,9 +439,13 @@ public partial class MainWindow : Window
             return;
 
         bool enableCluster = MultiPortClusterToggle.IsChecked == true;
-        _ipcClient.SetSecondaryClusterActive(enableCluster);
+        bool active = _ipcClient.SetSecondaryClusterActive(enableCluster);
         DsuStatusDto status = await _ipcClient.GetStatusAsync();
         UpdateUiFromStatus(status);
+
+        ShowToastNotification(
+            active ? "5-8 KOL KÜMESİ AÇILDI" : "5-8 KOL KÜMESİ KAPATILDI",
+            active ? $"2. Küme Portu Aktif: UDP 0.0.0.0:{status.SecondaryPort}" : $"Yalnızca Birincil Port Aktif ({status.ServerPort})");
     }
 
     private async void StartupToggle_Click(object sender, RoutedEventArgs e)
@@ -524,7 +534,7 @@ public partial class MainWindow : Window
             || string.Equals(profile.Name, "Standard Landscape", StringComparison.OrdinalIgnoreCase);
     }
 
-    private void UpdateSelectedProfileDetails(HandheldProfile profile)
+    private static string FormatProfileTagSummary(HandheldProfile profile)
     {
         var tags = new List<string>();
         if (profile.UsePitchOffset) tags.Add("0° PITCH");
@@ -533,27 +543,68 @@ public partial class MainWindow : Window
         if (profile.InvertZ) tags.Add("INV-Z");
         if (profile.SwapAxes) tags.Add("SWAP X⇄Y");
 
-        ProfileDescriptionText.Text = tags.Count > 0
+        return tags.Count > 0
             ? string.Join("  •  ", tags)
             : "RAW (NO OFFSET / NO INVERSION)";
+    }
 
+    private void UpdateSelectedProfileDetails(HandheldProfile profile)
+    {
+        ProfileDescriptionText.Text = FormatProfileTagSummary(profile);
         DeleteProfileButton.IsEnabled = !IsSystemPreset(profile);
     }
 
-    private void ShowProfileStatus(string message, bool isError = false)
+    public void ShowToastNotification(string title, string subtitle, bool isError = false, bool showHudOverlay = false)
     {
-        ProfileStatusFeedbackText.Text = message;
-        ProfileStatusFeedbackText.Foreground = isError ? StatusOfflineBrush : StatusOnlineBrush;
-        ProfileStatusFeedbackText.Visibility = Visibility.Visible;
+        Brush accent = isError ? StatusOfflineBrush : StatusOnlineBrush;
+        AppSnackbarAccentBar.Background = accent;
+        AppSnackbarBorder.BorderBrush = accent;
+        AppSnackbarTitleText.Text = title;
+        AppSnackbarMessageText.Text = subtitle;
+        AppSnackbarBorder.Visibility = Visibility.Visible;
 
-        _profileFeedbackTimer?.Stop();
-        _profileFeedbackTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(3.5) };
-        _profileFeedbackTimer.Tick += (_, _) =>
+        var fadeIn = new DoubleAnimation(0.0, 1.0, TimeSpan.FromMilliseconds(180))
         {
-            _profileFeedbackTimer?.Stop();
-            ProfileStatusFeedbackText.Visibility = Visibility.Collapsed;
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
         };
-        _profileFeedbackTimer.Start();
+        var slideUp = new DoubleAnimation(14.0, 0.0, TimeSpan.FromMilliseconds(200))
+        {
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+        };
+
+        AppSnackbarBorder.BeginAnimation(OpacityProperty, fadeIn);
+        AppSnackbarTranslate.BeginAnimation(TranslateTransform.YProperty, slideUp);
+
+        _snackbarTimer?.Stop();
+        _snackbarTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2.8) };
+        _snackbarTimer.Tick += (_, _) =>
+        {
+            _snackbarTimer?.Stop();
+            var fadeOut = new DoubleAnimation(0.0, TimeSpan.FromMilliseconds(200))
+            {
+                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseIn }
+            };
+            fadeOut.Completed += (_, _) =>
+            {
+                AppSnackbarBorder.Visibility = Visibility.Collapsed;
+            };
+            AppSnackbarBorder.BeginAnimation(OpacityProperty, fadeOut);
+        };
+        _snackbarTimer.Start();
+
+        if (!IsVisible || WindowState == WindowState.Minimized || showHudOverlay)
+        {
+            _hudToastService.ShowHudToast(title, subtitle, isError);
+        }
+    }
+
+    private void ShowProfileStatus(string message, bool isError = false, string? subtitle = null)
+    {
+        string detail = subtitle ?? (ProfileComboBox.SelectedItem is HandheldProfile p
+            ? FormatProfileTagSummary(p)
+            : $"UDP 0.0.0.0:{_lastStatus?.ServerPort ?? 26760}");
+
+        ShowToastNotification(message, detail, isError);
     }
 
     private async Task RefreshProfilesAsync(string? selectProfileName = null)
