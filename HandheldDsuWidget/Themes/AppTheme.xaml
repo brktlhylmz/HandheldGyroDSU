@@ -416,38 +416,41 @@
             <Setter.Value>
                 <ControlTemplate TargetType="RadioButton">
                     <Grid Background="Transparent" Height="56">
-                        <!-- Left Active Pill Bar -->
-                        <Border x:Name="LeftAccentBar"
-                                Width="3"
-                                Height="24"
-                                CornerRadius="0,2,2,0"
-                                HorizontalAlignment="Left"
-                                VerticalAlignment="Center"
-                                Background="Transparent" />
+                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Stretch">
+                            <Grid Height="28">
+                                <!-- Left Active Pill Bar (perfectly centered with IconPill) -->
+                                <Border x:Name="LeftAccentBar"
+                                        Width="3"
+                                        Height="18"
+                                        CornerRadius="0,2,2,0"
+                                        HorizontalAlignment="Left"
+                                        VerticalAlignment="Center"
+                                        Background="Transparent" />
 
-                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                            <!-- Flutter NavigationRail Indicator Pill -->
-                            <Border x:Name="IconPill"
-                                    Width="46"
-                                    Height="28"
-                                    CornerRadius="14"
-                                    Background="Transparent"
-                                    BorderBrush="Transparent"
-                                    BorderThickness="1"
-                                    HorizontalAlignment="Center">
-                                <Path x:Name="RailIcon"
-                                      Data="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}"
-                                      Stroke="{TemplateBinding Foreground}"
-                                      StrokeThickness="1.5"
-                                      StrokeStartLineCap="Round"
-                                      StrokeEndLineCap="Round"
-                                      StrokeLineJoin="Round"
-                                      Width="14"
-                                      Height="14"
-                                      Stretch="Uniform"
-                                      HorizontalAlignment="Center"
-                                      VerticalAlignment="Center" />
-                            </Border>
+                                <!-- Flutter NavigationRail Indicator Pill -->
+                                <Border x:Name="IconPill"
+                                        Width="46"
+                                        Height="28"
+                                        CornerRadius="14"
+                                        Background="Transparent"
+                                        BorderBrush="Transparent"
+                                        BorderThickness="1"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center">
+                                    <Path x:Name="RailIcon"
+                                          Data="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}"
+                                          Stroke="{TemplateBinding Foreground}"
+                                          StrokeThickness="1.5"
+                                          StrokeStartLineCap="Round"
+                                          StrokeEndLineCap="Round"
+                                          StrokeLineJoin="Round"
+                                          Width="14"
+                                          Height="14"
+                                          Stretch="Uniform"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Center" />
+                                </Border>
+                            </Grid>
 
                             <ContentPresenter HorizontalAlignment="Center"
                                               Margin="0,4,0,0" />
