@@ -11,7 +11,7 @@
   "CloseTooltip": "Uygulamayı Kapat",
   "TrayTooltip": "Handheld Gyro DSU (Göster/Gizle için Tıkla)",
 
-  "SectionConnection": "EMÜLATÖR TELEMETRİ BAĞLANTISI",
+  "SectionConnection": "EMÜLATÖR & CANLI IMU TELEMETRİ",
   "StatusConnected": "Emülatör Bağlı (Aktif Yayın)",
   "StatusWaiting": "DSU Motoru Hazır • Emülatör Bekleniyor",
   "StatusReadyBadge": "HAZIR",
