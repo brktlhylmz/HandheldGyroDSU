@@ -484,16 +484,10 @@ public partial class MainWindow : Window
             return;
 
         bool enableCluster = MultiPortClusterToggle.IsChecked == true;
-        bool active = _ipcClient.SetSecondaryClusterActive(enableCluster);
+        _ = _ipcClient.SetSecondaryClusterActive(enableCluster);
         DsuStatusDto status = await _ipcClient.GetStatusAsync();
         UpdateUiFromStatus(status);
         RenderControllersAndRulesUi();
-
-        ShowToastNotification(
-            active ? _loc["ToastClusterEnabledTitle"] : _loc["ToastClusterDisabledTitle"],
-            active
-                ? _loc.Format("ToastClusterEnabledSubFormat", status.SecondaryPort)
-                : _loc.Format("ToastClusterDisabledSubFormat", status.ServerPort));
     }
 
     private async void ApplySecondaryPortButton_Click(object sender, RoutedEventArgs e)
@@ -532,9 +526,6 @@ public partial class MainWindow : Window
             {
                 SecondaryPortStatusSubtitle.Text = _loc.Format("SecondaryPortSavedFormat", newSecPort);
                 SecondaryPortStatusSubtitle.Foreground = StatusOnlineBrush;
-                ShowToastNotification(
-                    _loc["ToastClusterEnabledTitle"],
-                    _loc.Format("SecondaryPortSavedFormat", newSecPort));
             }
             else
             {
