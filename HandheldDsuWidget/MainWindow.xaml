@@ -673,6 +673,144 @@
                                               VerticalAlignment="Center"
                                               Click="AxisConfigToggle_Click" />
                                 </Grid>
+
+                                <Border Style="{DynamicResource AppRowDividerStyle}" />
+
+                                <!-- Row 6: Gyro Sensitivity (Gain Multiplier) -->
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <Border x:Name="BadgeSensitivity" Grid.Row="0" Grid.Column="0" Style="{DynamicResource AppAxisBadgeStyle}">
+                                        <TextBlock x:Name="BadgeSensitivityText"
+                                                   Text="×"
+                                                   FontFamily="{DynamicResource FontMonospace}"
+                                                   Foreground="{DynamicResource BrushTextSecondary}"
+                                                   FontSize="13"
+                                                   FontWeight="Bold"
+                                                   HorizontalAlignment="Center"
+                                                   VerticalAlignment="Center" />
+                                    </Border>
+
+                                    <StackPanel Grid.Row="0" Grid.Column="1" VerticalAlignment="Center" Margin="0,0,12,0">
+                                        <TextBlock Text="{Binding [SensitivityTitle], Source={x:Static services:LocalizationService.Instance}}"
+                                                   Foreground="{DynamicResource BrushTextPrimary}"
+                                                   FontSize="11.5"
+                                                   FontWeight="SemiBold" />
+                                        <TextBlock Text="{Binding [SensitivityDesc], Source={x:Static services:LocalizationService.Instance}}"
+                                                   Foreground="{DynamicResource BrushTextSecondary}"
+                                                   FontSize="10"
+                                                   TextWrapping="Wrap"
+                                                   Margin="0,1,0,0" />
+                                    </StackPanel>
+
+                                    <Border Grid.Row="0"
+                                            Grid.Column="2"
+                                            Background="{DynamicResource BrushBgSubPanel}"
+                                            BorderBrush="{DynamicResource BrushBorderInput}"
+                                            BorderThickness="1"
+                                            CornerRadius="4"
+                                            Padding="7,2"
+                                            VerticalAlignment="Center">
+                                        <TextBlock x:Name="SensitivityValueText"
+                                                   Text="1.0x"
+                                                   FontFamily="{DynamicResource FontMonospace}"
+                                                   Foreground="{DynamicResource BrushAccentPrimary}"
+                                                   FontSize="11"
+                                                   FontWeight="Bold" />
+                                    </Border>
+
+                                    <Slider x:Name="SensitivitySlider"
+                                            Grid.Row="1"
+                                            Grid.Column="1"
+                                            Grid.ColumnSpan="2"
+                                            Style="{DynamicResource AppSliderStyle}"
+                                            Minimum="0.2"
+                                            Maximum="3.0"
+                                            Value="1.0"
+                                            SmallChange="0.1"
+                                            LargeChange="0.2"
+                                            TickFrequency="0.1"
+                                            IsSnapToTickEnabled="True"
+                                            Margin="0,6,0,0"
+                                            ValueChanged="AxisSlider_ValueChanged" />
+                                </Grid>
+
+                                <Border Style="{DynamicResource AppRowDividerStyle}" />
+
+                                <!-- Row 7: Jitter Deadzone Filter -->
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <Border x:Name="BadgeDeadzone" Grid.Row="0" Grid.Column="0" Style="{DynamicResource AppAxisBadgeStyle}">
+                                        <TextBlock x:Name="BadgeDeadzoneText"
+                                                   Text="DZ"
+                                                   FontFamily="{DynamicResource FontMonospace}"
+                                                   Foreground="{DynamicResource BrushTextSecondary}"
+                                                   FontSize="10.5"
+                                                   FontWeight="Bold"
+                                                   HorizontalAlignment="Center"
+                                                   VerticalAlignment="Center" />
+                                    </Border>
+
+                                    <StackPanel Grid.Row="0" Grid.Column="1" VerticalAlignment="Center" Margin="0,0,12,0">
+                                        <TextBlock Text="{Binding [DeadzoneTitle], Source={x:Static services:LocalizationService.Instance}}"
+                                                   Foreground="{DynamicResource BrushTextPrimary}"
+                                                   FontSize="11.5"
+                                                   FontWeight="SemiBold" />
+                                        <TextBlock Text="{Binding [DeadzoneDesc], Source={x:Static services:LocalizationService.Instance}}"
+                                                   Foreground="{DynamicResource BrushTextSecondary}"
+                                                   FontSize="10"
+                                                   TextWrapping="Wrap"
+                                                   Margin="0,1,0,0" />
+                                    </StackPanel>
+
+                                    <Border Grid.Row="0"
+                                            Grid.Column="2"
+                                            Background="{DynamicResource BrushBgSubPanel}"
+                                            BorderBrush="{DynamicResource BrushBorderInput}"
+                                            BorderThickness="1"
+                                            CornerRadius="4"
+                                            Padding="7,2"
+                                            VerticalAlignment="Center">
+                                        <TextBlock x:Name="DeadzoneValueText"
+                                                   Text="0.0°/s"
+                                                   FontFamily="{DynamicResource FontMonospace}"
+                                                   Foreground="{DynamicResource BrushAccentPrimary}"
+                                                   FontSize="11"
+                                                   FontWeight="Bold" />
+                                    </Border>
+
+                                    <Slider x:Name="DeadzoneSlider"
+                                            Grid.Row="1"
+                                            Grid.Column="1"
+                                            Grid.ColumnSpan="2"
+                                            Style="{DynamicResource AppSliderStyle}"
+                                            Minimum="0.0"
+                                            Maximum="3.0"
+                                            Value="0.0"
+                                            SmallChange="0.1"
+                                            LargeChange="0.2"
+                                            TickFrequency="0.1"
+                                            IsSnapToTickEnabled="True"
+                                            Margin="0,6,0,0"
+                                            ValueChanged="AxisSlider_ValueChanged" />
+                                </Grid>
                             </StackPanel>
                         </Border>
                         </StackPanel>

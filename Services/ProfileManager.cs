@@ -100,6 +100,11 @@ public static class ProfileManager
                         {
                             profile.Name = Path.GetFileNameWithoutExtension(file);
                         }
+                        if (profile.Sensitivity <= 0.05f)
+                        {
+                            profile.Sensitivity = 1.0f;
+                        }
+                        profile.Deadzone = Math.Clamp(profile.Deadzone, 0f, 5f);
                         list.Add(profile);
                     }
                 }
@@ -171,9 +176,17 @@ public static class ProfileManager
         try
         {
             HandheldProfile? profile = JsonSerializer.Deserialize<HandheldProfile>(jsonContent, JsonOptions);
-            if (profile is not null && string.IsNullOrWhiteSpace(profile.Name))
+            if (profile is not null)
             {
-                profile.Name = "Imported Profile";
+                if (string.IsNullOrWhiteSpace(profile.Name))
+                {
+                    profile.Name = "Imported Profile";
+                }
+                if (profile.Sensitivity <= 0.05f)
+                {
+                    profile.Sensitivity = 1.0f;
+                }
+                profile.Deadzone = Math.Clamp(profile.Deadzone, 0f, 5f);
             }
             return profile;
         }

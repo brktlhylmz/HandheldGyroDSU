@@ -42,6 +42,10 @@
   "InvertZDesc": "Sağa / sola dönüş yönünü tersine çevirir",
   "SwapAxesTitle": "X ↔ Y Eksenlerini Takas Et",
   "SwapAxesDesc": "Dikey sensör yerleşimli cihazlar için Pitch ve Roll eksenlerini değiştirir",
+  "SensitivityTitle": "Jiroskop Hassasiyeti (Çarpan)",
+  "SensitivityDesc": "Daha hızlı dönüş veya daha hassas nişan için hareket hızı çarpanı (0.2x – 3.0x)",
+  "DeadzoneTitle": "Titreme Filtresi (Deadzone / Ölü Bölge)",
+  "DeadzoneDesc": "Sabit tutarken fan titreşimini ve mikro el titremesini süzer (0.0°/s – 3.0°/s)",
 
   "SectionTelemetry": "CANLI IMU TELEMETRİ (DEG/S & G)",
   "AxisPitchLabel": "PITCH (X)",

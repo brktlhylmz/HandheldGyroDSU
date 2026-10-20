@@ -42,6 +42,10 @@
   "InvertZDesc": "Reverse left / right turning direction",
   "SwapAxesTitle": "Swap X ↔ Y Axes",
   "SwapAxesDesc": "Exchange Pitch and Roll for portrait-mounted sensors",
+  "SensitivityTitle": "Gyro Sensitivity (Gain)",
+  "SensitivityDesc": "Multiplies motion speed for faster or finer aiming (0.2x – 3.0x)",
+  "DeadzoneTitle": "Jitter Deadzone Filter",
+  "DeadzoneDesc": "Suppresses fan vibration and micro hand tremor when holding steady (0.0°/s – 3.0°/s)",
 
   "SectionTelemetry": "LIVE IMU TELEMETRY (DEG/S & G)",
   "AxisPitchLabel": "PITCH (X)",

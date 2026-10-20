@@ -143,32 +143,64 @@ public sealed class GamepadNavigationService : IDisposable
             }
         }
 
-        // 5. Up / Down Navigation (D-Pad or Left Stick) with Auto-Repeat
-        int navDir = 0;
-        if ((buttons & (XINPUT_GAMEPAD_DPAD_UP | XINPUT_GAMEPAD_DPAD_LEFT)) != 0 || pad.sThumbLY > ThumbDeadzone)
+        // 5. Up / Down Navigation or Horizontal Slider Adjustment (D-Pad or Left Stick) with Auto-Repeat
+        bool isSliderFocused = Keyboard.FocusedElement is Slider;
+        int horizDir = 0;
+        if (isSliderFocused)
         {
-            navDir = -1;
+            if ((buttons & XINPUT_GAMEPAD_DPAD_LEFT) != 0 || pad.sThumbLX < -ThumbDeadzone)
+            {
+                horizDir = -1;
+            }
+            else if ((buttons & XINPUT_GAMEPAD_DPAD_RIGHT) != 0 || pad.sThumbLX > ThumbDeadzone)
+            {
+                horizDir = 1;
+            }
         }
-        else if ((buttons & (XINPUT_GAMEPAD_DPAD_DOWN | XINPUT_GAMEPAD_DPAD_RIGHT)) != 0 || pad.sThumbLY < -ThumbDeadzone)
+
+        int navDir = 0;
+        if (horizDir == 0)
         {
-            navDir = 1;
+            if ((buttons & (XINPUT_GAMEPAD_DPAD_UP | (!isSliderFocused ? XINPUT_GAMEPAD_DPAD_LEFT : (ushort)0))) != 0 || pad.sThumbLY > ThumbDeadzone)
+            {
+                navDir = -1;
+            }
+            else if ((buttons & (XINPUT_GAMEPAD_DPAD_DOWN | (!isSliderFocused ? XINPUT_GAMEPAD_DPAD_RIGHT : (ushort)0))) != 0 || pad.sThumbLY < -ThumbDeadzone)
+            {
+                navDir = 1;
+            }
         }
 
         DateTime now = DateTime.UtcNow;
-        if (navDir != 0)
+        int activeDir = horizDir != 0 ? (horizDir * 2) : navDir;
+        if (activeDir != 0)
         {
-            if (navDir != _prevNavDir)
+            if (activeDir != _prevNavDir)
             {
-                MoveFocus(navDir);
-                _nextRepeatTimeUtc = now.AddMilliseconds(320);
+                if (horizDir != 0 && Keyboard.FocusedElement is Slider slider)
+                {
+                    AdjustSlider(slider, horizDir);
+                }
+                else
+                {
+                    MoveFocus(navDir);
+                }
+                _nextRepeatTimeUtc = now.AddMilliseconds(280);
             }
             else if (now >= _nextRepeatTimeUtc)
             {
-                MoveFocus(navDir);
-                _nextRepeatTimeUtc = now.AddMilliseconds(130);
+                if (horizDir != 0 && Keyboard.FocusedElement is Slider slider)
+                {
+                    AdjustSlider(slider, horizDir);
+                }
+                else
+                {
+                    MoveFocus(navDir);
+                }
+                _nextRepeatTimeUtc = now.AddMilliseconds(110);
             }
         }
-        _prevNavDir = navDir;
+        _prevNavDir = activeDir;
 
         // 6. A Button Activates / Toggles Focused Control
         if ((justPressed & XINPUT_GAMEPAD_A) != 0)
@@ -258,7 +290,21 @@ public sealed class GamepadNavigationService : IDisposable
             case ComboBox comboBox when comboBox.IsEnabled:
                 comboBox.IsDropDownOpen = !comboBox.IsDropDownOpen;
                 break;
+
+            case Slider slider when slider.IsEnabled:
+                slider.Value = slider.Minimum > 0.0 ? 1.0 : 0.0;
+                break;
         }
+    }
+
+    private static void AdjustSlider(Slider slider, int direction)
+    {
+        if (!slider.IsEnabled)
+            return;
+
+        double step = slider.SmallChange > 0 ? slider.SmallChange : 0.1;
+        double next = Math.Round(slider.Value + (direction * step), 1);
+        slider.Value = Math.Clamp(next, slider.Minimum, slider.Maximum);
     }
 
     private static bool TryGetActiveGamepadState(out XINPUT_GAMEPAD activePad)

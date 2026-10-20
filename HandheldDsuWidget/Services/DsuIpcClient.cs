@@ -78,6 +78,12 @@ public sealed class DsuStatusDto
     [JsonPropertyName("usePitchOffset")]
     public bool UsePitchOffset { get; set; } = true;
 
+    [JsonPropertyName("sensitivity")]
+    public double Sensitivity { get; set; } = 1.0;
+
+    [JsonPropertyName("deadzone")]
+    public double Deadzone { get; set; } = 0.0;
+
     [JsonPropertyName("isCalibrating")]
     public bool IsCalibrating { get; set; }
 
@@ -216,6 +222,8 @@ public sealed class DsuIpcClient : IDisposable
             InvertZ = profile.InvertZ,
             SwapAxes = profile.SwapAxes,
             UsePitchOffset = _embeddedSensor.UsePitchOffset,
+            Sensitivity = Math.Round(_embeddedSensor.Sensitivity, 2),
+            Deadzone = Math.Round(_embeddedSensor.Deadzone, 2),
             IsCalibrating = _embeddedSensor.IsCalibrating,
             CalibrationProgress = _embeddedSensor.CalibrationProgressPercent,
             GyroPitch = Math.Round(motion.GyroPitch, 2),
@@ -336,6 +344,8 @@ public sealed class DsuIpcClient : IDisposable
         bool? invertZ = null,
         bool? swapAxes = null,
         bool? usePitchOffset = null,
+        float? sensitivity = null,
+        float? deadzone = null,
         CancellationToken cancellationToken = default)
     {
         if (!_usingEmbeddedEngine)
@@ -346,7 +356,9 @@ public sealed class DsuIpcClient : IDisposable
                 invertY,
                 invertZ,
                 swapAxes,
-                usePitchOffset
+                usePitchOffset,
+                sensitivity,
+                deadzone
             });
             DsuStatusDto? remote = await PostJsonAsync("/axes", payload, cancellationToken);
             if (remote is not null)
@@ -355,7 +367,7 @@ public sealed class DsuIpcClient : IDisposable
             EnsureEmbeddedEngineStarted();
         }
 
-        _embeddedSensor!.UpdateAxisSettings(invertX, invertY, invertZ, swapAxes, usePitchOffset);
+        _embeddedSensor!.UpdateAxisSettings(invertX, invertY, invertZ, swapAxes, usePitchOffset, sensitivity, deadzone);
         _embeddedIpcServer?.SaveCurrentSettings();
         return BuildEmbeddedStatusDto();
     }
@@ -438,7 +450,9 @@ public sealed class DsuIpcClient : IDisposable
                 target.InvertY,
                 target.InvertZ,
                 target.SwapAxes,
-                target.UsePitchOffset);
+                target.UsePitchOffset,
+                target.Sensitivity,
+                target.Deadzone);
             if (_embeddedSettings is not null)
             {
                 _embeddedSettings.ActiveProfileName = target.Name;
