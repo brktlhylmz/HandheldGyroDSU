@@ -43,9 +43,9 @@ public sealed class IpcHttpServer : IDisposable
 
     public string SetLanguage(string? language)
     {
-        string normalized = (language ?? "tr").Trim().ToLowerInvariant();
+        string normalized = (language ?? "en").Trim().ToLowerInvariant();
         if (string.IsNullOrWhiteSpace(normalized))
-            normalized = "tr";
+            normalized = "en";
 
         _settings.Language = normalized;
         SaveCurrentSettings();

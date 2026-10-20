@@ -163,7 +163,7 @@ public sealed class ControllerAndAppWatcherService : IDisposable
                     };
                     _config.Controllers.Add(known);
                 }
-                else if (!string.IsNullOrWhiteSpace(friendlyName) && string.IsNullOrWhiteSpace(known.DisplayName))
+                else if (!string.IsNullOrWhiteSpace(friendlyName))
                 {
                     known.DisplayName = friendlyName;
                 }
@@ -180,11 +180,12 @@ public sealed class ControllerAndAppWatcherService : IDisposable
                         ? known.AssignedProfileName
                         : null;
 
+                    var loc = LocalizationService.Instance;
                     AutomationNotification?.Invoke(
                         this,
                         (
-                            $"🎮 {known.DisplayName} Bağlandı",
-                            $"{playerIndex + 1}. Oyuncu (UDP {known.AssignedUdpPort} • Slot {known.AssignedDsuSlot}) → {known.AssignedProfileName}",
+                            loc.Format("ToastControllerConnectedTitleFormat", known.DisplayName),
+                            loc.Format("ToastControllerConnectedSubFormat", playerIndex + 1, known.AssignedUdpPort, known.AssignedDsuSlot, known.AssignedProfileName),
                             profileToApply,
                             rawSnapshot.Count
                         ));
@@ -261,11 +262,12 @@ public sealed class ControllerAndAppWatcherService : IDisposable
             {
                 _lastDetectedEmulatorProcess = procName;
                 int connectedCount = _config.Controllers.Count(c => c.IsConnected);
+                var loc = LocalizationService.Instance;
                 AutomationNotification?.Invoke(
                     this,
                     (
-                        $"🚀 {matchedRule.DisplayName} Algılandı",
-                        $"Otomatik Profil Aktif: {matchedRule.ProfileName}",
+                        loc.Format("ToastEmulatorDetectedTitleFormat", matchedRule.DisplayName),
+                        loc.Format("ToastEmulatorDetectedSubFormat", matchedRule.ProfileName),
                         matchedRule.ProfileName,
                         connectedCount
                     ));
@@ -288,15 +290,15 @@ public sealed class ControllerAndAppWatcherService : IDisposable
 
         return (vid, pid) switch
         {
-            (0x0B05, _) => "ASUS ROG Ally Dahili Kontrolcü",
-            (0x17EF, _) => "Lenovo Legion Go Kontrolcü",
+            (0x0B05, _) => "ASUS ROG Ally Controller",
+            (0x17EF, _) => "Lenovo Legion Go Controller",
             (0x054C, 0x0CE6) => "Sony DualSense Wireless Controller",
             (0x054C, 0x0DF2) => "Sony DualSense Edge Controller",
             (0x054C, _) => "Sony DualShock 4 Controller",
             (0x057E, 0x2009) => "Nintendo Switch Pro Controller",
             (0x2DC8, _) => "8BitDo Wireless Controller",
             (0x3537, _) => "GameSir Controller",
-            (0x045E, _) => "Xbox / XInput Gamepad (Dahili / Kablosuz)",
+            (0x045E, _) => "Xbox / XInput Controller",
             _ => $"Gamepad ({vid:X4}:{pid:X4})"
         };
     }
