@@ -96,7 +96,9 @@ public sealed class ControllerAndAppWatcherService : IDisposable
                 _config.EmulatorRules.Add(new EmulatorProfileRule
                 {
                     ProcessName = cleanProc,
-                    DisplayName = string.IsNullOrWhiteSpace(displayName) ? $"{cleanProc}.exe" : displayName,
+                    DisplayName = string.IsNullOrWhiteSpace(displayName)
+                        ? AutomationConfig.ResolveFriendlyProcessDisplayName(cleanProc)
+                        : displayName,
                     ProfileName = profileName,
                     IsEnabled = isEnabled
                 });
@@ -104,6 +106,17 @@ public sealed class ControllerAndAppWatcherService : IDisposable
 
             _config.Save();
         }
+    }
+
+    public void RemoveEmulatorRule(string processName)
+    {
+        lock (_syncLock)
+        {
+            _config.EmulatorRules.RemoveAll(r =>
+                string.Equals(r.ProcessName, processName, StringComparison.OrdinalIgnoreCase));
+            _config.Save();
+        }
+        ControllersChanged?.Invoke(this, EventArgs.Empty);
     }
 
     private void OnRawControllerChanged(object? sender, RawGameController e)

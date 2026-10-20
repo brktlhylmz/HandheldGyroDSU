@@ -82,6 +82,8 @@
   "SectionEmulatorAuto": "EMÜLATÖR & OYUN (.EXE) OTO-PROFİL",
   "AutoEmulatorTitle": "Aktif Emülatöre Göre Otomatik Profil Geçişi",
   "AutoEmulatorDesc": "Ön planda çalışan emülatör/oyun algılandığında profilini devreye sokar",
+  "EmulatorEmptyStateDesc": "Henüz eklenmiş bir emülatör veya oyun (.exe) kuralı yok. Aşağıdan işlem adı yazarak ekleyebilirsiniz.",
+  "EmulatorRemoveTooltip": "Bu emülatör/oyun kuralını kaldır",
   "CustomExePlaceholder": "Özel işlem adı (örn. cemu, totk)...",
   "BtnAddRule": "EKLE",
   "ToastEmulatorDetectedTitleFormat": "🚀 {0} Algılandı",
