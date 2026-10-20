@@ -9,20 +9,22 @@
     <Color x:Key="ColorBgCard">#141821</Color>
     <Color x:Key="ColorBgSubPanel">#0E1117</Color>
     <Color x:Key="ColorBgInput">#0B0E14</Color>
+    <Color x:Key="ColorBgSwitchOff">#1C2230</Color>
     <Color x:Key="ColorBgControlHover">#1E2432</Color>
     <Color x:Key="ColorBgControlPressed">#272F40</Color>
     <Color x:Key="ColorBgDisabled">#1A1E28</Color>
 
     <Color x:Key="ColorBorderWindow">#262C3A</Color>
     <Color x:Key="ColorBorderCard">#222836</Color>
-    <Color x:Key="ColorBorderSubtle">#1B202C</Color>
+    <Color x:Key="ColorBorderSubtle">#1E2433</Color>
     <Color x:Key="ColorBorderInput">#2E3648</Color>
+    <Color x:Key="ColorBorderSwitchOff">#343E54</Color>
 
     <!-- Primary Accent Colors -->
     <Color x:Key="ColorAccentPrimary">#FF0032</Color>
-    <Color x:Key="ColorAccentPrimaryHover">#FF244E</Color>
+    <Color x:Key="ColorAccentPrimaryHover">#FF2952</Color>
     <Color x:Key="ColorAccentPrimaryPressed">#CC0028</Color>
-    <Color x:Key="ColorAccentDim">#3D0A16</Color>
+    <Color x:Key="ColorAccentDim">#380B16</Color>
 
     <!-- Status & Telemetry Readout Colors -->
     <Color x:Key="ColorStatusOnline">#00E676</Color>
@@ -43,6 +45,7 @@
     <SolidColorBrush x:Key="BrushBgCard" Color="{StaticResource ColorBgCard}" />
     <SolidColorBrush x:Key="BrushBgSubPanel" Color="{StaticResource ColorBgSubPanel}" />
     <SolidColorBrush x:Key="BrushBgInput" Color="{StaticResource ColorBgInput}" />
+    <SolidColorBrush x:Key="BrushBgSwitchOff" Color="{StaticResource ColorBgSwitchOff}" />
     <SolidColorBrush x:Key="BrushBgControlHover" Color="{StaticResource ColorBgControlHover}" />
     <SolidColorBrush x:Key="BrushBgControlPressed" Color="{StaticResource ColorBgControlPressed}" />
     <SolidColorBrush x:Key="BrushBgDisabled" Color="{StaticResource ColorBgDisabled}" />
@@ -51,6 +54,7 @@
     <SolidColorBrush x:Key="BrushBorderCard" Color="{StaticResource ColorBorderCard}" />
     <SolidColorBrush x:Key="BrushBorderSubtle" Color="{StaticResource ColorBorderSubtle}" />
     <SolidColorBrush x:Key="BrushBorderInput" Color="{StaticResource ColorBorderInput}" />
+    <SolidColorBrush x:Key="BrushBorderSwitchOff" Color="{StaticResource ColorBorderSwitchOff}" />
 
     <SolidColorBrush x:Key="BrushAccentPrimary" Color="{StaticResource ColorAccentPrimary}" />
     <SolidColorBrush x:Key="BrushAccentPrimaryHover" Color="{StaticResource ColorAccentPrimaryHover}" />
@@ -95,10 +99,10 @@
         <Setter Property="Control.Template">
             <Setter.Value>
                 <ControlTemplate>
-                    <Border Margin="-2"
+                    <Border Margin="-3"
                             BorderBrush="{DynamicResource BrushAccentPrimary}"
                             BorderThickness="1.5"
-                            CornerRadius="3"
+                            CornerRadius="5"
                             SnapsToDevicePixels="True" />
                 </ControlTemplate>
             </Setter.Value>
@@ -106,13 +110,13 @@
     </Style>
 
     <!-- ====================================================================== -->
-    <!-- 5. CONTAINERS & SECTION HEADERS                                        -->
+    <!-- 5. CONTAINERS, BADGES, DIVIDERS & SECTION HEADERS                      -->
     <!-- ====================================================================== -->
     <Style x:Key="AppCardStyle" TargetType="Border">
         <Setter Property="Background" Value="{DynamicResource BrushBgCard}" />
         <Setter Property="BorderBrush" Value="{DynamicResource BrushBorderCard}" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="CornerRadius" Value="3" />
+        <Setter Property="CornerRadius" Value="4" />
         <Setter Property="Padding" Value="14,12" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
     </Style>
@@ -121,9 +125,27 @@
         <Setter Property="Background" Value="{DynamicResource BrushBgSubPanel}" />
         <Setter Property="BorderBrush" Value="{DynamicResource BrushBorderSubtle}" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="CornerRadius" Value="2" />
+        <Setter Property="CornerRadius" Value="3" />
         <Setter Property="Padding" Value="10,7" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
+    </Style>
+
+    <Style x:Key="AppAxisBadgeStyle" TargetType="Border">
+        <Setter Property="Width" Value="42" />
+        <Setter Property="Height" Value="28" />
+        <Setter Property="CornerRadius" Value="4" />
+        <Setter Property="Background" Value="{DynamicResource BrushBgSubPanel}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource BrushBorderInput}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="Margin" Value="0,0,12,0" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+    </Style>
+
+    <Style x:Key="AppRowDividerStyle" TargetType="Border">
+        <Setter Property="Height" Value="1" />
+        <Setter Property="Background" Value="{DynamicResource BrushBorderSubtle}" />
+        <Setter Property="Margin" Value="0,9" />
     </Style>
 
     <Style x:Key="AppSectionHeaderStyle" TargetType="TextBlock">
@@ -135,7 +157,7 @@
     </Style>
 
     <!-- ====================================================================== -->
-    <!-- 6. INDUSTRIAL TOGGLE SWITCH                                            -->
+    <!-- 6. MODERN HARDWARE PILL TOGGLE SWITCH                                  -->
     <!-- ====================================================================== -->
     <Style x:Key="AppToggleSwitchStyle" TargetType="CheckBox">
         <Setter Property="Cursor" Value="Hand" />
@@ -143,35 +165,36 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="CheckBox">
-                    <Grid Width="44" Height="22" Background="Transparent">
+                    <Grid Width="46" Height="24" Background="Transparent">
                         <Border x:Name="Track"
-                                CornerRadius="2"
-                                Background="{DynamicResource BrushBgInput}"
-                                BorderBrush="{DynamicResource BrushBorderInput}"
+                                CornerRadius="12"
+                                Background="{DynamicResource BrushBgSwitchOff}"
+                                BorderBrush="{DynamicResource BrushBorderSwitchOff}"
                                 BorderThickness="1"
                                 SnapsToDevicePixels="True" />
-                        <Border x:Name="Thumb"
-                                Width="16"
-                                Height="14"
-                                CornerRadius="1"
-                                Background="{DynamicResource BrushTextSecondary}"
-                                HorizontalAlignment="Left"
-                                Margin="3,0,0,0"
-                                SnapsToDevicePixels="True" />
+                        <Ellipse x:Name="Thumb"
+                                 Width="16"
+                                 Height="16"
+                                 Fill="{DynamicResource BrushTextSecondary}"
+                                 HorizontalAlignment="Left"
+                                 VerticalAlignment="Center"
+                                 Margin="4,0,0,0"
+                                 SnapsToDevicePixels="True" />
                     </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Track" Property="BorderBrush" Value="{DynamicResource BrushTextSecondary}" />
+                            <Setter TargetName="Track" Property="BorderBrush" Value="{DynamicResource BrushTextPrimary}" />
+                            <Setter TargetName="Thumb" Property="Fill" Value="{DynamicResource BrushTextPrimary}" />
                         </Trigger>
                         <Trigger Property="IsKeyboardFocused" Value="True">
                             <Setter TargetName="Track" Property="BorderBrush" Value="{DynamicResource BrushAccentPrimary}" />
                         </Trigger>
                         <Trigger Property="IsChecked" Value="True">
-                            <Setter TargetName="Track" Property="Background" Value="{DynamicResource BrushAccentDim}" />
-                            <Setter TargetName="Track" Property="BorderBrush" Value="{DynamicResource BrushAccentPrimary}" />
-                            <Setter TargetName="Thumb" Property="Background" Value="{DynamicResource BrushAccentPrimary}" />
+                            <Setter TargetName="Track" Property="Background" Value="{DynamicResource BrushAccentPrimary}" />
+                            <Setter TargetName="Track" Property="BorderBrush" Value="{DynamicResource BrushAccentPrimaryHover}" />
+                            <Setter TargetName="Thumb" Property="Fill" Value="{DynamicResource BrushTextOnAccent}" />
                             <Setter TargetName="Thumb" Property="HorizontalAlignment" Value="Right" />
-                            <Setter TargetName="Thumb" Property="Margin" Value="0,0,3,0" />
+                            <Setter TargetName="Thumb" Property="Margin" Value="0,0,4,0" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -180,7 +203,7 @@
     </Style>
 
     <!-- ====================================================================== -->
-    <!-- 7. BUTTON STYLES (PRIMARY, SECONDARY, NAVIGATION TABS, WINDOW CHROME)  -->
+    <!-- 7. BUTTON STYLES (PRIMARY, SECONDARY, GHOST, NAV TABS, WINDOW CHROME)  -->
     <!-- ====================================================================== -->
     <Style x:Key="AppPrimaryButtonStyle" TargetType="Button">
         <Setter Property="FontFamily" Value="{DynamicResource FontPrimary}" />
@@ -199,7 +222,7 @@
                             Background="{TemplateBinding Background}"
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}"
-                            CornerRadius="2"
+                            CornerRadius="3"
                             Padding="14,10"
                             SnapsToDevicePixels="True">
                         <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
@@ -242,7 +265,7 @@
                             Background="{TemplateBinding Background}"
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}"
-                            CornerRadius="2"
+                            CornerRadius="3"
                             Padding="14,6"
                             SnapsToDevicePixels="True">
                         <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
@@ -268,6 +291,43 @@
         </Setter>
     </Style>
 
+    <Style x:Key="AppGhostButtonStyle" TargetType="Button">
+        <Setter Property="FontFamily" Value="{DynamicResource FontPrimary}" />
+        <Setter Property="Background" Value="{DynamicResource BrushBgSubPanel}" />
+        <Setter Property="Foreground" Value="{DynamicResource BrushTextSecondary}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource BrushBorderInput}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="FontWeight" Value="Bold" />
+        <Setter Property="FontSize" Value="9.5" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="FocusVisualStyle" Value="{DynamicResource AppFocusVisualStyle}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="BtnBorder"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="3"
+                            Padding="8,3"
+                            SnapsToDevicePixels="True">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="BtnBorder" Property="BorderBrush" Value="{DynamicResource BrushAccentPrimary}" />
+                            <Setter TargetName="BtnBorder" Property="Background" Value="{DynamicResource BrushBgControlHover}" />
+                            <Setter Property="Foreground" Value="{DynamicResource BrushTextPrimary}" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="BtnBorder" Property="Background" Value="{DynamicResource BrushAccentDim}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <!-- Top Navigation Tab RadioButton Style -->
     <Style x:Key="AppNavTabStyle" TargetType="RadioButton">
         <Setter Property="FontFamily" Value="{DynamicResource FontPrimary}" />
@@ -283,7 +343,7 @@
                     <Grid Background="{TemplateBinding Background}">
                         <Border x:Name="TabHoverBg"
                                 Background="Transparent"
-                                CornerRadius="2"
+                                CornerRadius="3"
                                 Margin="2,2,2,0" />
                         <ContentPresenter HorizontalAlignment="Center"
                                           VerticalAlignment="Center"
@@ -323,7 +383,7 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
-                    <Border x:Name="BtnBg" Background="{TemplateBinding Background}" CornerRadius="2">
+                    <Border x:Name="BtnBg" Background="{TemplateBinding Background}" CornerRadius="3">
                         <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                     </Border>
                     <ControlTemplate.Triggers>
@@ -344,7 +404,7 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
-                    <Border x:Name="BtnBg" Background="{TemplateBinding Background}" CornerRadius="2">
+                    <Border x:Name="BtnBg" Background="{TemplateBinding Background}" CornerRadius="3">
                         <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                     </Border>
                     <ControlTemplate.Triggers>
@@ -383,7 +443,7 @@
                             Background="{TemplateBinding Background}"
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}"
-                            CornerRadius="2"
+                            CornerRadius="3"
                             SnapsToDevicePixels="True">
                         <ScrollViewer x:Name="PART_ContentHost" Margin="6,2" />
                     </Border>
@@ -454,7 +514,7 @@
                                             Background="{DynamicResource BrushBgInput}"
                                             BorderBrush="{DynamicResource BrushBorderInput}"
                                             BorderThickness="1"
-                                            CornerRadius="2">
+                                            CornerRadius="3">
                                         <Grid>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*" />
@@ -502,7 +562,7 @@
                                         Background="{DynamicResource BrushBgCard}"
                                         BorderBrush="{DynamicResource BrushAccentPrimary}"
                                         BorderThickness="1"
-                                        CornerRadius="2"
+                                        CornerRadius="3"
                                         Margin="0,2,0,0">
                                     <ScrollViewer Margin="1" SnapsToDevicePixels="True">
                                         <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Contained" />

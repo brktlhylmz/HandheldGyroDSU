@@ -5,7 +5,7 @@
         xmlns:services="clr-namespace:HandheldDsuWidget.Services"
         Title="Handheld Gyro DSU"
         Width="440"
-        Height="640"
+        Height="650"
         MinWidth="380"
         MinHeight="460"
         WindowStyle="None"
@@ -236,7 +236,7 @@
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
 
-                                <StackPanel VerticalAlignment="Center" Margin="0,0,10,0">
+                                <StackPanel VerticalAlignment="Center" Margin="0,0,12,0">
                                     <TextBlock Text="{Binding [StreamTitle], Source={x:Static services:LocalizationService.Instance}}"
                                                Foreground="{DynamicResource BrushTextPrimary}"
                                                FontWeight="SemiBold"
@@ -257,108 +257,228 @@
                             </Grid>
                         </Border>
 
-                        <!-- Card 3: Sensor Profile & Axis Orientation Switches -->
+                        <!-- Card 3: Axis Orientation & Hold Angle Switches -->
                         <Border Style="{DynamicResource AppCardStyle}" Margin="0,0,0,10">
                             <StackPanel>
-                                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                                    <Border Width="3" Height="12" Background="{DynamicResource BrushAccentPrimary}" Margin="0,0,7,0" />
-                                    <TextBlock Text="{Binding [SectionProfileAxes], Source={x:Static services:LocalizationService.Instance}}"
-                                               Style="{DynamicResource AppSectionHeaderStyle}" />
-                                </StackPanel>
+                                <!-- Header + Reset Button -->
+                                <Grid Margin="0,0,0,10">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
 
-                                <ComboBox x:Name="DeviceProfileComboBox"
-                                          Style="{DynamicResource AppComboBoxStyle}"
-                                          SelectedIndex="0"
-                                          Margin="0,0,0,8"
-                                          SelectionChanged="DeviceProfileComboBox_SelectionChanged">
-                                    <ComboBoxItem Content="{Binding [ProfileRogAlly], Source={x:Static services:LocalizationService.Instance}}" Tag="rog_ally" />
-                                    <ComboBoxItem Content="{Binding [ProfileLegionGo], Source={x:Static services:LocalizationService.Instance}}" Tag="legion_go" />
-                                    <ComboBoxItem Content="{Binding [ProfileMsiClaw], Source={x:Static services:LocalizationService.Instance}}" Tag="msi_claw" />
-                                </ComboBox>
+                                    <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                                        <Border Width="3" Height="12" Background="{DynamicResource BrushAccentPrimary}" Margin="0,0,7,0" />
+                                        <TextBlock Text="{Binding [SectionProfileAxes], Source={x:Static services:LocalizationService.Instance}}"
+                                                   Style="{DynamicResource AppSectionHeaderStyle}" />
+                                    </StackPanel>
 
-                                <!-- 2x2 Axis Inversion Grid -->
-                                <UniformGrid Columns="2" Margin="0,0,0,6">
-                                    <Border Style="{DynamicResource AppSubPanelStyle}" Margin="0,0,3,6">
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="*" />
-                                                <ColumnDefinition Width="Auto" />
-                                            </Grid.ColumnDefinitions>
-                                            <StackPanel VerticalAlignment="Center" Margin="0,0,6,0">
-                                                <TextBlock Text="{Binding [InvertXTitle], Source={x:Static services:LocalizationService.Instance}}"
-                                                           Foreground="{DynamicResource BrushTextPrimary}" FontSize="11" FontWeight="SemiBold" />
-                                                <TextBlock Text="{Binding [InvertXDesc], Source={x:Static services:LocalizationService.Instance}}"
-                                                           Foreground="{DynamicResource BrushTextSecondary}" FontSize="9.5" />
-                                            </StackPanel>
-                                            <CheckBox x:Name="InvertXToggle" Grid.Column="1" Style="{DynamicResource AppToggleSwitchStyle}" VerticalAlignment="Center" Click="AxisConfigToggle_Click" />
-                                        </Grid>
+                                    <Button x:Name="ResetAxesButton"
+                                            Grid.Column="1"
+                                            Style="{DynamicResource AppGhostButtonStyle}"
+                                            Content="{Binding [ResetAxesButton], Source={x:Static services:LocalizationService.Instance}}"
+                                            ToolTip="{Binding [ResetAxesTooltip], Source={x:Static services:LocalizationService.Instance}}"
+                                            Click="ResetAxesButton_Click" />
+                                </Grid>
+
+                                <!-- Row 1: Zero Resting Pitch Angle (0°) -->
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <Border x:Name="BadgePitchOffset" Grid.Column="0" Style="{DynamicResource AppAxisBadgeStyle}">
+                                        <TextBlock x:Name="BadgePitchOffsetText"
+                                                   Text="0°"
+                                                   FontFamily="{DynamicResource FontMonospace}"
+                                                   Foreground="{DynamicResource BrushTextSecondary}"
+                                                   FontSize="11"
+                                                   FontWeight="Bold"
+                                                   HorizontalAlignment="Center"
+                                                   VerticalAlignment="Center" />
                                     </Border>
 
-                                    <Border Style="{DynamicResource AppSubPanelStyle}" Margin="3,0,0,6">
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="*" />
-                                                <ColumnDefinition Width="Auto" />
-                                            </Grid.ColumnDefinitions>
-                                            <StackPanel VerticalAlignment="Center" Margin="0,0,6,0">
-                                                <TextBlock Text="{Binding [InvertYTitle], Source={x:Static services:LocalizationService.Instance}}"
-                                                           Foreground="{DynamicResource BrushTextPrimary}" FontSize="11" FontWeight="SemiBold" />
-                                                <TextBlock Text="{Binding [InvertYDesc], Source={x:Static services:LocalizationService.Instance}}"
-                                                           Foreground="{DynamicResource BrushTextSecondary}" FontSize="9.5" />
-                                            </StackPanel>
-                                            <CheckBox x:Name="InvertYToggle" Grid.Column="1" Style="{DynamicResource AppToggleSwitchStyle}" VerticalAlignment="Center" Click="AxisConfigToggle_Click" />
-                                        </Grid>
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,12,0">
+                                        <TextBlock Text="{Binding [PitchOffsetTitle], Source={x:Static services:LocalizationService.Instance}}"
+                                                   Foreground="{DynamicResource BrushTextPrimary}"
+                                                   FontSize="11.5"
+                                                   FontWeight="SemiBold" />
+                                        <TextBlock Text="{Binding [PitchOffsetDesc], Source={x:Static services:LocalizationService.Instance}}"
+                                                   Foreground="{DynamicResource BrushTextSecondary}"
+                                                   FontSize="10"
+                                                   TextWrapping="Wrap"
+                                                   Margin="0,1,0,0" />
+                                    </StackPanel>
+
+                                    <CheckBox x:Name="PitchOffsetToggle"
+                                              Grid.Column="2"
+                                              Style="{DynamicResource AppToggleSwitchStyle}"
+                                              IsChecked="True"
+                                              VerticalAlignment="Center"
+                                              Click="AxisConfigToggle_Click" />
+                                </Grid>
+
+                                <Border Style="{DynamicResource AppRowDividerStyle}" />
+
+                                <!-- Row 2: Invert Pitch (X) -->
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <Border x:Name="BadgeInvertX" Grid.Column="0" Style="{DynamicResource AppAxisBadgeStyle}">
+                                        <TextBlock x:Name="BadgeInvertXText"
+                                                   Text="X"
+                                                   FontFamily="{DynamicResource FontMonospace}"
+                                                   Foreground="{DynamicResource BrushTextSecondary}"
+                                                   FontSize="11"
+                                                   FontWeight="Bold"
+                                                   HorizontalAlignment="Center"
+                                                   VerticalAlignment="Center" />
                                     </Border>
 
-                                    <Border Style="{DynamicResource AppSubPanelStyle}" Margin="0,0,3,0">
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="*" />
-                                                <ColumnDefinition Width="Auto" />
-                                            </Grid.ColumnDefinitions>
-                                            <StackPanel VerticalAlignment="Center" Margin="0,0,6,0">
-                                                <TextBlock Text="{Binding [InvertZTitle], Source={x:Static services:LocalizationService.Instance}}"
-                                                           Foreground="{DynamicResource BrushTextPrimary}" FontSize="11" FontWeight="SemiBold" />
-                                                <TextBlock Text="{Binding [InvertZDesc], Source={x:Static services:LocalizationService.Instance}}"
-                                                           Foreground="{DynamicResource BrushTextSecondary}" FontSize="9.5" />
-                                            </StackPanel>
-                                            <CheckBox x:Name="InvertZToggle" Grid.Column="1" Style="{DynamicResource AppToggleSwitchStyle}" VerticalAlignment="Center" Click="AxisConfigToggle_Click" />
-                                        </Grid>
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,12,0">
+                                        <TextBlock Text="{Binding [InvertXTitle], Source={x:Static services:LocalizationService.Instance}}"
+                                                   Foreground="{DynamicResource BrushTextPrimary}"
+                                                   FontSize="11.5"
+                                                   FontWeight="SemiBold" />
+                                        <TextBlock Text="{Binding [InvertXDesc], Source={x:Static services:LocalizationService.Instance}}"
+                                                   Foreground="{DynamicResource BrushTextSecondary}"
+                                                   FontSize="10"
+                                                   TextWrapping="Wrap"
+                                                   Margin="0,1,0,0" />
+                                    </StackPanel>
+
+                                    <CheckBox x:Name="InvertXToggle"
+                                              Grid.Column="2"
+                                              Style="{DynamicResource AppToggleSwitchStyle}"
+                                              VerticalAlignment="Center"
+                                              Click="AxisConfigToggle_Click" />
+                                </Grid>
+
+                                <Border Style="{DynamicResource AppRowDividerStyle}" />
+
+                                <!-- Row 3: Invert Roll (Y) -->
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <Border x:Name="BadgeInvertY" Grid.Column="0" Style="{DynamicResource AppAxisBadgeStyle}">
+                                        <TextBlock x:Name="BadgeInvertYText"
+                                                   Text="Y"
+                                                   FontFamily="{DynamicResource FontMonospace}"
+                                                   Foreground="{DynamicResource BrushTextSecondary}"
+                                                   FontSize="11"
+                                                   FontWeight="Bold"
+                                                   HorizontalAlignment="Center"
+                                                   VerticalAlignment="Center" />
                                     </Border>
 
-                                    <Border Style="{DynamicResource AppSubPanelStyle}" Margin="3,0,0,0">
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="*" />
-                                                <ColumnDefinition Width="Auto" />
-                                            </Grid.ColumnDefinitions>
-                                            <StackPanel VerticalAlignment="Center" Margin="0,0,6,0">
-                                                <TextBlock Text="{Binding [SwapAxesTitle], Source={x:Static services:LocalizationService.Instance}}"
-                                                           Foreground="{DynamicResource BrushTextPrimary}" FontSize="11" FontWeight="SemiBold" />
-                                                <TextBlock Text="{Binding [SwapAxesDesc], Source={x:Static services:LocalizationService.Instance}}"
-                                                           Foreground="{DynamicResource BrushTextSecondary}" FontSize="9.5" />
-                                            </StackPanel>
-                                            <CheckBox x:Name="SwapAxesToggle" Grid.Column="1" Style="{DynamicResource AppToggleSwitchStyle}" VerticalAlignment="Center" Click="AxisConfigToggle_Click" />
-                                        </Grid>
-                                    </Border>
-                                </UniformGrid>
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,12,0">
+                                        <TextBlock Text="{Binding [InvertYTitle], Source={x:Static services:LocalizationService.Instance}}"
+                                                   Foreground="{DynamicResource BrushTextPrimary}"
+                                                   FontSize="11.5"
+                                                   FontWeight="SemiBold" />
+                                        <TextBlock Text="{Binding [InvertYDesc], Source={x:Static services:LocalizationService.Instance}}"
+                                                   Foreground="{DynamicResource BrushTextSecondary}"
+                                                   FontSize="10"
+                                                   TextWrapping="Wrap"
+                                                   Margin="0,1,0,0" />
+                                    </StackPanel>
 
-                                <!-- Resting Pitch Angle Compensation Toggle -->
-                                <Border Style="{DynamicResource AppSubPanelStyle}">
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="Auto" />
-                                        </Grid.ColumnDefinitions>
-                                        <StackPanel VerticalAlignment="Center" Margin="0,0,8,0">
-                                            <TextBlock Text="{Binding [PitchOffsetTitle], Source={x:Static services:LocalizationService.Instance}}"
-                                                       Foreground="{DynamicResource BrushTextPrimary}" FontSize="11" FontWeight="SemiBold" />
-                                            <TextBlock Text="{Binding [PitchOffsetDesc], Source={x:Static services:LocalizationService.Instance}}"
-                                                       Foreground="{DynamicResource BrushTextSecondary}" FontSize="9.5" TextWrapping="Wrap" />
-                                        </StackPanel>
-                                        <CheckBox x:Name="PitchOffsetToggle" Grid.Column="1" Style="{DynamicResource AppToggleSwitchStyle}" IsChecked="True" VerticalAlignment="Center" Click="AxisConfigToggle_Click" />
-                                    </Grid>
-                                </Border>
+                                    <CheckBox x:Name="InvertYToggle"
+                                              Grid.Column="2"
+                                              Style="{DynamicResource AppToggleSwitchStyle}"
+                                              VerticalAlignment="Center"
+                                              Click="AxisConfigToggle_Click" />
+                                </Grid>
+
+                                <Border Style="{DynamicResource AppRowDividerStyle}" />
+
+                                <!-- Row 4: Invert Yaw (Z) -->
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <Border x:Name="BadgeInvertZ" Grid.Column="0" Style="{DynamicResource AppAxisBadgeStyle}">
+                                        <TextBlock x:Name="BadgeInvertZText"
+                                                   Text="Z"
+                                                   FontFamily="{DynamicResource FontMonospace}"
+                                                   Foreground="{DynamicResource BrushTextSecondary}"
+                                                   FontSize="11"
+                                                   FontWeight="Bold"
+                                                   HorizontalAlignment="Center"
+                                                   VerticalAlignment="Center" />
+                                    </Border>
+
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,12,0">
+                                        <TextBlock Text="{Binding [InvertZTitle], Source={x:Static services:LocalizationService.Instance}}"
+                                                   Foreground="{DynamicResource BrushTextPrimary}"
+                                                   FontSize="11.5"
+                                                   FontWeight="SemiBold" />
+                                        <TextBlock Text="{Binding [InvertZDesc], Source={x:Static services:LocalizationService.Instance}}"
+                                                   Foreground="{DynamicResource BrushTextSecondary}"
+                                                   FontSize="10"
+                                                   TextWrapping="Wrap"
+                                                   Margin="0,1,0,0" />
+                                    </StackPanel>
+
+                                    <CheckBox x:Name="InvertZToggle"
+                                              Grid.Column="2"
+                                              Style="{DynamicResource AppToggleSwitchStyle}"
+                                              VerticalAlignment="Center"
+                                              Click="AxisConfigToggle_Click" />
+                                </Grid>
+
+                                <Border Style="{DynamicResource AppRowDividerStyle}" />
+
+                                <!-- Row 5: Swap X <-> Y Axes -->
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <Border x:Name="BadgeSwapAxes" Grid.Column="0" Style="{DynamicResource AppAxisBadgeStyle}">
+                                        <TextBlock x:Name="BadgeSwapAxesText"
+                                                   Text="X⇄Y"
+                                                   FontFamily="{DynamicResource FontMonospace}"
+                                                   Foreground="{DynamicResource BrushTextSecondary}"
+                                                   FontSize="10.5"
+                                                   FontWeight="Bold"
+                                                   HorizontalAlignment="Center"
+                                                   VerticalAlignment="Center" />
+                                    </Border>
+
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,12,0">
+                                        <TextBlock Text="{Binding [SwapAxesTitle], Source={x:Static services:LocalizationService.Instance}}"
+                                                   Foreground="{DynamicResource BrushTextPrimary}"
+                                                   FontSize="11.5"
+                                                   FontWeight="SemiBold" />
+                                        <TextBlock Text="{Binding [SwapAxesDesc], Source={x:Static services:LocalizationService.Instance}}"
+                                                   Foreground="{DynamicResource BrushTextSecondary}"
+                                                   FontSize="10"
+                                                   TextWrapping="Wrap"
+                                                   Margin="0,1,0,0" />
+                                    </StackPanel>
+
+                                    <CheckBox x:Name="SwapAxesToggle"
+                                              Grid.Column="2"
+                                              Style="{DynamicResource AppToggleSwitchStyle}"
+                                              VerticalAlignment="Center"
+                                              Click="AxisConfigToggle_Click" />
+                                </Grid>
                             </StackPanel>
                         </Border>
 

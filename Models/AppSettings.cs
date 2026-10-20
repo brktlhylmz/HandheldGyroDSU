@@ -10,14 +10,13 @@ namespace HandheldDsuServer.Models;
 public sealed class AppSettings
 {
     public int UdpPort { get; set; } = 26760;
-    public string ActiveProfileKey { get; set; } = "rog_ally";
     public string Language { get; set; } = "tr";
     public bool IsStreamingEnabled { get; set; } = true;
     public bool StartWithWindows { get; set; }
-    public bool? InvertX { get; set; }
-    public bool? InvertY { get; set; }
-    public bool? InvertZ { get; set; }
-    public bool? SwapAxes { get; set; }
+    public bool InvertX { get; set; } = false;
+    public bool InvertY { get; set; } = true;
+    public bool InvertZ { get; set; } = true;
+    public bool SwapAxes { get; set; } = false;
     public bool UsePitchOffset { get; set; } = true;
     public float RestAccY { get; set; }
     public float RestAccZ { get; set; } = -1.0f;

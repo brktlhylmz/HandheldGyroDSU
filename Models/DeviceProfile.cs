@@ -1,67 +1,46 @@
 namespace HandheldDsuServer.Models;
 
 /// <summary>
-/// Manages axis mapping and orientation inversions for Windows handhelds
-/// according to their internal IMU sensor mounting orientation.
+/// Manages axis mapping and orientation inversions for Windows handheld IMU sensors,
+/// transforming raw WinRT sensor readings into the Cemuhook DSU coordinate space.
 /// </summary>
 public sealed class DeviceProfile
 {
-    public string Name { get; set; }
     public bool InvertX { get; set; }
     public bool InvertY { get; set; }
     public bool InvertZ { get; set; }
     public bool SwapAxes { get; set; }
 
     public DeviceProfile(
-        string name,
         bool invertX = false,
         bool invertY = true,
         bool invertZ = true,
         bool swapAxes = false)
     {
-        Name = name;
         InvertX = invertX;
         InvertY = invertY;
         InvertZ = invertZ;
         SwapAxes = swapAxes;
     }
 
-    /// <summary>
-    /// Default axis profile for Asus ROG Ally / ROG Ally X (Landscape).
-    /// </summary>
-    public static DeviceProfile CreateAsusRogAlly() => new(
-        name: "Asus ROG Ally",
+    public static DeviceProfile CreateDefault() => new(
         invertX: false,
         invertY: true,
         invertZ: true,
         swapAxes: false
     );
 
-    /// <summary>
-    /// Axis profile for Lenovo Legion Go (Portrait-native display sensor layout).
-    /// </summary>
-    public static DeviceProfile CreateLenovoLegionGo() => new(
-        name: "Lenovo Legion Go",
-        invertX: true,
-        invertY: false,
-        invertZ: true,
-        swapAxes: true
-    );
-
-    /// <summary>
-    /// Axis profile for MSI Claw.
-    /// </summary>
-    public static DeviceProfile CreateMsiClaw() => new(
-        name: "MSI Claw",
-        invertX: false,
-        invertY: false,
-        invertZ: true,
-        swapAxes: false
-    );
+    public void ResetToDefaults()
+    {
+        InvertX = false;
+        InvertY = true;
+        InvertZ = true;
+        SwapAxes = false;
+    }
 
     /// <summary>
     /// Transforms raw WinRT sensor readings (Accelerometer in G and Gyrometer in deg/s)
-    /// into the active device profile and Cemuhook DSU coordinate space.
+    /// into the Cemuhook DSU coordinate space.
     /// </summary>
     public MotionData Transform(
         float rawAccX, float rawAccY, float rawAccZ,
