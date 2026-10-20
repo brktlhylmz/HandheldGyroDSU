@@ -57,6 +57,7 @@ public sealed class IpcHttpServer : IDisposable
         GyroBias bias = _sensorService.CurrentBias;
         DeviceProfile profile = _sensorService.ActiveProfile;
         _settings.UdpPort = _udpServer.Port;
+        _settings.ActiveSlot = _udpServer.ActiveSlot;
         _settings.InvertX = profile.InvertX;
         _settings.InvertY = profile.InvertY;
         _settings.InvertZ = profile.InvertZ;
@@ -300,6 +301,17 @@ public sealed class IpcHttpServer : IDisposable
                     string json = BuildStatusJson("Profile deleted");
                     await WriteHttpResponseAsync(stream, 200, "OK", json, cancellationToken);
                 }
+                else if (method == "POST" && path == "/slot")
+                {
+                    int? requestedSlot = ExtractIntParameter(query, body, "slot");
+                    if (requestedSlot.HasValue)
+                    {
+                        _udpServer.SetActiveSlot(requestedSlot.Value);
+                        SaveCurrentSettings();
+                    }
+                    string json = BuildStatusJson($"Active DSU slot set to {_udpServer.ActiveSlot}");
+                    await WriteHttpResponseAsync(stream, 200, "OK", json, cancellationToken);
+                }
                 else
                 {
                     string notFoundJson = JsonSerializer.Serialize(new
@@ -342,6 +354,10 @@ public sealed class IpcHttpServer : IDisposable
             language = _settings.Language,
             activeProfileName = _settings.ActiveProfileName,
             serverPort = _udpServer.Port,
+            activeSlot = (int)_udpServer.ActiveSlot,
+            wasPortFallbackTriggered = _udpServer.WasPortFallbackTriggered,
+            isSecondaryClusterActive = _udpServer.IsSecondaryClusterActive,
+            secondaryPort = _udpServer.SecondaryPort,
             ipcPort = _port,
             isStreamingEnabled = _udpServer.IsStreamingEnabled,
             startWithWindows = StartupManager.IsStartupEnabled(),

@@ -115,6 +115,11 @@ public partial class MainWindow : Window
                 ExportProfileButton,
                 PortTextBox,
                 ApplyPortButton,
+                Slot0Button,
+                Slot1Button,
+                Slot2Button,
+                Slot3Button,
+                MultiPortClusterToggle,
                 StartupToggle,
                 CalibrateButton
             ];
@@ -219,6 +224,18 @@ public partial class MainWindow : Window
         badgeText.Foreground = isActive ? TextOnAccentBrush : TextSecondaryBrush;
     }
 
+    private void UpdateSlotButtonsVisual(int activeSlot)
+    {
+        Button[] buttons = [Slot0Button, Slot1Button, Slot2Button, Slot3Button];
+        for (int i = 0; i < buttons.Length; i++)
+        {
+            bool isSelected = i == activeSlot;
+            buttons[i].Background = isSelected ? AccentDimBrush : BgSubPanelBrush;
+            buttons[i].BorderBrush = isSelected ? AccentPrimaryBrush : BorderInputBrush;
+            buttons[i].Foreground = isSelected ? TextOnAccentBrush : TextSecondaryBrush;
+        }
+    }
+
     private void UpdateUiFromStatus(DsuStatusDto status)
     {
         _lastStatus = status;
@@ -234,7 +251,15 @@ public partial class MainWindow : Window
                 }
             }
 
-            EngineSubtitleText.Text = _loc.Format("HeaderSubtitleFormat", status.ServerPort, status.IpcPort);
+            EngineSubtitleText.Text = _loc.Format("HeaderSubtitleFormat", status.ServerPort, status.IpcPort, status.ActiveSlot);
+            UpdateSlotButtonsVisual(status.ActiveSlot);
+            MultiPortClusterToggle.IsChecked = status.IsSecondaryClusterActive;
+
+            if (status.WasPortFallbackTriggered && PortStatusSubtitle.Text == _loc["PortDefaultDesc"])
+            {
+                PortStatusSubtitle.Text = _loc.Format("PortFallbackWarningFormat", status.ServerPort);
+                PortStatusSubtitle.Foreground = AccentPrimaryBrush;
+            }
 
             if (!string.IsNullOrWhiteSpace(status.ActiveProfileName) && !ProfileComboBox.IsDropDownOpen)
             {
@@ -388,6 +413,29 @@ public partial class MainWindow : Window
         {
             ApplyPortButton.IsEnabled = true;
         }
+    }
+
+    private async void SlotButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_suppressUiEvents || sender is not Button btn)
+            return;
+
+        if (int.TryParse(btn.Tag?.ToString(), out int slot))
+        {
+            DsuStatusDto status = await _ipcClient.SetActiveSlotAsync(slot);
+            UpdateUiFromStatus(status);
+        }
+    }
+
+    private async void MultiPortClusterToggle_Click(object sender, RoutedEventArgs e)
+    {
+        if (_suppressUiEvents)
+            return;
+
+        bool enableCluster = MultiPortClusterToggle.IsChecked == true;
+        _ipcClient.SetSecondaryClusterActive(enableCluster);
+        DsuStatusDto status = await _ipcClient.GetStatusAsync();
+        UpdateUiFromStatus(status);
     }
 
     private async void StartupToggle_Click(object sender, RoutedEventArgs e)

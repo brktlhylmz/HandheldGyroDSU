@@ -68,15 +68,22 @@ public static class DsuProtocol
 
     /// <summary>
     /// Builds a 0x100001 (Controller Info) response packet (32 bytes).
-    /// Slot 0 is reported as connected with Full Gyro support; other slots are reported as disconnected.
+    /// Reports the specified slot as connected if it matches the active slot or is marked connected.
     /// </summary>
-    public static byte[] BuildControllerInfoResponse(uint serverId, byte slot)
+    public static byte[] BuildControllerInfoResponse(
+        uint serverId,
+        byte slot,
+        bool? isSlotConnected = null,
+        byte macSuffixOffset = 0)
     {
         byte[] packet = new byte[32];
         Span<byte> span = packet;
 
+        bool connected = isSlotConnected ?? (slot == 0);
+        byte macSuffix = (byte)Math.Clamp(slot + 1 + macSuffixOffset, 1, 254);
+
         BinaryPrimitives.WriteUInt32LittleEndian(span.Slice(16, 4), MsgTypeControllerInfoRequest);
-        WriteSharedControllerInfo(span.Slice(20, 11), slot, isConnected: slot == 0);
+        WriteSharedControllerInfo(span.Slice(20, 11), slot, isConnected: connected, macSuffix);
         span[31] = 0;
 
         FinalizeServerHeader(span, serverId);
@@ -90,15 +97,19 @@ public static class DsuProtocol
         Span<byte> packet,
         uint serverId,
         uint packetNumber,
-        in MotionData motion)
+        in MotionData motion,
+        byte slot = 0,
+        byte macSuffixOffset = 0)
     {
         packet.Clear();
+
+        byte macSuffix = (byte)Math.Clamp(slot + 1 + macSuffixOffset, 1, 254);
 
         // [16..19] Message Type (0x100002)
         BinaryPrimitives.WriteUInt32LittleEndian(packet.Slice(16, 4), MsgTypeControllerDataRequest);
 
-        // [20..30] Shared Controller Info (11 bytes) - Slot 0 active
-        WriteSharedControllerInfo(packet.Slice(20, 11), slot: 0, isConnected: true);
+        // [20..30] Shared Controller Info (11 bytes)
+        WriteSharedControllerInfo(packet.Slice(20, 11), slot, isConnected: true, macSuffix);
 
         // [31] Is Connected (1 = Connected)
         packet[31] = 1;
@@ -129,7 +140,7 @@ public static class DsuProtocol
         FinalizeServerHeader(packet, serverId);
     }
 
-    private static void WriteSharedControllerInfo(Span<byte> infoSpan, byte slot, bool isConnected)
+    private static void WriteSharedControllerInfo(Span<byte> infoSpan, byte slot, bool isConnected, byte macSuffix)
     {
         infoSpan[0] = slot;
 
@@ -147,6 +158,7 @@ public static class DsuProtocol
         infoSpan[2] = 2; // Device Model: Full Gyro / DS4 (2)
         infoSpan[3] = 1; // Connection Type: USB / Internal (1)
         DefaultMacAddress.CopyTo(infoSpan.Slice(4, 6));
+        infoSpan[9] = macSuffix; // Unique virtual MAC per slot/cluster
         infoSpan[10] = 0x05; // Battery Status: Full (0x05)
     }
 

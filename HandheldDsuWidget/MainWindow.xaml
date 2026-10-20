@@ -768,15 +768,16 @@
                             </StackPanel>
                         </Border>
 
-                        <!-- Settings Card 2: Network & DSU UDP Port -->
+                        <!-- Settings Card 3: Network, Port & Multi-Pad DSU Slot -->
                         <Border Style="{DynamicResource AppCardStyle}" Margin="0,0,0,10">
                             <StackPanel>
-                                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
                                     <Border Width="3" Height="12" Background="{DynamicResource BrushAccentPrimary}" Margin="0,0,7,0" />
                                     <TextBlock Text="{Binding [SectionNetwork], Source={x:Static services:LocalizationService.Instance}}"
                                                Style="{DynamicResource AppSectionHeaderStyle}" />
                                 </StackPanel>
 
+                                <!-- Row 1: Primary DSU UDP Port -->
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*" />
@@ -811,6 +812,103 @@
                                             Content="{Binding [ApplyButton], Source={x:Static services:LocalizationService.Instance}}"
                                             Height="30"
                                             Click="ApplyPortButton_Click" />
+                                </Grid>
+
+                                <Border Style="{DynamicResource AppRowDividerStyle}" Margin="0,9,0,9" />
+
+                                <!-- Row 2: Active DSU Controller Slot Selector (Pad 0..3) -->
+                                <StackPanel>
+                                    <TextBlock Text="{Binding [SlotSelectTitle], Source={x:Static services:LocalizationService.Instance}}"
+                                               Foreground="{DynamicResource BrushTextPrimary}"
+                                               FontWeight="SemiBold"
+                                               FontSize="12" />
+                                    <TextBlock Text="{Binding [SlotSelectDesc], Source={x:Static services:LocalizationService.Instance}}"
+                                               Foreground="{DynamicResource BrushTextSecondary}"
+                                               FontSize="10"
+                                               TextWrapping="Wrap"
+                                               Margin="0,2,0,7" />
+
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="6" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="6" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="6" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <Button x:Name="Slot0Button"
+                                                Grid.Column="0"
+                                                Tag="0"
+                                                Style="{DynamicResource AppGhostButtonStyle}"
+                                                Content="PAD 0"
+                                                FontFamily="{DynamicResource FontMonospace}"
+                                                FontSize="10.5"
+                                                Height="28"
+                                                Click="SlotButton_Click" />
+
+                                        <Button x:Name="Slot1Button"
+                                                Grid.Column="2"
+                                                Tag="1"
+                                                Style="{DynamicResource AppGhostButtonStyle}"
+                                                Content="PAD 1"
+                                                FontFamily="{DynamicResource FontMonospace}"
+                                                FontSize="10.5"
+                                                Height="28"
+                                                Click="SlotButton_Click" />
+
+                                        <Button x:Name="Slot2Button"
+                                                Grid.Column="4"
+                                                Tag="2"
+                                                Style="{DynamicResource AppGhostButtonStyle}"
+                                                Content="PAD 2"
+                                                FontFamily="{DynamicResource FontMonospace}"
+                                                FontSize="10.5"
+                                                Height="28"
+                                                Click="SlotButton_Click" />
+
+                                        <Button x:Name="Slot3Button"
+                                                Grid.Column="6"
+                                                Tag="3"
+                                                Style="{DynamicResource AppGhostButtonStyle}"
+                                                Content="PAD 3"
+                                                FontFamily="{DynamicResource FontMonospace}"
+                                                FontSize="10.5"
+                                                Height="28"
+                                                Click="SlotButton_Click" />
+                                    </Grid>
+                                </StackPanel>
+
+                                <Border Style="{DynamicResource AppRowDividerStyle}" Margin="0,9,0,9" />
+
+                                <!-- Row 3: Secondary Cluster Port Toggle (Pads 5-8 on Port 26762) -->
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,10,0">
+                                        <TextBlock Text="{Binding [ClusterToggleTitle], Source={x:Static services:LocalizationService.Instance}}"
+                                                   Foreground="{DynamicResource BrushTextPrimary}"
+                                                   FontWeight="SemiBold"
+                                                   FontSize="11.5" />
+                                        <TextBlock x:Name="ClusterToggleSubtitle"
+                                                   Text="{Binding [ClusterToggleDesc], Source={x:Static services:LocalizationService.Instance}}"
+                                                   Foreground="{DynamicResource BrushTextSecondary}"
+                                                   FontSize="10"
+                                                   TextWrapping="Wrap"
+                                                   Margin="0,2,0,0" />
+                                    </StackPanel>
+
+                                    <CheckBox x:Name="MultiPortClusterToggle"
+                                              Grid.Column="1"
+                                              Style="{DynamicResource AppToggleSwitchStyle}"
+                                              IsChecked="False"
+                                              VerticalAlignment="Center"
+                                              Click="MultiPortClusterToggle_Click" />
                                 </Grid>
                             </StackPanel>
                         </Border>
