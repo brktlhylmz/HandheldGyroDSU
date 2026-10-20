@@ -117,8 +117,6 @@
   "StartupTitle": "Launch on Windows Startup",
   "StartupEnabledDesc": "Enabled • Starts minimized in the system tray",
   "StartupDisabledDesc": "Disabled • Only runs when launched manually",
-  "StartMinimizedTitle": "Start Minimized in System Tray",
-  "StartMinimizedDesc": "Launches directly in the background tray without opening the main window",
   "CloseToTrayTitle": "Close ('✕') Button Minimizes to Tray",
   "CloseToTrayDesc": "Hides the window to the system tray instead of stopping the DSU server",
   "HudNotificationsTitle": "In-Game HUD Overlay Notifications",

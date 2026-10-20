@@ -19,7 +19,6 @@ public sealed class AppSettings
     public bool AutoSwitchProfiles { get; set; } = true;
     public bool IsStreamingEnabled { get; set; } = true;
     public bool StartWithWindows { get; set; }
-    public bool StartMinimized { get; set; }
     public bool CloseToTray { get; set; }
     public bool HudNotificationsEnabled { get; set; } = true;
     public bool InvertX { get; set; } = false;

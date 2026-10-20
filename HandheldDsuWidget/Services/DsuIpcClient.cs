@@ -48,9 +48,6 @@ public sealed class DsuStatusDto
     [JsonPropertyName("startWithWindows")]
     public bool StartWithWindows { get; set; }
 
-    [JsonPropertyName("startMinimized")]
-    public bool StartMinimized { get; set; }
-
     [JsonPropertyName("closeToTray")]
     public bool CloseToTray { get; set; }
 
@@ -209,7 +206,6 @@ public sealed class DsuIpcClient : IDisposable
             IpcPort = IpcHttpServer.DefaultIpcPort,
             IsStreamingEnabled = _embeddedUdpServer.IsStreamingEnabled,
             StartWithWindows = StartupManager.IsStartupEnabled(),
-            StartMinimized = _embeddedSettings?.StartMinimized ?? false,
             CloseToTray = _embeddedSettings?.CloseToTray ?? false,
             HudNotificationsEnabled = _embeddedSettings?.HudNotificationsEnabled ?? true,
             IsEmulatorConnected = clients.Count > 0,
@@ -535,7 +531,6 @@ public sealed class DsuIpcClient : IDisposable
     }
 
     public async Task<DsuStatusDto> UpdatePreferencesAsync(
-        bool? startMinimized = null,
         bool? closeToTray = null,
         bool? hudNotificationsEnabled = null,
         CancellationToken cancellationToken = default)
@@ -544,7 +539,6 @@ public sealed class DsuIpcClient : IDisposable
         {
             string payload = JsonSerializer.Serialize(new
             {
-                startMinimized,
                 closeToTray,
                 hudNotificationsEnabled
             });
@@ -555,7 +549,7 @@ public sealed class DsuIpcClient : IDisposable
             EnsureEmbeddedEngineStarted();
         }
 
-        _embeddedIpcServer?.SetPreferences(startMinimized, closeToTray, hudNotificationsEnabled);
+        _embeddedIpcServer?.SetPreferences(closeToTray, hudNotificationsEnabled);
         return BuildEmbeddedStatusDto();
     }
 

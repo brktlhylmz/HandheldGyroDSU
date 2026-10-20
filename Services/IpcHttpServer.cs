@@ -52,10 +52,8 @@ public sealed class IpcHttpServer : IDisposable
         return _settings.Language;
     }
 
-    public void SetPreferences(bool? startMinimized = null, bool? closeToTray = null, bool? hudNotificationsEnabled = null)
+    public void SetPreferences(bool? closeToTray = null, bool? hudNotificationsEnabled = null)
     {
-        if (startMinimized.HasValue)
-            _settings.StartMinimized = startMinimized.Value;
         if (closeToTray.HasValue)
             _settings.CloseToTray = closeToTray.Value;
         if (hudNotificationsEnabled.HasValue)
@@ -74,7 +72,6 @@ public sealed class IpcHttpServer : IDisposable
         StartupManager.SetStartup(false);
 
         _settings.ActiveProfileName = "Standard Landscape";
-        _settings.StartMinimized = false;
         _settings.CloseToTray = false;
         _settings.HudNotificationsEnabled = true;
         SaveCurrentSettings();
@@ -368,10 +365,9 @@ public sealed class IpcHttpServer : IDisposable
                 }
                 else if (method == "POST" && path == "/preferences")
                 {
-                    bool? startMin = ExtractBooleanParameter(query, body, "startMinimized");
                     bool? closeTray = ExtractBooleanParameter(query, body, "closeToTray");
                     bool? hudNotif = ExtractBooleanParameter(query, body, "hudNotificationsEnabled");
-                    SetPreferences(startMin, closeTray, hudNotif);
+                    SetPreferences(closeTray, hudNotif);
                     string json = BuildStatusJson("Preferences updated");
                     await WriteHttpResponseAsync(stream, 200, "OK", json, cancellationToken);
                 }
@@ -430,7 +426,6 @@ public sealed class IpcHttpServer : IDisposable
             ipcPort = _port,
             isStreamingEnabled = _udpServer.IsStreamingEnabled,
             startWithWindows = StartupManager.IsStartupEnabled(),
-            startMinimized = _settings.StartMinimized,
             closeToTray = _settings.CloseToTray,
             hudNotificationsEnabled = _settings.HudNotificationsEnabled,
             isEmulatorConnected = clients.Count > 0,
