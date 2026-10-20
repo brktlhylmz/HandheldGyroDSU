@@ -1,8 +1,8 @@
 namespace HandheldDsuServer.Models;
 
 /// <summary>
-/// Manages axis mapping and orientation inversions for different Windows handhelds
-/// (Asus ROG Ally, Lenovo Legion Go, MSI Claw) according to their internal IMU sensor mounting.
+/// Manages axis mapping and orientation inversions for Windows handhelds
+/// according to their internal IMU sensor mounting orientation.
 /// </summary>
 public sealed class DeviceProfile
 {
@@ -27,10 +27,10 @@ public sealed class DeviceProfile
     }
 
     /// <summary>
-    /// Default axis profile for Asus ROG Ally / ROG Ally X (Landscape).
+    /// Default axis profile for standard landscape-mounted IMU sensors (ASUS, Acer, Ayaneo, GPD, etc.).
     /// </summary>
-    public static DeviceProfile CreateAsusRogAlly() => new(
-        name: "Asus ROG Ally",
+    public static DeviceProfile CreateLandscapeStandard() => new(
+        name: "Standard Landscape",
         invertX: false,
         invertY: true,
         invertZ: true,
@@ -38,10 +38,10 @@ public sealed class DeviceProfile
     );
 
     /// <summary>
-    /// Axis profile for Lenovo Legion Go (Portrait-native display sensor layout).
+    /// Axis profile for handhelds with portrait-native display/sensor mounting (e.g., Lenovo Legion Go).
     /// </summary>
-    public static DeviceProfile CreateLenovoLegionGo() => new(
-        name: "Lenovo Legion Go",
+    public static DeviceProfile CreatePortraitNative() => new(
+        name: "Portrait Sensor",
         invertX: true,
         invertY: false,
         invertZ: true,
@@ -49,10 +49,10 @@ public sealed class DeviceProfile
     );
 
     /// <summary>
-    /// Axis profile for MSI Claw.
+    /// Alternative landscape axis profile (e.g., MSI Claw / Inverted Y-axis sensors).
     /// </summary>
-    public static DeviceProfile CreateMsiClaw() => new(
-        name: "MSI Claw",
+    public static DeviceProfile CreateAlternativeLandscape() => new(
+        name: "Alternative Landscape",
         invertX: false,
         invertY: false,
         invertZ: true,

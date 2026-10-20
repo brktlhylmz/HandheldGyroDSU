@@ -162,7 +162,7 @@ public sealed class ConsoleDashboard
 
         WriteColoredLine("======================================================================", ConsoleColor.DarkCyan);
         WriteColoredLine("   HANDHELD CEMUHOOK DSU (GYRO/MOTION) SERVER - .NET 10 (WinRT)       ", ConsoleColor.Cyan);
-        WriteColoredLine("   Asus ROG Ally | Lenovo Legion Go | MSI Claw + Xbox Game Bar IPC    ", ConsoleColor.DarkGray);
+        WriteColoredLine("   Universal Windows Handheld IMU Server + Xbox Game Bar IPC          ", ConsoleColor.DarkGray);
         WriteColoredLine("======================================================================", ConsoleColor.DarkCyan);
 
         // 1. Server and IPC Status
@@ -237,7 +237,7 @@ public sealed class ConsoleDashboard
 
         WriteColoredLine("======================================================================", ConsoleColor.DarkCyan);
         WriteColoredLine("  [C] Calibrate (Hold stationary for 1s)                              ", ConsoleColor.Green);
-        WriteColoredLine("  [P] Cycle Device Profile (ROG Ally -> Legion Go -> MSI Claw)        ", ConsoleColor.Gray);
+        WriteColoredLine("  [P] Cycle Device Profile (Standard -> Portrait -> Alternative)      ", ConsoleColor.Gray);
         WriteColoredLine("  [T] Toggle Stream | [X/Y/Z] Invert Axis | [S] Swap Axes | [Q] Quit  ", ConsoleColor.Gray);
         WriteColoredLine("======================================================================", ConsoleColor.DarkCyan);
         Console.ResetColor();

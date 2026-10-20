@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
         xmlns:services="clr-namespace:HandheldDsuWidget.Services"
-        Title="ROG Motion DSU Engine"
+        Title="Handheld Gyro DSU"
         Width="440"
         Height="640"
         MinWidth="380"
@@ -31,9 +31,9 @@
 
         <Grid>
             <Grid.RowDefinitions>
-                <!-- 0: Custom ROG Titlebar -->
+                <!-- 0: Custom Window Titlebar -->
                 <RowDefinition Height="Auto" />
-                <!-- 1: Cyber Crimson Gradient Accent Line -->
+                <!-- 1: Header Accent Line -->
                 <RowDefinition Height="2" />
                 <!-- 2: Top Navigation Tabs (Dashboard / Settings) -->
                 <RowDefinition Height="Auto" />
@@ -57,9 +57,9 @@
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
 
-                    <!-- ROG Slash Vector Emblem -->
+                    <!-- Brand Emblem Vector Icon -->
                     <Path Grid.Column="0"
-                          Data="{DynamicResource IconRogSlash}"
+                          Data="{DynamicResource IconBrandEmblem}"
                           Fill="{DynamicResource BrushAccentPrimary}"
                           Width="18"
                           Height="16"
@@ -83,7 +83,7 @@
                     <!-- Window Control Buttons (Pin, Minimize to Tray, Maximize/Restore, Close) -->
                     <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
                         <Button x:Name="PinButton"
-                                Style="{DynamicResource RogWindowButtonStyle}"
+                                Style="{DynamicResource AppWindowButtonStyle}"
                                 Foreground="{DynamicResource BrushStatusOnline}"
                                 ToolTip="{Binding [PinTooltip], Source={x:Static services:LocalizationService.Instance}}"
                                 Click="PinButton_Click">
@@ -93,7 +93,7 @@
                         </Button>
 
                         <Button x:Name="MinimizeTrayButton"
-                                Style="{DynamicResource RogWindowButtonStyle}"
+                                Style="{DynamicResource AppWindowButtonStyle}"
                                 ToolTip="{Binding [MinimizeTrayTooltip], Source={x:Static services:LocalizationService.Instance}}"
                                 Click="MinimizeToTrayButton_Click">
                             <Path Data="{DynamicResource IconMinimize}"
@@ -102,7 +102,7 @@
                         </Button>
 
                         <Button x:Name="MaximizeRestoreButton"
-                                Style="{DynamicResource RogWindowButtonStyle}"
+                                Style="{DynamicResource AppWindowButtonStyle}"
                                 Click="MaximizeRestoreButton_Click">
                             <Path Data="{DynamicResource IconMaximize}"
                                   Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
@@ -110,7 +110,7 @@
                         </Button>
 
                         <Button x:Name="CloseWindowButton"
-                                Style="{DynamicResource RogWindowCloseButtonStyle}"
+                                Style="{DynamicResource AppWindowCloseButtonStyle}"
                                 ToolTip="{Binding [CloseTooltip], Source={x:Static services:LocalizationService.Instance}}"
                                 Click="CloseButton_Click">
                             <Path Data="{DynamicResource IconClose}"
@@ -121,8 +121,8 @@
                 </Grid>
             </Border>
 
-            <!-- 1. ROG Accent Stripe -->
-            <Border Grid.Row="1" Background="{DynamicResource BrushRogHeaderStripe}" />
+            <!-- 1. Header Accent Stripe -->
+            <Border Grid.Row="1" Background="{DynamicResource BrushHeaderAccentStripe}" />
 
             <!-- ============================================================== -->
             <!-- 2. NAVIGATION BAR (DASHBOARD / SETTINGS)                        -->
@@ -134,7 +134,7 @@
                     Padding="12,4,12,0">
                 <UniformGrid Columns="2">
                     <RadioButton x:Name="DashboardTabButton"
-                                 Style="{DynamicResource RogNavTabStyle}"
+                                 Style="{DynamicResource AppNavTabStyle}"
                                  IsChecked="True"
                                  Checked="NavTab_Checked">
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
@@ -146,7 +146,7 @@
                     </RadioButton>
 
                     <RadioButton x:Name="SettingsTabButton"
-                                 Style="{DynamicResource RogNavTabStyle}"
+                                 Style="{DynamicResource AppNavTabStyle}"
                                  Checked="NavTab_Checked">
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                             <Path Data="{DynamicResource IconSettings}"
@@ -174,12 +174,12 @@
                     <StackPanel x:Name="DashboardViewPanel" Visibility="Visible">
 
                         <!-- Card 1: Emulator Connection Status -->
-                        <Border Style="{DynamicResource RogCardStyle}" Margin="0,0,0,10">
+                        <Border Style="{DynamicResource AppCardStyle}" Margin="0,0,0,10">
                             <StackPanel>
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                                     <Border Width="3" Height="12" Background="{DynamicResource BrushAccentPrimary}" Margin="0,0,7,0" />
                                     <TextBlock Text="{Binding [SectionConnection], Source={x:Static services:LocalizationService.Instance}}"
-                                               Style="{DynamicResource RogSectionHeaderStyle}" />
+                                               Style="{DynamicResource AppSectionHeaderStyle}" />
                                 </StackPanel>
 
                                 <Grid>
@@ -214,7 +214,7 @@
                                     </StackPanel>
 
                                     <Border Grid.Column="2"
-                                            Style="{DynamicResource RogSubPanelStyle}"
+                                            Style="{DynamicResource AppSubPanelStyle}"
                                             Padding="9,4"
                                             VerticalAlignment="Center">
                                         <TextBlock x:Name="PacketCounterText"
@@ -229,7 +229,7 @@
                         </Border>
 
                         <!-- Card 2: DSU Motion Stream Toggle -->
-                        <Border Style="{DynamicResource RogCardStyle}" Margin="0,0,0,10">
+                        <Border Style="{DynamicResource AppCardStyle}" Margin="0,0,0,10">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
@@ -250,35 +250,35 @@
 
                                 <CheckBox x:Name="GyroStreamToggle"
                                           Grid.Column="1"
-                                          Style="{DynamicResource RogToggleSwitchStyle}"
+                                          Style="{DynamicResource AppToggleSwitchStyle}"
                                           IsChecked="True"
                                           VerticalAlignment="Center"
                                           Click="GyroStreamToggle_Click" />
                             </Grid>
                         </Border>
 
-                        <!-- Card 3: Handheld Profile & Axis Orientation Switches -->
-                        <Border Style="{DynamicResource RogCardStyle}" Margin="0,0,0,10">
+                        <!-- Card 3: Sensor Profile & Axis Orientation Switches -->
+                        <Border Style="{DynamicResource AppCardStyle}" Margin="0,0,0,10">
                             <StackPanel>
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                                     <Border Width="3" Height="12" Background="{DynamicResource BrushAccentPrimary}" Margin="0,0,7,0" />
                                     <TextBlock Text="{Binding [SectionProfileAxes], Source={x:Static services:LocalizationService.Instance}}"
-                                               Style="{DynamicResource RogSectionHeaderStyle}" />
+                                               Style="{DynamicResource AppSectionHeaderStyle}" />
                                 </StackPanel>
 
                                 <ComboBox x:Name="DeviceProfileComboBox"
-                                          Style="{DynamicResource RogComboBoxStyle}"
+                                          Style="{DynamicResource AppComboBoxStyle}"
                                           SelectedIndex="0"
                                           Margin="0,0,0,8"
                                           SelectionChanged="DeviceProfileComboBox_SelectionChanged">
-                                    <ComboBoxItem Content="{Binding [ProfileRogAlly], Source={x:Static services:LocalizationService.Instance}}" Tag="rog_ally" />
-                                    <ComboBoxItem Content="{Binding [ProfileLegionGo], Source={x:Static services:LocalizationService.Instance}}" Tag="legion_go" />
-                                    <ComboBoxItem Content="{Binding [ProfileMsiClaw], Source={x:Static services:LocalizationService.Instance}}" Tag="msi_claw" />
+                                    <ComboBoxItem Content="{Binding [ProfileLandscapeStandard], Source={x:Static services:LocalizationService.Instance}}" Tag="landscape_standard" />
+                                    <ComboBoxItem Content="{Binding [ProfilePortraitSensor], Source={x:Static services:LocalizationService.Instance}}" Tag="portrait_native" />
+                                    <ComboBoxItem Content="{Binding [ProfileAlternativeLandscape], Source={x:Static services:LocalizationService.Instance}}" Tag="landscape_alt" />
                                 </ComboBox>
 
                                 <!-- 2x2 Axis Inversion Grid -->
                                 <UniformGrid Columns="2" Margin="0,0,0,6">
-                                    <Border Style="{DynamicResource RogSubPanelStyle}" Margin="0,0,3,6">
+                                    <Border Style="{DynamicResource AppSubPanelStyle}" Margin="0,0,3,6">
                                         <Grid>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*" />
@@ -290,11 +290,11 @@
                                                 <TextBlock Text="{Binding [InvertXDesc], Source={x:Static services:LocalizationService.Instance}}"
                                                            Foreground="{DynamicResource BrushTextSecondary}" FontSize="9.5" />
                                             </StackPanel>
-                                            <CheckBox x:Name="InvertXToggle" Grid.Column="1" Style="{DynamicResource RogToggleSwitchStyle}" VerticalAlignment="Center" Click="AxisConfigToggle_Click" />
+                                            <CheckBox x:Name="InvertXToggle" Grid.Column="1" Style="{DynamicResource AppToggleSwitchStyle}" VerticalAlignment="Center" Click="AxisConfigToggle_Click" />
                                         </Grid>
                                     </Border>
 
-                                    <Border Style="{DynamicResource RogSubPanelStyle}" Margin="3,0,0,6">
+                                    <Border Style="{DynamicResource AppSubPanelStyle}" Margin="3,0,0,6">
                                         <Grid>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*" />
@@ -306,11 +306,11 @@
                                                 <TextBlock Text="{Binding [InvertYDesc], Source={x:Static services:LocalizationService.Instance}}"
                                                            Foreground="{DynamicResource BrushTextSecondary}" FontSize="9.5" />
                                             </StackPanel>
-                                            <CheckBox x:Name="InvertYToggle" Grid.Column="1" Style="{DynamicResource RogToggleSwitchStyle}" VerticalAlignment="Center" Click="AxisConfigToggle_Click" />
+                                            <CheckBox x:Name="InvertYToggle" Grid.Column="1" Style="{DynamicResource AppToggleSwitchStyle}" VerticalAlignment="Center" Click="AxisConfigToggle_Click" />
                                         </Grid>
                                     </Border>
 
-                                    <Border Style="{DynamicResource RogSubPanelStyle}" Margin="0,0,3,0">
+                                    <Border Style="{DynamicResource AppSubPanelStyle}" Margin="0,0,3,0">
                                         <Grid>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*" />
@@ -322,11 +322,11 @@
                                                 <TextBlock Text="{Binding [InvertZDesc], Source={x:Static services:LocalizationService.Instance}}"
                                                            Foreground="{DynamicResource BrushTextSecondary}" FontSize="9.5" />
                                             </StackPanel>
-                                            <CheckBox x:Name="InvertZToggle" Grid.Column="1" Style="{DynamicResource RogToggleSwitchStyle}" VerticalAlignment="Center" Click="AxisConfigToggle_Click" />
+                                            <CheckBox x:Name="InvertZToggle" Grid.Column="1" Style="{DynamicResource AppToggleSwitchStyle}" VerticalAlignment="Center" Click="AxisConfigToggle_Click" />
                                         </Grid>
                                     </Border>
 
-                                    <Border Style="{DynamicResource RogSubPanelStyle}" Margin="3,0,0,0">
+                                    <Border Style="{DynamicResource AppSubPanelStyle}" Margin="3,0,0,0">
                                         <Grid>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*" />
@@ -338,13 +338,13 @@
                                                 <TextBlock Text="{Binding [SwapAxesDesc], Source={x:Static services:LocalizationService.Instance}}"
                                                            Foreground="{DynamicResource BrushTextSecondary}" FontSize="9.5" />
                                             </StackPanel>
-                                            <CheckBox x:Name="SwapAxesToggle" Grid.Column="1" Style="{DynamicResource RogToggleSwitchStyle}" VerticalAlignment="Center" Click="AxisConfigToggle_Click" />
+                                            <CheckBox x:Name="SwapAxesToggle" Grid.Column="1" Style="{DynamicResource AppToggleSwitchStyle}" VerticalAlignment="Center" Click="AxisConfigToggle_Click" />
                                         </Grid>
                                     </Border>
                                 </UniformGrid>
 
                                 <!-- Resting Pitch Angle Compensation Toggle -->
-                                <Border Style="{DynamicResource RogSubPanelStyle}">
+                                <Border Style="{DynamicResource AppSubPanelStyle}">
                                     <Grid>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
@@ -356,23 +356,23 @@
                                             <TextBlock Text="{Binding [PitchOffsetDesc], Source={x:Static services:LocalizationService.Instance}}"
                                                        Foreground="{DynamicResource BrushTextSecondary}" FontSize="9.5" TextWrapping="Wrap" />
                                         </StackPanel>
-                                        <CheckBox x:Name="PitchOffsetToggle" Grid.Column="1" Style="{DynamicResource RogToggleSwitchStyle}" IsChecked="True" VerticalAlignment="Center" Click="AxisConfigToggle_Click" />
+                                        <CheckBox x:Name="PitchOffsetToggle" Grid.Column="1" Style="{DynamicResource AppToggleSwitchStyle}" IsChecked="True" VerticalAlignment="Center" Click="AxisConfigToggle_Click" />
                                     </Grid>
                                 </Border>
                             </StackPanel>
                         </Border>
 
                         <!-- Card 4: Live IMU Telemetry Readout -->
-                        <Border Style="{DynamicResource RogCardStyle}">
+                        <Border Style="{DynamicResource AppCardStyle}">
                             <StackPanel>
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                                     <Border Width="3" Height="12" Background="{DynamicResource BrushAccentPrimary}" Margin="0,0,7,0" />
                                     <TextBlock Text="{Binding [SectionTelemetry], Source={x:Static services:LocalizationService.Instance}}"
-                                               Style="{DynamicResource RogSectionHeaderStyle}" />
+                                               Style="{DynamicResource AppSectionHeaderStyle}" />
                                 </StackPanel>
 
                                 <UniformGrid Columns="3" Margin="0,0,0,8">
-                                    <Border Style="{DynamicResource RogSubPanelStyle}" Margin="0,0,4,0" Padding="8,8">
+                                    <Border Style="{DynamicResource AppSubPanelStyle}" Margin="0,0,4,0" Padding="8,8">
                                         <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                                             <TextBlock Text="{Binding [AxisPitchLabel], Source={x:Static services:LocalizationService.Instance}}"
                                                        Foreground="{DynamicResource BrushTextSecondary}" FontSize="9.5" FontWeight="Bold" HorizontalAlignment="Center" />
@@ -387,7 +387,7 @@
                                         </StackPanel>
                                     </Border>
 
-                                    <Border Style="{DynamicResource RogSubPanelStyle}" Margin="2,0,2,0" Padding="8,8">
+                                    <Border Style="{DynamicResource AppSubPanelStyle}" Margin="2,0,2,0" Padding="8,8">
                                         <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                                             <TextBlock Text="{Binding [AxisYawLabel], Source={x:Static services:LocalizationService.Instance}}"
                                                        Foreground="{DynamicResource BrushTextSecondary}" FontSize="9.5" FontWeight="Bold" HorizontalAlignment="Center" />
@@ -402,7 +402,7 @@
                                         </StackPanel>
                                     </Border>
 
-                                    <Border Style="{DynamicResource RogSubPanelStyle}" Margin="4,0,0,0" Padding="8,8">
+                                    <Border Style="{DynamicResource AppSubPanelStyle}" Margin="4,0,0,0" Padding="8,8">
                                         <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                                             <TextBlock Text="{Binding [AxisRollLabel], Source={x:Static services:LocalizationService.Instance}}"
                                                        Foreground="{DynamicResource BrushTextSecondary}" FontSize="9.5" FontWeight="Bold" HorizontalAlignment="Center" />
@@ -418,7 +418,7 @@
                                     </Border>
                                 </UniformGrid>
 
-                                <Border Style="{DynamicResource RogSubPanelStyle}" Padding="8,5">
+                                <Border Style="{DynamicResource AppSubPanelStyle}" Padding="8,5">
                                     <TextBlock x:Name="BiasStatusText"
                                                Text="ACC (X/Y/Z): 0.00, 0.00, 0.00 G   |   BIAS: +0.00, +0.00, +0.00"
                                                Foreground="{DynamicResource BrushTextSecondary}"
@@ -437,12 +437,12 @@
                     <StackPanel x:Name="SettingsViewPanel" Visibility="Collapsed">
 
                         <!-- Settings Card 1: Interface Language -->
-                        <Border Style="{DynamicResource RogCardStyle}" Margin="0,0,0,10">
+                        <Border Style="{DynamicResource AppCardStyle}" Margin="0,0,0,10">
                             <StackPanel>
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                                     <Border Width="3" Height="12" Background="{DynamicResource BrushAccentPrimary}" Margin="0,0,7,0" />
                                     <TextBlock Text="{Binding [SectionLanguage], Source={x:Static services:LocalizationService.Instance}}"
-                                               Style="{DynamicResource RogSectionHeaderStyle}" />
+                                               Style="{DynamicResource AppSectionHeaderStyle}" />
                                 </StackPanel>
 
                                 <Grid>
@@ -464,7 +464,7 @@
 
                                     <ComboBox x:Name="LanguageComboBox"
                                               Grid.Column="1"
-                                              Style="{DynamicResource RogComboBoxStyle}"
+                                              Style="{DynamicResource AppComboBoxStyle}"
                                               DisplayMemberPath="DisplayName"
                                               SelectedValuePath="Code"
                                               SelectionChanged="LanguageComboBox_SelectionChanged" />
@@ -473,12 +473,12 @@
                         </Border>
 
                         <!-- Settings Card 2: Network & DSU UDP Port -->
-                        <Border Style="{DynamicResource RogCardStyle}" Margin="0,0,0,10">
+                        <Border Style="{DynamicResource AppCardStyle}" Margin="0,0,0,10">
                             <StackPanel>
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                                     <Border Width="3" Height="12" Background="{DynamicResource BrushAccentPrimary}" Margin="0,0,7,0" />
                                     <TextBlock Text="{Binding [SectionNetwork], Source={x:Static services:LocalizationService.Instance}}"
-                                               Style="{DynamicResource RogSectionHeaderStyle}" />
+                                               Style="{DynamicResource AppSectionHeaderStyle}" />
                                 </StackPanel>
 
                                 <Grid>
@@ -504,14 +504,14 @@
 
                                     <TextBox x:Name="PortTextBox"
                                              Grid.Column="1"
-                                             Style="{DynamicResource RogTextBoxStyle}"
+                                             Style="{DynamicResource AppTextBoxStyle}"
                                              Text="26760"
                                              Height="30"
                                              KeyDown="PortTextBox_KeyDown" />
 
                                     <Button x:Name="ApplyPortButton"
                                             Grid.Column="3"
-                                            Style="{DynamicResource RogSecondaryButtonStyle}"
+                                            Style="{DynamicResource AppSecondaryButtonStyle}"
                                             Content="{Binding [ApplyButton], Source={x:Static services:LocalizationService.Instance}}"
                                             Height="30"
                                             Click="ApplyPortButton_Click" />
@@ -520,12 +520,12 @@
                         </Border>
 
                         <!-- Settings Card 3: System Integration (Start with Windows) -->
-                        <Border Style="{DynamicResource RogCardStyle}">
+                        <Border Style="{DynamicResource AppCardStyle}">
                             <StackPanel>
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                                     <Border Width="3" Height="12" Background="{DynamicResource BrushAccentPrimary}" Margin="0,0,7,0" />
                                     <TextBlock Text="{Binding [SectionSystem], Source={x:Static services:LocalizationService.Instance}}"
-                                               Style="{DynamicResource RogSectionHeaderStyle}" />
+                                               Style="{DynamicResource AppSectionHeaderStyle}" />
                                 </StackPanel>
 
                                 <Grid>
@@ -549,7 +549,7 @@
 
                                     <CheckBox x:Name="StartupToggle"
                                               Grid.Column="1"
-                                              Style="{DynamicResource RogToggleSwitchStyle}"
+                                              Style="{DynamicResource AppToggleSwitchStyle}"
                                               IsChecked="False"
                                               VerticalAlignment="Center"
                                               Click="StartupToggle_Click" />
@@ -570,7 +570,7 @@
                     Padding="14,10,14,10">
                 <StackPanel>
                     <Button x:Name="CalibrateButton"
-                            Style="{DynamicResource RogPrimaryButtonStyle}"
+                            Style="{DynamicResource AppPrimaryButtonStyle}"
                             ToolTip="{Binding [CalibrateTooltip], Source={x:Static services:LocalizationService.Instance}}"
                             Click="CalibrateButton_Click">
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">

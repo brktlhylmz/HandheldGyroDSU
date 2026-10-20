@@ -204,9 +204,11 @@ public partial class MainWindow : Window
 
             // 3. Active device profile selection
             int targetIndex = 0;
-            if (status.ActiveProfile.Contains("Legion", StringComparison.OrdinalIgnoreCase))
+            if (status.ActiveProfile.Contains("Portrait", StringComparison.OrdinalIgnoreCase) ||
+                status.ActiveProfile.Contains("Legion", StringComparison.OrdinalIgnoreCase))
                 targetIndex = 1;
-            else if (status.ActiveProfile.Contains("Claw", StringComparison.OrdinalIgnoreCase))
+            else if (status.ActiveProfile.Contains("Alternative", StringComparison.OrdinalIgnoreCase) ||
+                     status.ActiveProfile.Contains("Claw", StringComparison.OrdinalIgnoreCase))
                 targetIndex = 2;
 
             if (DeviceProfileComboBox.SelectedIndex != targetIndex && !DeviceProfileComboBox.IsDropDownOpen)
