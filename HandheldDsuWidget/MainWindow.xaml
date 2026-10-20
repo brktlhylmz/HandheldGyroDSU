@@ -166,7 +166,7 @@
                           Style="{DynamicResource AppOverlayScrollViewerStyle}"
                           VerticalScrollBarVisibility="Auto"
                           HorizontalScrollBarVisibility="Disabled"
-                          Padding="14,12,14,12"
+                          Padding="14,12,18,12"
                           PanningMode="VerticalOnly">
                 <Grid>
                     <!-- ====================================================== -->
