@@ -36,6 +36,9 @@ public partial class MainWindow : Window
     private bool _suppressUiEvents;
     private bool _isPollBusy;
     private DsuStatusDto? _lastStatus;
+    private double _radarX;
+    private double _radarY;
+    private double _radarRoll;
 
     private Brush StatusOnlineBrush => (Brush)FindResource("BrushStatusOnline");
     private Brush StatusOnlineDimBrush => (Brush)FindResource("BrushStatusOnlineDim");
@@ -83,7 +86,7 @@ public partial class MainWindow : Window
 
         _pollTimer = new DispatcherTimer
         {
-            Interval = TimeSpan.FromMilliseconds(80)
+            Interval = TimeSpan.FromMilliseconds(45)
         };
         _pollTimer.Tick += PollTimer_Tick;
 
@@ -562,10 +565,32 @@ public partial class MainWindow : Window
 
             UpdateProfileIndicatorUi(ProfileComboBox.SelectedItem as HandheldProfile, status);
 
-            // 4. Live IMU values (deg/s & G)
+            // 4. Live IMU values (deg/s & G) and Live Gyro Crosshair / Horizon Radar Scope
             PitchValueText.Text = $"{status.GyroPitch:+0.00;-0.00;0.00}°/s";
             YawValueText.Text = $"{status.GyroYaw:+0.00;-0.00;0.00}°/s";
             RollValueText.Text = $"{status.GyroRoll:+0.00;-0.00;0.00}°/s";
+
+            if (status.IsStreamingEnabled)
+            {
+                double targetX = Math.Clamp((-status.GyroYaw * 0.45) + (status.GyroRoll * 0.18), -22.0, 22.0);
+                double targetY = Math.Clamp(-status.GyroPitch * 0.45, -20.0, 20.0);
+                _radarX = (_radarX * 0.68) + (targetX * 0.32);
+                _radarY = (_radarY * 0.68) + (targetY * 0.32);
+
+                double accelRollDeg = Math.Atan2(status.AccX, Math.Max(0.15, Math.Abs(status.AccZ))) * (180.0 / Math.PI);
+                double targetRoll = Math.Clamp(accelRollDeg + (status.GyroRoll * 0.22), -45.0, 45.0);
+                _radarRoll = (_radarRoll * 0.72) + (targetRoll * 0.28);
+            }
+            else
+            {
+                _radarX *= 0.6;
+                _radarY *= 0.6;
+                _radarRoll *= 0.6;
+            }
+
+            RadarDotTranslate.X = _radarX;
+            RadarDotTranslate.Y = _radarY;
+            RadarRollRotate.Angle = _radarRoll;
 
             BiasStatusText.Text = _loc.Format(
                 "TelemetryFooterFormat",
