@@ -605,30 +605,29 @@
     </Style>
 
     <!-- ====================================================================== -->
-    <!-- 9. ERGONOMIC OVERLAY SCROLLBAR (EASY MOUSE/TOUCH GRAB, ZERO SQUEEZE)   -->
+    <!-- 9. BALANCED ERGONOMIC OVERLAY SCROLLBAR (SWEET SPOT 8PX)               -->
     <!-- ====================================================================== -->
     <Style x:Key="AppScrollBarThumb" TargetType="Thumb">
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Thumb">
-                    <!-- Full 12px wide hit-test area so mouse/touch grabs effortlessly -->
                     <Grid Background="Transparent">
                         <Border x:Name="ThumbBd"
-                                Width="7"
+                                Width="5"
                                 Background="{DynamicResource BrushTextMuted}"
-                                CornerRadius="3.5"
+                                CornerRadius="2.5"
                                 HorizontalAlignment="Center" />
                     </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="ThumbBd" Property="Width" Value="9" />
-                            <Setter TargetName="ThumbBd" Property="CornerRadius" Value="4.5" />
+                            <Setter TargetName="ThumbBd" Property="Width" Value="7" />
+                            <Setter TargetName="ThumbBd" Property="CornerRadius" Value="3.5" />
                             <Setter TargetName="ThumbBd" Property="Background" Value="{DynamicResource BrushAccentPrimary}" />
                         </Trigger>
                         <Trigger Property="IsDragging" Value="True">
-                            <Setter TargetName="ThumbBd" Property="Width" Value="9" />
-                            <Setter TargetName="ThumbBd" Property="CornerRadius" Value="4.5" />
+                            <Setter TargetName="ThumbBd" Property="Width" Value="7" />
+                            <Setter TargetName="ThumbBd" Property="CornerRadius" Value="3.5" />
                             <Setter TargetName="ThumbBd" Property="Background" Value="{DynamicResource BrushAccentPrimaryHover}" />
                         </Trigger>
                     </ControlTemplate.Triggers>
@@ -638,21 +637,19 @@
     </Style>
 
     <Style TargetType="ScrollBar">
-        <Setter Property="Width" Value="12" />
+        <Setter Property="Width" Value="8" />
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="Cursor" Value="Hand" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ScrollBar">
-                    <Border Width="12"
-                            Background="#14FFFFFF"
-                            CornerRadius="6">
+                    <Grid Width="8" Background="Transparent">
                         <Track x:Name="PART_Track" IsDirectionReversed="True">
                             <Track.Thumb>
                                 <Thumb Style="{StaticResource AppScrollBarThumb}" />
                             </Track.Thumb>
                         </Track>
-                    </Border>
+                    </Grid>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
@@ -674,7 +671,7 @@
                         <ScrollBar x:Name="PART_VerticalScrollBar"
                                    AutomationProperties.AutomationId="VerticalScrollBar"
                                    HorizontalAlignment="Right"
-                                   Margin="0,8,3,8"
+                                   Margin="0,8,2,8"
                                    Maximum="{TemplateBinding ScrollableHeight}"
                                    Minimum="0"
                                    Value="{Binding VerticalOffset, Mode=OneWay, RelativeSource={RelativeSource TemplatedParent}}"
