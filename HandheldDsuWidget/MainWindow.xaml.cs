@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
@@ -31,6 +32,7 @@ public partial class MainWindow : Window
 
     private List<HandheldProfile> _profiles = [];
     private DispatcherTimer? _snackbarTimer;
+    private ContextMenu? _trayContextMenu;
     private bool _suppressUiEvents;
     private bool _isPollBusy;
     private DsuStatusDto? _lastStatus;
@@ -89,7 +91,7 @@ public partial class MainWindow : Window
         {
             _trayService.Initialize(this, _loc["TrayTooltip"]);
             _trayService.TrayLeftClicked += (_, _) => ToggleWindowVisibility();
-            _trayService.TrayRightClicked += (_, _) => ShowFromTray();
+            _trayService.TrayRightClicked += (_, _) => ShowTrayContextMenu();
         };
 
         Loaded += async (_, _) =>
@@ -239,6 +241,111 @@ public partial class MainWindow : Window
         {
             ShowFromTray();
         }
+    }
+
+    private void ShowTrayContextMenu()
+    {
+        if (_trayContextMenu is not null)
+        {
+            _trayContextMenu.IsOpen = false;
+        }
+
+        var itemStyle = (Style)FindResource("AppTrayMenuItemStyle");
+        var sepStyle = (Style)FindResource("AppTraySeparatorStyle");
+
+        var menu = new ContextMenu
+        {
+            Style = (Style)FindResource("AppTrayContextMenuStyle"),
+            Placement = PlacementMode.MousePoint
+        };
+
+        string activeProf = string.IsNullOrWhiteSpace(AppBarProfileNameText.Text)
+            ? (_lastStatus?.ActiveProfileName ?? "Standard Landscape")
+            : AppBarProfileNameText.Text;
+
+        var headerItem = new MenuItem
+        {
+            Style = itemStyle,
+            Header = $"HANDHELD GYRO DSU  •  {activeProf}",
+            IsEnabled = false,
+            FontSize = 10,
+            FontWeight = FontWeights.Bold
+        };
+        menu.Items.Add(headerItem);
+        menu.Items.Add(new Separator { Style = sepStyle });
+
+        var showHideItem = new MenuItem
+        {
+            Style = itemStyle,
+            Header = IsVisible ? _loc["TrayMenuHideWindow"] : _loc["TrayMenuShowWindow"]
+        };
+        showHideItem.Click += (_, _) => ToggleWindowVisibility();
+        menu.Items.Add(showHideItem);
+
+        bool isStreaming = _lastStatus?.IsStreamingEnabled ?? true;
+        var streamItem = new MenuItem
+        {
+            Style = itemStyle,
+            Header = isStreaming ? _loc["TrayMenuStreamActive"] : _loc["TrayMenuStreamPaused"],
+            Foreground = isStreaming ? StatusOnlineBrush : TextSecondaryBrush
+        };
+        streamItem.Click += async (_, _) =>
+        {
+            DsuStatusDto status = await _ipcClient.ToggleStreamingAsync(!isStreaming);
+            UpdateUiFromStatus(status);
+        };
+        menu.Items.Add(streamItem);
+
+        var calibrateItem = new MenuItem
+        {
+            Style = itemStyle,
+            Header = _loc["TrayMenuCalibrate"]
+        };
+        calibrateItem.Click += async (_, _) => await TriggerCalibrationFromControllerAsync();
+        menu.Items.Add(calibrateItem);
+
+        menu.Items.Add(new Separator { Style = sepStyle });
+
+        var profilesItem = new MenuItem
+        {
+            Style = itemStyle,
+            Header = _loc["TrayMenuProfiles"]
+        };
+        profilesItem.Click += (_, _) =>
+        {
+            ShowFromTray();
+            ProfilesTabButton.IsChecked = true;
+        };
+        menu.Items.Add(profilesItem);
+
+        var settingsItem = new MenuItem
+        {
+            Style = itemStyle,
+            Header = _loc["TrayMenuSettings"]
+        };
+        settingsItem.Click += (_, _) =>
+        {
+            ShowFromTray();
+            SettingsTabButton.IsChecked = true;
+        };
+        menu.Items.Add(settingsItem);
+
+        menu.Items.Add(new Separator { Style = sepStyle });
+
+        var exitItem = new MenuItem
+        {
+            Style = itemStyle,
+            Header = _loc["TrayMenuExit"],
+            Foreground = StatusOfflineBrush
+        };
+        exitItem.Click += (_, _) => Close();
+        menu.Items.Add(exitItem);
+
+        menu.Closed += (_, _) => _trayService.CompleteContextMenu();
+
+        _trayContextMenu = menu;
+        _trayService.PrepareForContextMenu();
+        menu.IsOpen = true;
     }
 
     public void CycleTab(int direction)
