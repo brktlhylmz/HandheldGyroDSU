@@ -37,6 +37,7 @@ public partial class MainWindow : Window
     private bool _suppressUiEvents;
     private bool _isPollBusy;
     private bool _isPinnedByUser;
+    private int _backgroundIdleTickCounter;
     private DsuStatusDto? _lastStatus;
     private int _lastSyncedServerPort = -1;
     private int _lastSyncedSecondaryPort = -1;
@@ -263,6 +264,10 @@ public partial class MainWindow : Window
         {
             WindowState = WindowState.Normal;
         }
+        if (_lastStatus is not null)
+        {
+            UpdateUiFromStatus(_lastStatus);
+        }
         Activate();
         Focus();
     }
@@ -275,6 +280,10 @@ public partial class MainWindow : Window
         if (WindowState == WindowState.Minimized)
         {
             WindowState = WindowState.Normal;
+        }
+        if (_lastStatus is not null)
+        {
+            UpdateUiFromStatus(_lastStatus);
         }
         Activate();
     }
@@ -506,6 +515,21 @@ public partial class MainWindow : Window
             isOurWindowActive: IsVisible && (IsActive || IsMouseOver),
             isPinnedByUser: _isPinnedByUser);
 
+        bool isWindowHiddenOrMinimized = !IsVisible || WindowState == WindowState.Minimized;
+        if (isWindowHiddenOrMinimized)
+        {
+            // Battery/CPU optimization: when hidden in the system tray, skip 22 FPS WPF visual updates
+            // and only refresh cached status once per ~1.1s for tray context menu readiness.
+            _backgroundIdleTickCounter++;
+            if (_backgroundIdleTickCounter < 25)
+                return;
+            _backgroundIdleTickCounter = 0;
+        }
+        else
+        {
+            _backgroundIdleTickCounter = 0;
+        }
+
         if (_isPollBusy)
             return;
 
@@ -513,7 +537,14 @@ public partial class MainWindow : Window
         try
         {
             DsuStatusDto status = await _ipcClient.GetStatusAsync();
-            UpdateUiFromStatus(status);
+            if (isWindowHiddenOrMinimized)
+            {
+                _lastStatus = status;
+            }
+            else
+            {
+                UpdateUiFromStatus(status);
+            }
         }
         finally
         {
@@ -544,6 +575,7 @@ public partial class MainWindow : Window
             }
 
             EngineSubtitleText.Text = _loc.Format("HeaderSubtitleFormat", status.ServerPort, status.IpcPort);
+            CopyEndpointButton.Content = FormattableString.Invariant($"127.0.0.1:{status.ServerPort} ⧉");
             MultiPortClusterToggle.IsChecked = status.IsSecondaryClusterActive;
             SecondaryPortRowGrid.Visibility = status.IsSecondaryClusterActive ? Visibility.Visible : Visibility.Collapsed;
 
@@ -1375,6 +1407,23 @@ public partial class MainWindow : Window
                 CalibrateButton.IsEnabled = true;
                 CalibrateButtonText.Text = _loc["CalibrateButton"];
             }
+        }
+    }
+
+    private void CopyEndpointButton_Click(object sender, RoutedEventArgs e)
+    {
+        int port = _lastStatus?.ServerPort ?? 26760;
+        string endpoint = FormattableString.Invariant($"127.0.0.1:{port}");
+        try
+        {
+            Clipboard.SetText(endpoint);
+            ShowToastNotification(
+                _loc.Format("ToastEndpointCopiedTitleFormat", endpoint),
+                _loc["ToastEndpointCopiedDesc"]);
+        }
+        catch
+        {
+            // Ignore clipboard access contention
         }
     }
 
