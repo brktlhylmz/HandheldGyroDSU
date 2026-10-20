@@ -111,17 +111,17 @@ public sealed class GamepadNavigationService : IDisposable
             _window.ScrollByVerticalOffset(delta);
         }
 
-        // 2. LB / RB Tab Switching
+        // 2. LB / RB Tab Switching (cycles through the 4 Navigation Rail tabs)
         if ((justPressed & XINPUT_GAMEPAD_LEFT_SHOULDER) != 0)
         {
-            _window.SwitchTab(showSettings: false);
+            _window.CycleTab(direction: -1);
             ResetFocusToFirstControl();
             return;
         }
 
         if ((justPressed & XINPUT_GAMEPAD_RIGHT_SHOULDER) != 0)
         {
-            _window.SwitchTab(showSettings: true);
+            _window.CycleTab(direction: 1);
             ResetFocusToFirstControl();
             return;
         }

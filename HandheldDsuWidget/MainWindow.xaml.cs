@@ -22,6 +22,7 @@ public partial class MainWindow : Window
     private readonly GameBarWidgetAdapter _gameBarAdapter = new();
     private readonly SystemTrayService _trayService = new();
     private readonly HudToastService _hudToastService = new();
+    private readonly ControllerAndAppWatcherService _automationWatcher = new();
     private readonly GamepadNavigationService _gamepadService;
     private readonly LocalizationService _loc = LocalizationService.Instance;
     private readonly DispatcherTimer _pollTimer;
@@ -37,7 +38,9 @@ public partial class MainWindow : Window
     private Brush StatusOnlineDimBrush => (Brush)FindResource("BrushStatusOnlineDim");
     private Brush StatusOfflineBrush => (Brush)FindResource("BrushStatusOffline");
     private Brush StatusOfflineDimBrush => (Brush)FindResource("BrushStatusOfflineDim");
+    private Brush TextPrimaryBrush => (Brush)FindResource("BrushTextPrimary");
     private Brush TextSecondaryBrush => (Brush)FindResource("BrushTextSecondary");
+    private Brush TextMutedBrush => (Brush)FindResource("BrushTextMuted");
     private Brush TextOnAccentBrush => (Brush)FindResource("BrushTextOnAccent");
     private Brush AccentPrimaryBrush => (Brush)FindResource("BrushAccentPrimary");
     private Brush AccentDimBrush => (Brush)FindResource("BrushAccentDim");
@@ -58,6 +61,9 @@ public partial class MainWindow : Window
         LanguageComboBox.ItemsSource = _loc.AvailableLanguages;
         LanguageComboBox.SelectedValue = _loc.CurrentLanguage;
 
+        _automationWatcher.ControllersChanged += (_, _) => RenderControllersAndRulesUi();
+        _automationWatcher.AutomationNotification += OnAutomationNotification;
+
         _loc.LanguageChanged += (_, _) =>
         {
             _trayService.UpdateTooltip(_loc["TrayTooltip"]);
@@ -67,6 +73,7 @@ public partial class MainWindow : Window
             {
                 UpdateUiFromStatus(_lastStatus);
             }
+            RenderControllersAndRulesUi();
         };
 
         _pollTimer = new DispatcherTimer
@@ -88,6 +95,15 @@ public partial class MainWindow : Window
             _loc.SetLanguage(status.Language);
             UpdateUiFromStatus(status);
             await RefreshProfilesAsync(status.ActiveProfileName);
+
+            _suppressUiEvents = true;
+            AutoControllerSwitchToggle.IsChecked = _automationWatcher.Config.AutoSwitchByController;
+            AutoEmulatorSwitchToggle.IsChecked = _automationWatcher.Config.AutoSwitchByEmulator;
+            _suppressUiEvents = false;
+
+            _automationWatcher.Start();
+            RenderControllersAndRulesUi();
+
             _pollTimer.Start();
             _gamepadService.Start();
         };
@@ -95,6 +111,7 @@ public partial class MainWindow : Window
         Closed += (_, _) =>
         {
             _snackbarTimer?.Stop();
+            _automationWatcher.Dispose();
             _hudToastService.Dispose();
             _gamepadService.Dispose();
             _pollTimer.Stop();
@@ -105,24 +122,39 @@ public partial class MainWindow : Window
 
     public IReadOnlyList<Control> GetActiveTabNavigableControls()
     {
-        if (SettingsTabButton.IsChecked == true)
+        if (ControllersTabButton.IsChecked == true)
         {
             return
             [
-                LanguageComboBox,
+                AutoControllerSwitchToggle,
+                CalibrateButton
+            ];
+        }
+
+        if (ProfilesTabButton.IsChecked == true)
+        {
+            return
+            [
                 ProfileComboBox,
                 DeleteProfileButton,
                 NewProfileNameTextBox,
                 SaveProfileButton,
                 ImportProfileButton,
                 ExportProfileButton,
+                AutoEmulatorSwitchToggle,
+                CustomExeTextBox,
+                AddCustomExeRuleButton,
+                CalibrateButton
+            ];
+        }
+
+        if (SettingsTabButton.IsChecked == true)
+        {
+            return
+            [
+                LanguageComboBox,
                 PortTextBox,
                 ApplyPortButton,
-                Slot0Button,
-                Slot1Button,
-                Slot2Button,
-                Slot3Button,
-                MultiPortClusterToggle,
                 StartupToggle,
                 CalibrateButton
             ];
@@ -180,26 +212,43 @@ public partial class MainWindow : Window
         }
     }
 
-    public void SwitchTab(bool showSettings)
+    public void CycleTab(int direction)
     {
-        if (showSettings)
+        RadioButton[] tabs = [DashboardTabButton, ControllersTabButton, ProfilesTabButton, SettingsTabButton];
+        int currentIndex = 0;
+        for (int i = 0; i < tabs.Length; i++)
         {
-            SettingsTabButton.IsChecked = true;
+            if (tabs[i].IsChecked == true)
+            {
+                currentIndex = i;
+                break;
+            }
         }
-        else
-        {
-            DashboardTabButton.IsChecked = true;
-        }
+
+        int nextIndex = (currentIndex + direction + tabs.Length) % tabs.Length;
+        tabs[nextIndex].IsChecked = true;
     }
 
     private void NavTab_Checked(object sender, RoutedEventArgs e)
     {
-        if (DashboardViewPanel is null || SettingsViewPanel is null)
+        if (DashboardViewPanel is null ||
+            ControllersViewPanel is null ||
+            ProfilesViewPanel is null ||
+            SettingsViewPanel is null)
+        {
             return;
+        }
 
-        bool isSettings = SettingsTabButton.IsChecked == true;
-        DashboardViewPanel.Visibility = isSettings ? Visibility.Collapsed : Visibility.Visible;
-        SettingsViewPanel.Visibility = isSettings ? Visibility.Visible : Visibility.Collapsed;
+        DashboardViewPanel.Visibility = DashboardTabButton.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
+        ControllersViewPanel.Visibility = ControllersTabButton.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
+        ProfilesViewPanel.Visibility = ProfilesTabButton.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
+        SettingsViewPanel.Visibility = SettingsTabButton.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
+
+        if (ControllersTabButton.IsChecked == true || ProfilesTabButton.IsChecked == true)
+        {
+            RenderControllersAndRulesUi();
+        }
+
         MainScrollViewer?.ScrollToTop();
     }
 
@@ -227,18 +276,6 @@ public partial class MainWindow : Window
         badgeText.Foreground = isActive ? TextOnAccentBrush : TextSecondaryBrush;
     }
 
-    private void UpdateSlotButtonsVisual(int activeSlot)
-    {
-        Button[] buttons = [Slot0Button, Slot1Button, Slot2Button, Slot3Button];
-        for (int i = 0; i < buttons.Length; i++)
-        {
-            bool isSelected = i == activeSlot;
-            buttons[i].Background = isSelected ? AccentDimBrush : BgSubPanelBrush;
-            buttons[i].BorderBrush = isSelected ? AccentPrimaryBrush : BorderInputBrush;
-            buttons[i].Foreground = isSelected ? TextOnAccentBrush : TextSecondaryBrush;
-        }
-    }
-
     private void UpdateUiFromStatus(DsuStatusDto status)
     {
         _lastStatus = status;
@@ -254,9 +291,7 @@ public partial class MainWindow : Window
                 }
             }
 
-            EngineSubtitleText.Text = _loc.Format("HeaderSubtitleFormat", status.ServerPort, status.IpcPort, status.ActiveSlot);
-            UpdateSlotButtonsVisual(status.ActiveSlot);
-            MultiPortClusterToggle.IsChecked = status.IsSecondaryClusterActive;
+            EngineSubtitleText.Text = _loc.Format("HeaderSubtitleFormat", status.ServerPort, status.IpcPort);
 
             if (status.WasPortFallbackTriggered && PortStatusSubtitle.Text == _loc["PortDefaultDesc"])
             {
@@ -418,34 +453,309 @@ public partial class MainWindow : Window
         }
     }
 
-    private async void SlotButton_Click(object sender, RoutedEventArgs e)
+    private async void OnAutomationNotification(object? sender, (string Title, string Subtitle, string? ProfileToApply, int ConnectedCount) args)
     {
-        if (_suppressUiEvents || sender is not Button btn)
-            return;
-
-        if (int.TryParse(btn.Tag?.ToString(), out int slot))
+        if (args.ConnectedCount > 4)
         {
-            DsuStatusDto status = await _ipcClient.SetActiveSlotAsync(slot);
-            UpdateUiFromStatus(status);
-            ShowToastNotification(
-                $"DSU PAD {status.ActiveSlot} AKTİF",
-                $"UDP 0.0.0.0:{status.ServerPort} • MAC ..:0{status.ActiveSlot + 1}");
+            _ipcClient.SetSecondaryClusterActive(true);
         }
+
+        if (!string.IsNullOrWhiteSpace(args.ProfileToApply))
+        {
+            DsuStatusDto status = await _ipcClient.ApplyProfileAsync(args.ProfileToApply);
+            UpdateUiFromStatus(status);
+        }
+
+        RenderControllersAndRulesUi();
+        ShowToastNotification(args.Title, args.Subtitle, isError: false, showHudOverlay: true);
     }
 
-    private async void MultiPortClusterToggle_Click(object sender, RoutedEventArgs e)
+    private void AutoControllerSwitchToggle_Click(object sender, RoutedEventArgs e)
     {
         if (_suppressUiEvents)
             return;
 
-        bool enableCluster = MultiPortClusterToggle.IsChecked == true;
-        bool active = _ipcClient.SetSecondaryClusterActive(enableCluster);
-        DsuStatusDto status = await _ipcClient.GetStatusAsync();
-        UpdateUiFromStatus(status);
+        _automationWatcher.Config.AutoSwitchByController = AutoControllerSwitchToggle.IsChecked == true;
+        _automationWatcher.SaveConfig();
+    }
 
-        ShowToastNotification(
-            active ? "5-8 KOL KÜMESİ AÇILDI" : "5-8 KOL KÜMESİ KAPATILDI",
-            active ? $"2. Küme Portu Aktif: UDP 0.0.0.0:{status.SecondaryPort}" : $"Yalnızca Birincil Port Aktif ({status.ServerPort})");
+    private void AutoEmulatorSwitchToggle_Click(object sender, RoutedEventArgs e)
+    {
+        if (_suppressUiEvents)
+            return;
+
+        _automationWatcher.Config.AutoSwitchByEmulator = AutoEmulatorSwitchToggle.IsChecked == true;
+        _automationWatcher.SaveConfig();
+    }
+
+    private void AddCustomExeRuleButton_Click(object sender, RoutedEventArgs e)
+    {
+        AddCustomExeRule();
+    }
+
+    private void CustomExeTextBox_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter)
+        {
+            e.Handled = true;
+            AddCustomExeRule();
+            Keyboard.ClearFocus();
+        }
+    }
+
+    private void AddCustomExeRule()
+    {
+        string rawInput = CustomExeTextBox.Text.Trim();
+        if (string.IsNullOrWhiteSpace(rawInput))
+            return;
+
+        string cleanProc = rawInput.Replace(".exe", "", StringComparison.OrdinalIgnoreCase);
+        string activeProfile = _lastStatus?.ActiveProfileName ?? "Standard Landscape";
+
+        _automationWatcher.AddOrUpdateEmulatorRule(
+            processName: cleanProc,
+            displayName: $"{cleanProc}.exe",
+            profileName: activeProfile,
+            isEnabled: true);
+
+        CustomExeTextBox.Text = string.Empty;
+        RenderControllersAndRulesUi();
+        ShowToastNotification("OYUN / EMÜLATÖR KURALI EKLENDİ", $"{cleanProc}.exe → {activeProfile}");
+    }
+
+    private void RenderControllersAndRulesUi()
+    {
+        if (ControllersListPanel is null || EmulatorRulesListPanel is null)
+            return;
+
+        int basePort = _lastStatus?.ServerPort ?? 26760;
+        IReadOnlyList<KnownControllerConfig> controllers = _automationWatcher.ScanControllers(basePort);
+
+        int connectedCount = controllers.Count(c => c.IsConnected);
+        if (connectedCount > 4 && _lastStatus?.IsSecondaryClusterActive == false)
+        {
+            _ipcClient.SetSecondaryClusterActive(true);
+        }
+
+        ControllersListPanel.Children.Clear();
+
+        foreach (KnownControllerConfig ctrl in controllers)
+        {
+            var cardBorder = new Border
+            {
+                CornerRadius = new CornerRadius(8),
+                Padding = new Thickness(11, 9, 11, 9),
+                Margin = new Thickness(0, 0, 0, 7),
+                Background = BgSubPanelBrush,
+                BorderBrush = ctrl.IsConnected ? StatusOnlineBrush : BorderInputBrush,
+                BorderThickness = new Thickness(1)
+            };
+
+            var rootStack = new StackPanel();
+
+            // Row 1: Controller Name + Online/Offline Badge + Forget Button (if offline)
+            var topGrid = new Grid();
+            topGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            topGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+            var titleStack = new StackPanel();
+            var nameText = new TextBlock
+            {
+                Text = ctrl.DisplayName,
+                FontSize = 11.5,
+                FontWeight = FontWeights.Bold,
+                Foreground = TextPrimaryBrush,
+                TextTrimming = TextTrimming.CharacterEllipsis
+            };
+            titleStack.Children.Add(nameText);
+
+            var statusBadgeText = new TextBlock
+            {
+                Text = ctrl.IsConnected
+                    ? _loc.Format("BadgeControllerOnlineFormat", ctrl.AssignedPlayerIndex + 1, ctrl.AssignedUdpPort)
+                    : _loc["BadgeControllerOffline"],
+                FontSize = 9.5,
+                FontWeight = FontWeights.Bold,
+                Foreground = ctrl.IsConnected ? StatusOnlineBrush : TextMutedBrush,
+                Margin = new Thickness(0, 2, 0, 0)
+            };
+            titleStack.Children.Add(statusBadgeText);
+
+            var hwIdText = new TextBlock
+            {
+                Text = ctrl.HardwareId,
+                FontSize = 8.5,
+                FontFamily = new FontFamily("Consolas"),
+                Foreground = TextMutedBrush,
+                Margin = new Thickness(0, 1, 0, 0)
+            };
+            titleStack.Children.Add(hwIdText);
+
+            Grid.SetColumn(titleStack, 0);
+            topGrid.Children.Add(titleStack);
+
+            if (!ctrl.IsConnected && !string.Equals(ctrl.HardwareId, "BUILTIN_HANDHELD_IMU", StringComparison.OrdinalIgnoreCase))
+            {
+                var forgetBtn = new Button
+                {
+                    Content = "✕",
+                    Style = (Style)FindResource("AppButtonStyle"),
+                    Width = 24,
+                    Height = 24,
+                    Padding = new Thickness(0),
+                    FontSize = 10,
+                    VerticalAlignment = VerticalAlignment.Top,
+                    ToolTip = "Kayıtlı kolu listeden kaldır"
+                };
+                string hwKey = ctrl.HardwareId;
+                forgetBtn.Click += (_, _) => _automationWatcher.ForgetController(hwKey);
+                Grid.SetColumn(forgetBtn, 1);
+                topGrid.Children.Add(forgetBtn);
+            }
+
+            rootStack.Children.Add(topGrid);
+
+            // Row 2: Assigned Profile Selector
+            var bottomGrid = new Grid { Margin = new Thickness(0, 7, 0, 0) };
+            bottomGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            bottomGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+
+            var profileLabel = new TextBlock
+            {
+                Text = "Otomatik Profil:",
+                FontSize = 10,
+                FontWeight = FontWeights.SemiBold,
+                Foreground = TextSecondaryBrush,
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(0, 0, 8, 0)
+            };
+            Grid.SetColumn(profileLabel, 0);
+            bottomGrid.Children.Add(profileLabel);
+
+            var profileCombo = new ComboBox
+            {
+                Style = (Style)FindResource("AppComboBoxStyle"),
+                ItemsSource = _profiles,
+                DisplayMemberPath = "Name",
+                SelectedValuePath = "Name",
+                SelectedValue = ctrl.AssignedProfileName
+            };
+
+            profileCombo.SelectionChanged += async (_, _) =>
+            {
+                if (profileCombo.SelectedItem is HandheldProfile selectedProf)
+                {
+                    ctrl.AssignedProfileName = selectedProf.Name;
+                    _automationWatcher.SaveConfig();
+
+                    if (ctrl.IsConnected)
+                    {
+                        DsuStatusDto status = await _ipcClient.ApplyProfileAsync(selectedProf.Name);
+                        UpdateUiFromStatus(status);
+                        ShowToastNotification(
+                            $"🎮 {ctrl.DisplayName}",
+                            $"Profil atandı ve uygulandı: {selectedProf.Name}");
+                    }
+                    else
+                    {
+                        ShowToastNotification(
+                            $"🎮 {ctrl.DisplayName}",
+                            $"Kayıtlı kol profili güncellendi: {selectedProf.Name}");
+                    }
+                }
+            };
+
+            Grid.SetColumn(profileCombo, 1);
+            bottomGrid.Children.Add(profileCombo);
+
+            rootStack.Children.Add(bottomGrid);
+            cardBorder.Child = rootStack;
+            ControllersListPanel.Children.Add(cardBorder);
+        }
+
+        // Populate Emulator (.exe) Rules List
+        EmulatorRulesListPanel.Children.Clear();
+        foreach (EmulatorProfileRule rule in _automationWatcher.Config.EmulatorRules)
+        {
+            var ruleBorder = new Border
+            {
+                CornerRadius = new CornerRadius(7),
+                Padding = new Thickness(10, 7, 10, 7),
+                Margin = new Thickness(0, 0, 0, 6),
+                Background = BgSubPanelBrush,
+                BorderBrush = BorderInputBrush,
+                BorderThickness = new Thickness(1)
+            };
+
+            var rowGrid = new Grid();
+            rowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            rowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            rowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(148) });
+
+            var ruleToggle = new CheckBox
+            {
+                Style = (Style)FindResource("AppToggleSwitchStyle"),
+                IsChecked = rule.IsEnabled,
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(0, 0, 9, 0)
+            };
+            ruleToggle.Click += (_, _) =>
+            {
+                rule.IsEnabled = ruleToggle.IsChecked == true;
+                _automationWatcher.SaveConfig();
+            };
+            Grid.SetColumn(ruleToggle, 0);
+            rowGrid.Children.Add(ruleToggle);
+
+            var labelStack = new StackPanel
+            {
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(0, 0, 8, 0)
+            };
+            labelStack.Children.Add(new TextBlock
+            {
+                Text = rule.DisplayName,
+                FontSize = 10.5,
+                FontWeight = FontWeights.SemiBold,
+                Foreground = TextPrimaryBrush,
+                TextTrimming = TextTrimming.CharacterEllipsis
+            });
+            labelStack.Children.Add(new TextBlock
+            {
+                Text = $"{rule.ProcessName}.exe",
+                FontSize = 8.5,
+                FontFamily = new FontFamily("Consolas"),
+                Foreground = TextMutedBrush
+            });
+            Grid.SetColumn(labelStack, 1);
+            rowGrid.Children.Add(labelStack);
+
+            var ruleProfileCombo = new ComboBox
+            {
+                Style = (Style)FindResource("AppComboBoxStyle"),
+                ItemsSource = _profiles,
+                DisplayMemberPath = "Name",
+                SelectedValuePath = "Name",
+                SelectedValue = rule.ProfileName,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            ruleProfileCombo.SelectionChanged += (_, _) =>
+            {
+                if (ruleProfileCombo.SelectedItem is HandheldProfile selectedProf)
+                {
+                    rule.ProfileName = selectedProf.Name;
+                    _automationWatcher.SaveConfig();
+                    ShowToastNotification(
+                        $"🚀 {rule.DisplayName}",
+                        $"Otomatik profil kuralı: {selectedProf.Name}");
+                }
+            };
+            Grid.SetColumn(ruleProfileCombo, 2);
+            rowGrid.Children.Add(ruleProfileCombo);
+
+            ruleBorder.Child = rowGrid;
+            EmulatorRulesListPanel.Children.Add(ruleBorder);
+        }
     }
 
     private async void StartupToggle_Click(object sender, RoutedEventArgs e)
@@ -626,6 +936,8 @@ public partial class MainWindow : Window
                 ProfileComboBox.SelectedValue = match.Name;
                 UpdateSelectedProfileDetails(match);
             }
+
+            RenderControllersAndRulesUi();
         }
         catch
         {

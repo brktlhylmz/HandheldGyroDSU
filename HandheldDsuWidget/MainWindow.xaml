@@ -4,10 +4,10 @@
         xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
         xmlns:services="clr-namespace:HandheldDsuWidget.Services"
         Title="Handheld Gyro DSU"
-        Width="440"
-        Height="680"
-        MinWidth="380"
-        MinHeight="460"
+        Width="495"
+        Height="640"
+        MinWidth="440"
+        MinHeight="480"
         WindowStyle="None"
         ResizeMode="CanResize"
         Background="{DynamicResource BrushBgWindow}"
@@ -35,11 +35,9 @@
                 <RowDefinition Height="Auto" />
                 <!-- 1: Header Accent Line -->
                 <RowDefinition Height="2" />
-                <!-- 2: Top Navigation Tabs (Dashboard / Settings) -->
-                <RowDefinition Height="Auto" />
-                <!-- 3: Scrollable View Content (Fits any small handheld screen) -->
+                <!-- 2: Main Body (Left Flutter Navigation Rail + Right Scrollable Views) -->
                 <RowDefinition Height="*" />
-                <!-- 4: Bottom Action Bar (Calibrate + Controller Hint) -->
+                <!-- 3: Bottom Action Bar (Calibrate + Controller Hint) -->
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
@@ -125,54 +123,67 @@
             <Border Grid.Row="1" Background="{DynamicResource BrushHeaderAccentStripe}" />
 
             <!-- ============================================================== -->
-            <!-- 2. NAVIGATION BAR (DASHBOARD / SETTINGS)                        -->
+            <!-- 2. MAIN WORKSPACE: LEFT FLUTTER NAVIGATION RAIL + RIGHT VIEWS  -->
             <!-- ============================================================== -->
-            <Border Grid.Row="2"
-                    Background="{DynamicResource BrushBgHeader}"
-                    BorderBrush="{DynamicResource BrushBorderCard}"
-                    BorderThickness="0,0,0,1"
-                    Padding="12,4,12,0">
-                <UniformGrid Columns="2">
-                    <RadioButton x:Name="DashboardTabButton"
-                                 Style="{DynamicResource AppNavTabStyle}"
-                                 IsChecked="True"
-                                 Checked="NavTab_Checked">
-                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                            <Path Data="{DynamicResource IconDashboard}"
-                                  Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"
-                                  Width="12" Height="12" Stretch="Uniform" Margin="0,0,7,0" />
-                            <TextBlock Text="{Binding [TabDashboard], Source={x:Static services:LocalizationService.Instance}}" />
-                        </StackPanel>
-                    </RadioButton>
+            <Grid Grid.Row="2">
+                <Grid.ColumnDefinitions>
+                    <!-- Left Flutter-Style Vertical Navigation Rail -->
+                    <ColumnDefinition Width="68" />
+                    <!-- Right Scrollable View Container -->
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
 
-                    <RadioButton x:Name="SettingsTabButton"
-                                 Style="{DynamicResource AppNavTabStyle}"
-                                 Checked="NavTab_Checked">
-                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                            <Path Data="{DynamicResource IconSettings}"
-                                  Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"
-                                  Width="12" Height="12" Stretch="Uniform" Margin="0,0,7,0" />
-                            <TextBlock Text="{Binding [TabSettings], Source={x:Static services:LocalizationService.Instance}}" />
-                        </StackPanel>
-                    </RadioButton>
-                </UniformGrid>
-            </Border>
+                <!-- LEFT NAVIGATION RAIL -->
+                <Border Grid.Column="0"
+                        Background="{DynamicResource BrushBgHeader}"
+                        BorderBrush="{DynamicResource BrushBorderCard}"
+                        BorderThickness="0,0,1,0"
+                        Padding="0,10,0,10">
+                    <StackPanel VerticalAlignment="Top">
+                        <RadioButton x:Name="DashboardTabButton"
+                                     GroupName="MainNavRail"
+                                     Style="{DynamicResource AppNavRailItemStyle}"
+                                     Tag="{DynamicResource IconDashboard}"
+                                     Content="{Binding [TabDashboard], Source={x:Static services:LocalizationService.Instance}}"
+                                     IsChecked="True"
+                                     Checked="NavTab_Checked" />
 
-            <!-- ============================================================== -->
-            <!-- 3. SCROLLABLE VIEW CONTAINER (DASHBOARD & SETTINGS)             -->
-            <!-- ============================================================== -->
-            <ScrollViewer x:Name="MainScrollViewer"
-                          Grid.Row="3"
-                          Style="{DynamicResource AppOverlayScrollViewerStyle}"
-                          VerticalScrollBarVisibility="Auto"
-                          HorizontalScrollBarVisibility="Disabled"
-                          Padding="14,12,14,12"
-                          PanningMode="VerticalOnly">
-                <Grid>
-                    <!-- ====================================================== -->
-                    <!-- VIEW A: DASHBOARD                                      -->
-                    <!-- ====================================================== -->
-                    <StackPanel x:Name="DashboardViewPanel" Visibility="Visible">
+                        <RadioButton x:Name="ControllersTabButton"
+                                     GroupName="MainNavRail"
+                                     Style="{DynamicResource AppNavRailItemStyle}"
+                                     Tag="{DynamicResource IconGamepad}"
+                                     Content="{Binding [TabControllers], Source={x:Static services:LocalizationService.Instance}}"
+                                     Checked="NavTab_Checked" />
+
+                        <RadioButton x:Name="ProfilesTabButton"
+                                     GroupName="MainNavRail"
+                                     Style="{DynamicResource AppNavRailItemStyle}"
+                                     Tag="{DynamicResource IconProfiles}"
+                                     Content="{Binding [TabProfiles], Source={x:Static services:LocalizationService.Instance}}"
+                                     Checked="NavTab_Checked" />
+
+                        <RadioButton x:Name="SettingsTabButton"
+                                     GroupName="MainNavRail"
+                                     Style="{DynamicResource AppNavRailItemStyle}"
+                                     Tag="{DynamicResource IconSettings}"
+                                     Content="{Binding [TabSettings], Source={x:Static services:LocalizationService.Instance}}"
+                                     Checked="NavTab_Checked" />
+                    </StackPanel>
+                </Border>
+
+                <!-- RIGHT SCROLLABLE CONTENT AREA -->
+                <ScrollViewer x:Name="MainScrollViewer"
+                              Grid.Column="1"
+                              Style="{DynamicResource AppOverlayScrollViewerStyle}"
+                              VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled"
+                              Padding="14,12,14,12"
+                              PanningMode="VerticalOnly">
+                    <Grid>
+                        <!-- ====================================================== -->
+                        <!-- VIEW 1: DASHBOARD                                      -->
+                        <!-- ====================================================== -->
+                        <StackPanel x:Name="DashboardViewPanel" Visibility="Visible">
 
                         <!-- Card 1: Unified Emulator Link & Live IMU Telemetry -->
                         <Border Style="{DynamicResource AppCardStyle}" Margin="0,0,0,10">
@@ -556,456 +567,482 @@
                                 </Grid>
                             </StackPanel>
                         </Border>
-                    </StackPanel>
+                        </StackPanel>
 
-                    <!-- ====================================================== -->
-                    <!-- VIEW B: SETTINGS MENU                                  -->
-                    <!-- ====================================================== -->
-                    <StackPanel x:Name="SettingsViewPanel" Visibility="Collapsed">
+                        <!-- ====================================================== -->
+                        <!-- VIEW 2: CONTROLLERS & AUTO-PROFILE BINDING             -->
+                        <!-- ====================================================== -->
+                        <StackPanel x:Name="ControllersViewPanel" Visibility="Collapsed">
 
-                        <!-- Settings Card 1: Interface Language -->
-                        <Border Style="{DynamicResource AppCardStyle}" Margin="0,0,0,10">
-                            <StackPanel>
-                                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                                    <Border Width="3" Height="12" Background="{DynamicResource BrushAccentPrimary}" Margin="0,0,7,0" />
-                                    <TextBlock Text="{Binding [SectionLanguage], Source={x:Static services:LocalizationService.Instance}}"
-                                               Style="{DynamicResource AppSectionHeaderStyle}" />
-                                </StackPanel>
-
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="150" />
-                                    </Grid.ColumnDefinitions>
-
-                                    <StackPanel VerticalAlignment="Center" Margin="0,0,10,0">
-                                        <TextBlock Text="{Binding [LanguageTitle], Source={x:Static services:LocalizationService.Instance}}"
-                                                   Foreground="{DynamicResource BrushTextPrimary}"
-                                                   FontWeight="SemiBold"
-                                                   FontSize="12" />
-                                        <TextBlock Text="{Binding [LanguageDesc], Source={x:Static services:LocalizationService.Instance}}"
-                                                   Foreground="{DynamicResource BrushTextSecondary}"
-                                                   FontSize="10"
-                                                   Margin="0,2,0,0" />
+                            <!-- Card 1: Connected & Remembered Controllers (VID:PID) -->
+                            <Border Style="{DynamicResource AppCardStyle}" Margin="0,0,0,10">
+                                <StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                                        <Border Width="3" Height="12" Background="{DynamicResource BrushAccentPrimary}" Margin="0,0,7,0" />
+                                        <TextBlock Text="{Binding [SectionControllers], Source={x:Static services:LocalizationService.Instance}}"
+                                                   Style="{DynamicResource AppSectionHeaderStyle}" />
                                     </StackPanel>
 
-                                    <ComboBox x:Name="LanguageComboBox"
-                                              Grid.Column="1"
-                                              Style="{DynamicResource AppComboBoxStyle}"
-                                              DisplayMemberPath="DisplayName"
-                                              SelectedValuePath="Code"
-                                              SelectionChanged="LanguageComboBox_SelectionChanged" />
-                                </Grid>
-                            </StackPanel>
-                        </Border>
-
-                        <!-- Settings Card 2: Profile Management & Sharing -->
-                        <Border Style="{DynamicResource AppCardStyle}" Margin="0,0,0,10">
-                            <StackPanel>
-                                <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                                    <Border Width="3" Height="12" Background="{DynamicResource BrushAccentPrimary}" Margin="0,0,7,0" />
-                                    <TextBlock Text="{Binding [SectionProfiles], Source={x:Static services:LocalizationService.Instance}}"
-                                               Style="{DynamicResource AppSectionHeaderStyle}" />
-                                </StackPanel>
-
-                                <!-- 1. Active Profile Dropdown (Auto-Apply on Selection) + Compact Trash Icon Button -->
-                                <StackPanel Margin="0,0,0,4">
-                                    <TextBlock Text="{Binding [ProfileSelectTitle], Source={x:Static services:LocalizationService.Instance}}"
-                                               Foreground="{DynamicResource BrushTextPrimary}"
-                                               FontWeight="SemiBold"
-                                               FontSize="12"
-                                               Margin="0,0,0,5" />
-
-                                    <Grid>
+                                    <Grid Margin="0,0,0,8">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="8" />
-                                            <ColumnDefinition Width="32" />
+                                            <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
 
-                                        <ComboBox x:Name="ProfileComboBox"
-                                                  Grid.Column="0"
-                                                  Style="{DynamicResource AppComboBoxStyle}"
-                                                  DisplayMemberPath="Name"
-                                                  SelectedValuePath="Name"
-                                                  SelectionChanged="ProfileComboBox_SelectionChanged" />
+                                        <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,10,0">
+                                            <TextBlock Text="{Binding [AutoControllerTitle], Source={x:Static services:LocalizationService.Instance}}"
+                                                       Foreground="{DynamicResource BrushTextPrimary}"
+                                                       FontWeight="SemiBold"
+                                                       FontSize="11.5" />
+                                            <TextBlock Text="{Binding [AutoControllerDesc], Source={x:Static services:LocalizationService.Instance}}"
+                                                       Foreground="{DynamicResource BrushTextSecondary}"
+                                                       FontSize="9.5"
+                                                       TextWrapping="Wrap"
+                                                       Margin="0,2,0,0" />
+                                        </StackPanel>
 
-                                        <Button x:Name="DeleteProfileButton"
-                                                Grid.Column="2"
-                                                Style="{DynamicResource AppGhostButtonStyle}"
-                                                ToolTip="{Binding [DeleteProfileTooltip], Source={x:Static services:LocalizationService.Instance}}"
-                                                Height="30"
-                                                Padding="0"
-                                                Foreground="{DynamicResource BrushStatusOffline}"
-                                                Click="DeleteProfileButton_Click">
-                                            <Path Data="{DynamicResource IconTrash}"
-                                                  Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
-                                                  StrokeThickness="1.4"
-                                                  StrokeStartLineCap="Round"
-                                                  StrokeEndLineCap="Round"
-                                                  StrokeLineJoin="Round"
-                                                  Width="12" Height="12" Stretch="Uniform" />
-                                        </Button>
+                                        <CheckBox x:Name="AutoControllerSwitchToggle"
+                                                  Grid.Column="1"
+                                                  Style="{DynamicResource AppToggleSwitchStyle}"
+                                                  IsChecked="True"
+                                                  VerticalAlignment="Center"
+                                                  Click="AutoControllerSwitchToggle_Click" />
                                     </Grid>
 
-                                    <TextBlock x:Name="ProfileDescriptionText"
-                                               Text="{Binding [ProfileSelectDesc], Source={x:Static services:LocalizationService.Instance}}"
-                                               FontFamily="{DynamicResource FontMonospace}"
-                                               Foreground="{DynamicResource BrushTextSecondary}"
-                                               FontSize="9.5"
-                                               TextWrapping="Wrap"
-                                               Margin="1,5,0,0" />
+                                    <Border Style="{DynamicResource AppRowDividerStyle}" Margin="0,2,0,8" />
+
+                                    <!-- Dynamic List of Connected & Remembered Controller Cards -->
+                                    <StackPanel x:Name="ControllersListPanel" />
                                 </StackPanel>
+                            </Border>
 
-                                <Border Style="{DynamicResource AppRowDividerStyle}" Margin="0,8,0,8" />
+                            <!-- Card 2: Emulator & Game (.exe) Auto-Profile Rules -->
+                            <Border Style="{DynamicResource AppCardStyle}">
+                                <StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                                        <Border Width="3" Height="12" Background="{DynamicResource BrushAccentPrimary}" Margin="0,0,7,0" />
+                                        <TextBlock Text="{Binding [SectionEmulatorAuto], Source={x:Static services:LocalizationService.Instance}}"
+                                                   Style="{DynamicResource AppSectionHeaderStyle}" />
+                                    </StackPanel>
 
-                                <!-- 2. Save Current Settings as New Profile -->
-                                <StackPanel Margin="0,0,0,4">
-                                    <TextBlock Text="{Binding [SaveProfileTitle], Source={x:Static services:LocalizationService.Instance}}"
-                                               Foreground="{DynamicResource BrushTextPrimary}"
-                                               FontWeight="SemiBold"
-                                               FontSize="12"
-                                               Margin="0,0,0,5" />
+                                    <Grid Margin="0,0,0,8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
 
-                                    <Grid>
+                                        <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,10,0">
+                                            <TextBlock Text="{Binding [AutoEmulatorTitle], Source={x:Static services:LocalizationService.Instance}}"
+                                                       Foreground="{DynamicResource BrushTextPrimary}"
+                                                       FontWeight="SemiBold"
+                                                       FontSize="11.5" />
+                                            <TextBlock Text="{Binding [AutoEmulatorDesc], Source={x:Static services:LocalizationService.Instance}}"
+                                                       Foreground="{DynamicResource BrushTextSecondary}"
+                                                       FontSize="9.5"
+                                                       TextWrapping="Wrap"
+                                                       Margin="0,2,0,0" />
+                                        </StackPanel>
+
+                                        <CheckBox x:Name="AutoEmulatorSwitchToggle"
+                                                  Grid.Column="1"
+                                                  Style="{DynamicResource AppToggleSwitchStyle}"
+                                                  IsChecked="True"
+                                                  VerticalAlignment="Center"
+                                                  Click="AutoEmulatorSwitchToggle_Click" />
+                                    </Grid>
+
+                                    <Border Style="{DynamicResource AppRowDividerStyle}" Margin="0,2,0,8" />
+
+                                    <!-- Dynamic List of Emulator Rules -->
+                                    <StackPanel x:Name="EmulatorRulesListPanel" />
+
+                                    <!-- Add Custom Process (.exe) Row -->
+                                    <Grid Margin="0,8,0,0">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
                                             <ColumnDefinition Width="8" />
                                             <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
 
-                                        <TextBox x:Name="NewProfileNameTextBox"
+                                        <TextBox x:Name="CustomExeTextBox"
                                                  Grid.Column="0"
                                                  Style="{DynamicResource AppTextBoxStyle}"
                                                  FontFamily="{DynamicResource FontPrimary}"
                                                  Foreground="{DynamicResource BrushTextPrimary}"
                                                  FontWeight="Normal"
-                                                 FontSize="11.5"
+                                                 FontSize="11"
                                                  HorizontalContentAlignment="Left"
-                                                 Tag="{Binding [SaveProfilePlaceholder], Source={x:Static services:LocalizationService.Instance}}"
-                                                 Height="30"
-                                                 KeyDown="NewProfileNameTextBox_KeyDown" />
+                                                 Tag="{Binding [CustomExePlaceholder], Source={x:Static services:LocalizationService.Instance}}"
+                                                 Height="28"
+                                                 KeyDown="CustomExeTextBox_KeyDown" />
 
-                                        <Button x:Name="SaveProfileButton"
+                                        <Button x:Name="AddCustomExeRuleButton"
                                                 Grid.Column="2"
                                                 Style="{DynamicResource AppSecondaryButtonStyle}"
-                                                Height="30"
-                                                Padding="12,0"
-                                                Click="SaveProfileButton_Click">
+                                                Height="28"
+                                                Padding="10,0"
+                                                Click="AddCustomExeRuleButton_Click">
                                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                                 <Path Data="{DynamicResource IconPlus}"
                                                       Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
                                                       StrokeThickness="1.6"
                                                       StrokeStartLineCap="Round"
                                                       StrokeEndLineCap="Round"
-                                                      Width="10" Height="10" Stretch="Uniform" Margin="0,0,6,0" />
-                                                <TextBlock Text="{Binding [BtnSaveProfile], Source={x:Static services:LocalizationService.Instance}}"
+                                                      Width="9" Height="9" Stretch="Uniform" Margin="0,0,5,0" />
+                                                <TextBlock Text="{Binding [BtnAddRule], Source={x:Static services:LocalizationService.Instance}}"
+                                                           FontSize="10.5"
                                                            VerticalAlignment="Center" />
                                             </StackPanel>
                                         </Button>
                                     </Grid>
                                 </StackPanel>
+                            </Border>
+                        </StackPanel>
 
-                                <Border Style="{DynamicResource AppRowDividerStyle}" Margin="0,8,0,10" />
-
-                                <!-- 3. Clean 2-Column File Sharing Row: Import (.JSON) & Export (.JSON) -->
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="8" />
-                                        <ColumnDefinition Width="*" />
-                                    </Grid.ColumnDefinitions>
-
-                                    <Button x:Name="ImportProfileButton"
-                                            Grid.Column="0"
-                                            Style="{DynamicResource AppGhostButtonStyle}"
-                                            FontSize="10.5"
-                                            Height="32"
-                                            Padding="8,0"
-                                            Click="ImportProfileButton_Click">
-                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                            <Path Data="{DynamicResource IconImport}"
-                                                  Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
-                                                  StrokeThickness="1.5"
-                                                  StrokeStartLineCap="Round"
-                                                  StrokeEndLineCap="Round"
-                                                  StrokeLineJoin="Round"
-                                                  Width="12" Height="12" Stretch="Uniform" Margin="0,0,7,0" />
-                                            <TextBlock Text="{Binding [BtnImportFile], Source={x:Static services:LocalizationService.Instance}}"
-                                                       VerticalAlignment="Center" />
-                                        </StackPanel>
-                                    </Button>
-
-                                    <Button x:Name="ExportProfileButton"
-                                            Grid.Column="2"
-                                            Style="{DynamicResource AppGhostButtonStyle}"
-                                            FontSize="10.5"
-                                            Height="32"
-                                            Padding="8,0"
-                                            Click="ExportProfileButton_Click">
-                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                            <Path Data="{DynamicResource IconExport}"
-                                                  Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
-                                                  StrokeThickness="1.5"
-                                                  StrokeStartLineCap="Round"
-                                                  StrokeEndLineCap="Round"
-                                                  StrokeLineJoin="Round"
-                                                  Width="12" Height="12" Stretch="Uniform" Margin="0,0,7,0" />
-                                            <TextBlock Text="{Binding [BtnExportFile], Source={x:Static services:LocalizationService.Instance}}"
-                                                       VerticalAlignment="Center" />
-                                        </StackPanel>
-                                    </Button>
-                                </Grid>
-
-                                <!-- Status / Feedback Message -->
-                                <TextBlock x:Name="ProfileStatusFeedbackText"
-                                           Foreground="{DynamicResource BrushStatusOnline}"
-                                           FontSize="10.5"
-                                           FontWeight="SemiBold"
-                                           Margin="1,8,0,0"
-                                           TextWrapping="Wrap"
-                                           Visibility="Collapsed" />
-                            </StackPanel>
-                        </Border>
-
-                        <!-- Settings Card 3: Network, Port & Multi-Pad DSU Slot -->
-                        <Border Style="{DynamicResource AppCardStyle}" Margin="0,0,0,10">
-                            <StackPanel>
-                                <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                                    <Border Width="3" Height="12" Background="{DynamicResource BrushAccentPrimary}" Margin="0,0,7,0" />
-                                    <TextBlock Text="{Binding [SectionNetwork], Source={x:Static services:LocalizationService.Instance}}"
-                                               Style="{DynamicResource AppSectionHeaderStyle}" />
-                                </StackPanel>
-
-                                <!-- Row 1: Primary DSU UDP Port -->
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="86" />
-                                        <ColumnDefinition Width="8" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-
-                                    <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,8,0">
-                                        <TextBlock Text="{Binding [PortTitle], Source={x:Static services:LocalizationService.Instance}}"
-                                                   Foreground="{DynamicResource BrushTextPrimary}"
-                                                   FontWeight="SemiBold"
-                                                   FontSize="12" />
-                                        <TextBlock x:Name="PortStatusSubtitle"
-                                                   Text="{Binding [PortDefaultDesc], Source={x:Static services:LocalizationService.Instance}}"
-                                                   Foreground="{DynamicResource BrushTextSecondary}"
-                                                   FontSize="10"
-                                                   TextWrapping="Wrap"
-                                                   Margin="0,2,0,0" />
+                        <!-- ====================================================== -->
+                        <!-- VIEW 3: PROFILE MANAGEMENT & SHARING                   -->
+                        <!-- ====================================================== -->
+                        <StackPanel x:Name="ProfilesViewPanel" Visibility="Collapsed">
+                            <Border Style="{DynamicResource AppCardStyle}">
+                                <StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                                        <Border Width="3" Height="12" Background="{DynamicResource BrushAccentPrimary}" Margin="0,0,7,0" />
+                                        <TextBlock Text="{Binding [SectionProfiles], Source={x:Static services:LocalizationService.Instance}}"
+                                                   Style="{DynamicResource AppSectionHeaderStyle}" />
                                     </StackPanel>
 
-                                    <TextBox x:Name="PortTextBox"
-                                             Grid.Column="1"
-                                             Style="{DynamicResource AppTextBoxStyle}"
-                                             Text="26760"
-                                             Height="30"
-                                             KeyDown="PortTextBox_KeyDown" />
+                                    <!-- 1. Active Profile Dropdown (Auto-Apply on Selection) + Compact Trash Icon Button -->
+                                    <StackPanel Margin="0,0,0,4">
+                                        <TextBlock Text="{Binding [ProfileSelectTitle], Source={x:Static services:LocalizationService.Instance}}"
+                                                   Foreground="{DynamicResource BrushTextPrimary}"
+                                                   FontWeight="SemiBold"
+                                                   FontSize="12"
+                                                   Margin="0,0,0,5" />
 
-                                    <Button x:Name="ApplyPortButton"
-                                            Grid.Column="3"
-                                            Style="{DynamicResource AppSecondaryButtonStyle}"
-                                            Content="{Binding [ApplyButton], Source={x:Static services:LocalizationService.Instance}}"
-                                            Height="30"
-                                            Click="ApplyPortButton_Click" />
-                                </Grid>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="8" />
+                                                <ColumnDefinition Width="32" />
+                                            </Grid.ColumnDefinitions>
 
-                                <Border Style="{DynamicResource AppRowDividerStyle}" Margin="0,9,0,9" />
+                                            <ComboBox x:Name="ProfileComboBox"
+                                                      Grid.Column="0"
+                                                      Style="{DynamicResource AppComboBoxStyle}"
+                                                      DisplayMemberPath="Name"
+                                                      SelectedValuePath="Name"
+                                                      SelectionChanged="ProfileComboBox_SelectionChanged" />
 
-                                <!-- Row 2: Active DSU Controller Slot Selector (Pad 0..3) -->
+                                            <Button x:Name="DeleteProfileButton"
+                                                    Grid.Column="2"
+                                                    Style="{DynamicResource AppGhostButtonStyle}"
+                                                    ToolTip="{Binding [DeleteProfileTooltip], Source={x:Static services:LocalizationService.Instance}}"
+                                                    Height="30"
+                                                    Padding="0"
+                                                    Foreground="{DynamicResource BrushStatusOffline}"
+                                                    Click="DeleteProfileButton_Click">
+                                                <Path Data="{DynamicResource IconTrash}"
+                                                      Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                                      StrokeThickness="1.4"
+                                                      StrokeStartLineCap="Round"
+                                                      StrokeEndLineCap="Round"
+                                                      StrokeLineJoin="Round"
+                                                      Width="12" Height="12" Stretch="Uniform" />
+                                            </Button>
+                                        </Grid>
+
+                                        <TextBlock x:Name="ProfileDescriptionText"
+                                                   Text="{Binding [ProfileSelectDesc], Source={x:Static services:LocalizationService.Instance}}"
+                                                   FontFamily="{DynamicResource FontMonospace}"
+                                                   Foreground="{DynamicResource BrushTextSecondary}"
+                                                   FontSize="9.5"
+                                                   TextWrapping="Wrap"
+                                                   Margin="1,5,0,0" />
+                                    </StackPanel>
+
+                                    <Border Style="{DynamicResource AppRowDividerStyle}" Margin="0,10,0,10" />
+
+                                    <!-- 2. Save Current Settings as New Profile -->
+                                    <StackPanel Margin="0,0,0,4">
+                                        <TextBlock Text="{Binding [SaveProfileTitle], Source={x:Static services:LocalizationService.Instance}}"
+                                                   Foreground="{DynamicResource BrushTextPrimary}"
+                                                   FontWeight="SemiBold"
+                                                   FontSize="12"
+                                                   Margin="0,0,0,5" />
+
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="8" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+
+                                            <TextBox x:Name="NewProfileNameTextBox"
+                                                     Grid.Column="0"
+                                                     Style="{DynamicResource AppTextBoxStyle}"
+                                                     FontFamily="{DynamicResource FontPrimary}"
+                                                     Foreground="{DynamicResource BrushTextPrimary}"
+                                                     FontWeight="Normal"
+                                                     FontSize="11.5"
+                                                     HorizontalContentAlignment="Left"
+                                                     Tag="{Binding [SaveProfilePlaceholder], Source={x:Static services:LocalizationService.Instance}}"
+                                                     Height="30"
+                                                     KeyDown="NewProfileNameTextBox_KeyDown" />
+
+                                            <Button x:Name="SaveProfileButton"
+                                                    Grid.Column="2"
+                                                    Style="{DynamicResource AppSecondaryButtonStyle}"
+                                                    Height="30"
+                                                    Padding="12,0"
+                                                    Click="SaveProfileButton_Click">
+                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                    <Path Data="{DynamicResource IconPlus}"
+                                                          Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                                          StrokeThickness="1.6"
+                                                          StrokeStartLineCap="Round"
+                                                          StrokeEndLineCap="Round"
+                                                          Width="10" Height="10" Stretch="Uniform" Margin="0,0,6,0" />
+                                                    <TextBlock Text="{Binding [BtnSaveProfile], Source={x:Static services:LocalizationService.Instance}}"
+                                                               VerticalAlignment="Center" />
+                                                </StackPanel>
+                                            </Button>
+                                        </Grid>
+                                    </StackPanel>
+
+                                    <Border Style="{DynamicResource AppRowDividerStyle}" Margin="0,10,0,12" />
+
+                                    <!-- 3. Clean 2-Column File Sharing Row: Import (.JSON) & Export (.JSON) -->
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="8" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <Button x:Name="ImportProfileButton"
+                                                Grid.Column="0"
+                                                Style="{DynamicResource AppGhostButtonStyle}"
+                                                FontSize="10.5"
+                                                Height="32"
+                                                Padding="8,0"
+                                                Click="ImportProfileButton_Click">
+                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                <Path Data="{DynamicResource IconImport}"
+                                                      Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                                      StrokeThickness="1.5"
+                                                      StrokeStartLineCap="Round"
+                                                      StrokeEndLineCap="Round"
+                                                      StrokeLineJoin="Round"
+                                                      Width="12" Height="12" Stretch="Uniform" Margin="0,0,7,0" />
+                                                <TextBlock Text="{Binding [BtnImportFile], Source={x:Static services:LocalizationService.Instance}}"
+                                                           VerticalAlignment="Center" />
+                                            </StackPanel>
+                                        </Button>
+
+                                        <Button x:Name="ExportProfileButton"
+                                                Grid.Column="2"
+                                                Style="{DynamicResource AppGhostButtonStyle}"
+                                                FontSize="10.5"
+                                                Height="32"
+                                                Padding="8,0"
+                                                Click="ExportProfileButton_Click">
+                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                <Path Data="{DynamicResource IconExport}"
+                                                      Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                                      StrokeThickness="1.5"
+                                                      StrokeStartLineCap="Round"
+                                                      StrokeEndLineCap="Round"
+                                                      StrokeLineJoin="Round"
+                                                      Width="12" Height="12" Stretch="Uniform" Margin="0,0,7,0" />
+                                                <TextBlock Text="{Binding [BtnExportFile], Source={x:Static services:LocalizationService.Instance}}"
+                                                           VerticalAlignment="Center" />
+                                            </StackPanel>
+                                        </Button>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+
+                        <!-- ====================================================== -->
+                        <!-- VIEW 4: SYSTEM & NETWORK SETTINGS                      -->
+                        <!-- ====================================================== -->
+                        <StackPanel x:Name="SettingsViewPanel" Visibility="Collapsed">
+
+                            <!-- Settings Card 1: Interface Language -->
+                            <Border Style="{DynamicResource AppCardStyle}" Margin="0,0,0,10">
                                 <StackPanel>
-                                    <TextBlock Text="{Binding [SlotSelectTitle], Source={x:Static services:LocalizationService.Instance}}"
-                                               Foreground="{DynamicResource BrushTextPrimary}"
-                                               FontWeight="SemiBold"
-                                               FontSize="12" />
-                                    <TextBlock Text="{Binding [SlotSelectDesc], Source={x:Static services:LocalizationService.Instance}}"
-                                               Foreground="{DynamicResource BrushTextSecondary}"
-                                               FontSize="10"
-                                               TextWrapping="Wrap"
-                                               Margin="0,2,0,7" />
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                        <Border Width="3" Height="12" Background="{DynamicResource BrushAccentPrimary}" Margin="0,0,7,0" />
+                                        <TextBlock Text="{Binding [SectionLanguage], Source={x:Static services:LocalizationService.Instance}}"
+                                                   Style="{DynamicResource AppSectionHeaderStyle}" />
+                                    </StackPanel>
 
                                     <Grid>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="6" />
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="6" />
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="6" />
-                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="150" />
                                         </Grid.ColumnDefinitions>
 
-                                        <Button x:Name="Slot0Button"
-                                                Grid.Column="0"
-                                                Tag="0"
-                                                Style="{DynamicResource AppGhostButtonStyle}"
-                                                Content="PAD 0"
-                                                FontFamily="{DynamicResource FontMonospace}"
-                                                FontSize="10.5"
-                                                Height="28"
-                                                Click="SlotButton_Click" />
+                                        <StackPanel VerticalAlignment="Center" Margin="0,0,10,0">
+                                            <TextBlock Text="{Binding [LanguageTitle], Source={x:Static services:LocalizationService.Instance}}"
+                                                       Foreground="{DynamicResource BrushTextPrimary}"
+                                                       FontWeight="SemiBold"
+                                                       FontSize="12" />
+                                            <TextBlock Text="{Binding [LanguageDesc], Source={x:Static services:LocalizationService.Instance}}"
+                                                       Foreground="{DynamicResource BrushTextSecondary}"
+                                                       FontSize="10"
+                                                       Margin="0,2,0,0" />
+                                        </StackPanel>
 
-                                        <Button x:Name="Slot1Button"
-                                                Grid.Column="2"
-                                                Tag="1"
-                                                Style="{DynamicResource AppGhostButtonStyle}"
-                                                Content="PAD 1"
-                                                FontFamily="{DynamicResource FontMonospace}"
-                                                FontSize="10.5"
-                                                Height="28"
-                                                Click="SlotButton_Click" />
-
-                                        <Button x:Name="Slot2Button"
-                                                Grid.Column="4"
-                                                Tag="2"
-                                                Style="{DynamicResource AppGhostButtonStyle}"
-                                                Content="PAD 2"
-                                                FontFamily="{DynamicResource FontMonospace}"
-                                                FontSize="10.5"
-                                                Height="28"
-                                                Click="SlotButton_Click" />
-
-                                        <Button x:Name="Slot3Button"
-                                                Grid.Column="6"
-                                                Tag="3"
-                                                Style="{DynamicResource AppGhostButtonStyle}"
-                                                Content="PAD 3"
-                                                FontFamily="{DynamicResource FontMonospace}"
-                                                FontSize="10.5"
-                                                Height="28"
-                                                Click="SlotButton_Click" />
+                                        <ComboBox x:Name="LanguageComboBox"
+                                                  Grid.Column="1"
+                                                  Style="{DynamicResource AppComboBoxStyle}"
+                                                  DisplayMemberPath="DisplayName"
+                                                  SelectedValuePath="Code"
+                                                  SelectionChanged="LanguageComboBox_SelectionChanged" />
                                     </Grid>
                                 </StackPanel>
+                            </Border>
 
-                                <Border Style="{DynamicResource AppRowDividerStyle}" Margin="0,9,0,9" />
-
-                                <!-- Row 3: Secondary Cluster Port Toggle (Pads 5-8 on Port 26762) -->
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-
-                                    <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,10,0">
-                                        <TextBlock Text="{Binding [ClusterToggleTitle], Source={x:Static services:LocalizationService.Instance}}"
-                                                   Foreground="{DynamicResource BrushTextPrimary}"
-                                                   FontWeight="SemiBold"
-                                                   FontSize="11.5" />
-                                        <TextBlock x:Name="ClusterToggleSubtitle"
-                                                   Text="{Binding [ClusterToggleDesc], Source={x:Static services:LocalizationService.Instance}}"
-                                                   Foreground="{DynamicResource BrushTextSecondary}"
-                                                   FontSize="10"
-                                                   TextWrapping="Wrap"
-                                                   Margin="0,2,0,0" />
+                            <!-- Settings Card 2: Network & DSU UDP Port -->
+                            <Border Style="{DynamicResource AppCardStyle}" Margin="0,0,0,10">
+                                <StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                                        <Border Width="3" Height="12" Background="{DynamicResource BrushAccentPrimary}" Margin="0,0,7,0" />
+                                        <TextBlock Text="{Binding [SectionNetwork], Source={x:Static services:LocalizationService.Instance}}"
+                                                   Style="{DynamicResource AppSectionHeaderStyle}" />
                                     </StackPanel>
 
-                                    <CheckBox x:Name="MultiPortClusterToggle"
-                                              Grid.Column="1"
-                                              Style="{DynamicResource AppToggleSwitchStyle}"
-                                              IsChecked="False"
-                                              VerticalAlignment="Center"
-                                              Click="MultiPortClusterToggle_Click" />
-                                </Grid>
-                            </StackPanel>
-                        </Border>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="86" />
+                                            <ColumnDefinition Width="8" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
 
-                        <!-- Settings Card 3: System Integration (Start with Windows) -->
-                        <Border Style="{DynamicResource AppCardStyle}">
-                            <StackPanel>
-                                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                                    <Border Width="3" Height="12" Background="{DynamicResource BrushAccentPrimary}" Margin="0,0,7,0" />
-                                    <TextBlock Text="{Binding [SectionSystem], Source={x:Static services:LocalizationService.Instance}}"
-                                               Style="{DynamicResource AppSectionHeaderStyle}" />
+                                        <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,8,0">
+                                            <TextBlock Text="{Binding [PortTitle], Source={x:Static services:LocalizationService.Instance}}"
+                                                       Foreground="{DynamicResource BrushTextPrimary}"
+                                                       FontWeight="SemiBold"
+                                                       FontSize="12" />
+                                            <TextBlock x:Name="PortStatusSubtitle"
+                                                       Text="{Binding [PortDefaultDesc], Source={x:Static services:LocalizationService.Instance}}"
+                                                       Foreground="{DynamicResource BrushTextSecondary}"
+                                                       FontSize="10"
+                                                       TextWrapping="Wrap"
+                                                       Margin="0,2,0,0" />
+                                        </StackPanel>
+
+                                        <TextBox x:Name="PortTextBox"
+                                                 Grid.Column="1"
+                                                 Style="{DynamicResource AppTextBoxStyle}"
+                                                 Text="26760"
+                                                 Height="30"
+                                                 KeyDown="PortTextBox_KeyDown" />
+
+                                        <Button x:Name="ApplyPortButton"
+                                                Grid.Column="3"
+                                                Style="{DynamicResource AppSecondaryButtonStyle}"
+                                                Content="{Binding [ApplyButton], Source={x:Static services:LocalizationService.Instance}}"
+                                                Height="30"
+                                                Click="ApplyPortButton_Click" />
+                                    </Grid>
                                 </StackPanel>
+                            </Border>
 
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-
-                                    <StackPanel VerticalAlignment="Center" Margin="0,0,10,0">
-                                        <TextBlock Text="{Binding [StartupTitle], Source={x:Static services:LocalizationService.Instance}}"
-                                                   Foreground="{DynamicResource BrushTextPrimary}"
-                                                   FontWeight="SemiBold"
-                                                   FontSize="12" />
-                                        <TextBlock x:Name="StartupToggleSubtitle"
-                                                   Text="{Binding [StartupDisabledDesc], Source={x:Static services:LocalizationService.Instance}}"
-                                                   Foreground="{DynamicResource BrushTextSecondary}"
-                                                   FontSize="10"
-                                                   TextWrapping="Wrap"
-                                                   Margin="0,2,0,0" />
+                            <!-- Settings Card 3: System Integration (Start with Windows) -->
+                            <Border Style="{DynamicResource AppCardStyle}">
+                                <StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                        <Border Width="3" Height="12" Background="{DynamicResource BrushAccentPrimary}" Margin="0,0,7,0" />
+                                        <TextBlock Text="{Binding [SectionSystem], Source={x:Static services:LocalizationService.Instance}}"
+                                                   Style="{DynamicResource AppSectionHeaderStyle}" />
                                     </StackPanel>
 
-                                    <CheckBox x:Name="StartupToggle"
-                                              Grid.Column="1"
-                                              Style="{DynamicResource AppToggleSwitchStyle}"
-                                              IsChecked="False"
-                                              VerticalAlignment="Center"
-                                              Click="StartupToggle_Click" />
-                                </Grid>
-                            </StackPanel>
-                        </Border>
-                    </StackPanel>
-                </Grid>
-            </ScrollViewer>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <StackPanel VerticalAlignment="Center" Margin="0,0,10,0">
+                                            <TextBlock Text="{Binding [StartupTitle], Source={x:Static services:LocalizationService.Instance}}"
+                                                       Foreground="{DynamicResource BrushTextPrimary}"
+                                                       FontWeight="SemiBold"
+                                                       FontSize="12" />
+                                            <TextBlock x:Name="StartupToggleSubtitle"
+                                                       Text="{Binding [StartupDisabledDesc], Source={x:Static services:LocalizationService.Instance}}"
+                                                       Foreground="{DynamicResource BrushTextSecondary}"
+                                                       FontSize="10"
+                                                       TextWrapping="Wrap"
+                                                       Margin="0,2,0,0" />
+                                        </StackPanel>
+
+                                        <CheckBox x:Name="StartupToggle"
+                                                  Grid.Column="1"
+                                                  Style="{DynamicResource AppToggleSwitchStyle}"
+                                                  IsChecked="False"
+                                                  VerticalAlignment="Center"
+                                                  Click="StartupToggle_Click" />
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </Grid>
+                </ScrollViewer>
+
+                <!-- FLOATING IN-APP SNACKBAR / TOAST OVERLAY -->
+                <Border x:Name="AppSnackbarBorder"
+                        Grid.Column="1"
+                        VerticalAlignment="Bottom"
+                        HorizontalAlignment="Stretch"
+                        Margin="16,0,16,10"
+                        Background="#F513161E"
+                        BorderBrush="{DynamicResource BrushBorderInput}"
+                        BorderThickness="1"
+                        CornerRadius="6"
+                        Padding="12,9"
+                        Opacity="0"
+                        Visibility="Collapsed"
+                        IsHitTestVisible="False"
+                        SnapsToDevicePixels="True">
+                    <Border.RenderTransform>
+                        <TranslateTransform x:Name="AppSnackbarTranslate" Y="14" />
+                    </Border.RenderTransform>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <Border x:Name="AppSnackbarAccentBar"
+                                Grid.Column="0"
+                                Width="3.5"
+                                CornerRadius="2"
+                                Background="{DynamicResource BrushStatusOnline}"
+                                Margin="0,1,10,1" />
+
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                            <TextBlock x:Name="AppSnackbarTitleText"
+                                       Foreground="{DynamicResource BrushTextPrimary}"
+                                       FontSize="11.5"
+                                       FontWeight="Bold" />
+                            <TextBlock x:Name="AppSnackbarMessageText"
+                                       Foreground="{DynamicResource BrushTextSecondary}"
+                                       FontFamily="{DynamicResource FontMonospace}"
+                                       FontSize="10"
+                                       TextWrapping="Wrap"
+                                       Margin="0,1,0,0" />
+                        </StackPanel>
+                    </Grid>
+                </Border>
+            </Grid>
 
             <!-- ============================================================== -->
-            <!-- 3B. FLOATING IN-APP SNACKBAR / TOAST OVERLAY                   -->
+            <!-- 3. BOTTOM ACTION BAR (CALIBRATE + CONTROLLER HINT)             -->
             <!-- ============================================================== -->
-            <Border x:Name="AppSnackbarBorder"
-                    Grid.Row="3"
-                    VerticalAlignment="Bottom"
-                    HorizontalAlignment="Stretch"
-                    Margin="16,0,16,10"
-                    Background="#F513161E"
-                    BorderBrush="{DynamicResource BrushBorderInput}"
-                    BorderThickness="1"
-                    CornerRadius="6"
-                    Padding="12,9"
-                    Opacity="0"
-                    Visibility="Collapsed"
-                    IsHitTestVisible="False"
-                    SnapsToDevicePixels="True">
-                <Border.RenderTransform>
-                    <TranslateTransform x:Name="AppSnackbarTranslate" Y="14" />
-                </Border.RenderTransform>
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
-
-                    <Border x:Name="AppSnackbarAccentBar"
-                            Grid.Column="0"
-                            Width="3.5"
-                            CornerRadius="2"
-                            Background="{DynamicResource BrushStatusOnline}"
-                            Margin="0,1,10,1" />
-
-                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                        <TextBlock x:Name="AppSnackbarTitleText"
-                                   Foreground="{DynamicResource BrushTextPrimary}"
-                                   FontSize="11.5"
-                                   FontWeight="Bold" />
-                        <TextBlock x:Name="AppSnackbarMessageText"
-                                   Foreground="{DynamicResource BrushTextSecondary}"
-                                   FontFamily="{DynamicResource FontMonospace}"
-                                   FontSize="10"
-                                   TextWrapping="Wrap"
-                                   Margin="0,1,0,0" />
-                    </StackPanel>
-                </Grid>
-            </Border>
-
-            <!-- ============================================================== -->
-            <!-- 4. BOTTOM ACTION BAR (CALIBRATE + CONTROLLER HINT)             -->
-            <!-- ============================================================== -->
-            <Border Grid.Row="4"
+            <Border Grid.Row="3"
                     Background="{DynamicResource BrushBgHeader}"
                     BorderBrush="{DynamicResource BrushBorderCard}"
                     BorderThickness="0,1,0,0"
