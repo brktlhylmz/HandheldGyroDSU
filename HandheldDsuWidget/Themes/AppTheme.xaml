@@ -96,6 +96,10 @@
     <Geometry x:Key="IconMinimize">M 3,8 H 13 V 9.5 H 3 Z</Geometry>
     <Geometry x:Key="IconMaximize">M 3,3 H 13 V 13 H 3 Z M 4.5,4.5 V 11.5 H 11.5 V 4.5 Z</Geometry>
     <Geometry x:Key="IconClose">M 3.5,2.5 L 8,7 L 12.5,2.5 L 13.5,3.5 L 9,8 L 13.5,12.5 L 12.5,13.5 L 8,9 L 3.5,13.5 L 2.5,12.5 L 7,8 L 2.5,3.5 Z</Geometry>
+    <Geometry x:Key="IconTrash">M 6,2 H 10 M 3,4 H 13 M 4.5,4 L 5.2,13.5 H 10.8 L 11.5,4 M 6.8,6.5 V 11.5 M 9.2,6.5 V 11.5</Geometry>
+    <Geometry x:Key="IconPlus">M 8,3 V 13 M 3,8 H 13</Geometry>
+    <Geometry x:Key="IconImport">M 8,2 V 10.5 M 4.5,7.2 L 8,10.8 L 11.5,7.2 M 2.5,11.5 V 13.5 H 13.5 V 11.5</Geometry>
+    <Geometry x:Key="IconExport">M 8,10.5 V 2 M 4.5,5.5 L 8,2 L 11.5,5.5 M 2.5,11.5 V 13.5 H 13.5 V 11.5</Geometry>
 
     <!-- ====================================================================== -->
     <!-- 4. CONTROLLER / KEYBOARD FOCUS VISUAL STYLE                            -->
@@ -268,6 +272,7 @@
         <Setter Property="Foreground" Value="{DynamicResource BrushTextPrimary}" />
         <Setter Property="BorderBrush" Value="{DynamicResource BrushBorderInput}" />
         <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Padding" Value="14,6" />
         <Setter Property="FontWeight" Value="Bold" />
         <Setter Property="FontSize" Value="11" />
         <Setter Property="Cursor" Value="Hand" />
@@ -280,7 +285,7 @@
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}"
                             CornerRadius="3"
-                            Padding="14,6"
+                            Padding="{TemplateBinding Padding}"
                             SnapsToDevicePixels="True">
                         <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                     </Border>
@@ -311,6 +316,7 @@
         <Setter Property="Foreground" Value="{DynamicResource BrushTextSecondary}" />
         <Setter Property="BorderBrush" Value="{DynamicResource BrushBorderInput}" />
         <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Padding" Value="8,3" />
         <Setter Property="FontWeight" Value="Bold" />
         <Setter Property="FontSize" Value="9.5" />
         <Setter Property="Cursor" Value="Hand" />
@@ -323,7 +329,7 @@
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}"
                             CornerRadius="3"
-                            Padding="8,3"
+                            Padding="{TemplateBinding Padding}"
                             SnapsToDevicePixels="True">
                         <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                     </Border>
@@ -339,6 +345,12 @@
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
                             <Setter TargetName="BtnBorder" Property="Background" Value="{DynamicResource BrushAccentDim}" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="BtnBorder" Property="Background" Value="{DynamicResource BrushBgDisabled}" />
+                            <Setter TargetName="BtnBorder" Property="BorderBrush" Value="{DynamicResource BrushBorderCard}" />
+                            <Setter Property="Foreground" Value="{DynamicResource BrushTextMuted}" />
+                            <Setter Property="Opacity" Value="0.45" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -463,9 +475,27 @@
                             BorderThickness="{TemplateBinding BorderThickness}"
                             CornerRadius="3"
                             SnapsToDevicePixels="True">
-                        <ScrollViewer x:Name="PART_ContentHost" Margin="6,2" />
+                        <Grid>
+                            <ScrollViewer x:Name="PART_ContentHost" Margin="6,2" />
+                            <TextBlock x:Name="PlaceholderText"
+                                       Text="{TemplateBinding Tag}"
+                                       Foreground="{DynamicResource BrushTextMuted}"
+                                       FontFamily="{DynamicResource FontPrimary}"
+                                       FontSize="11"
+                                       FontWeight="Normal"
+                                       VerticalAlignment="Center"
+                                       Margin="10,0,8,0"
+                                       IsHitTestVisible="False"
+                                       Visibility="Collapsed" />
+                        </Grid>
                     </Border>
                     <ControlTemplate.Triggers>
+                        <Trigger Property="Text" Value="">
+                            <Setter TargetName="PlaceholderText" Property="Visibility" Value="Visible" />
+                        </Trigger>
+                        <Trigger Property="Text" Value="{x:Null}">
+                            <Setter TargetName="PlaceholderText" Property="Visibility" Value="Visible" />
+                        </Trigger>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource BrushTextSecondary}" />
                         </Trigger>

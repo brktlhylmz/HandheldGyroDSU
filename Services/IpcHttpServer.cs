@@ -229,11 +229,75 @@ public sealed class IpcHttpServer : IDisposable
                     string json = BuildStatusJson("Axis orientation settings updated");
                     await WriteHttpResponseAsync(stream, 200, "OK", json, cancellationToken);
                 }
-                else if (method == "POST" && path == "/language")
+                else if (method == "GET" && path == "/profiles")
                 {
-                    string? requestedLang = ExtractStringParameter(query, body, "language", "lang");
-                    string updatedLang = SetLanguage(requestedLang);
-                    string json = BuildStatusJson($"Language updated: {updatedLang}");
+                    var profiles = ProfileManager.LoadAllProfiles();
+                    string json = JsonSerializer.Serialize(new
+                    {
+                        activeProfileName = _settings.ActiveProfileName,
+                        profiles
+                    });
+                    await WriteHttpResponseAsync(stream, 200, "OK", json, cancellationToken);
+                }
+                else if (method == "POST" && path == "/profiles/apply")
+                {
+                    string? name = ExtractStringParameter(query, body, "name", "profile");
+                    var profiles = ProfileManager.LoadAllProfiles();
+                    var target = profiles.FirstOrDefault(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase));
+                    if (target is not null)
+                    {
+                        _sensorService.UpdateAxisSettings(
+                            target.InvertX,
+                            target.InvertY,
+                            target.InvertZ,
+                            target.SwapAxes,
+                            target.UsePitchOffset);
+                        _settings.ActiveProfileName = target.Name;
+                        SaveCurrentSettings();
+                        string json = BuildStatusJson($"Profile applied: {target.Name}");
+                        await WriteHttpResponseAsync(stream, 200, "OK", json, cancellationToken);
+                    }
+                    else
+                    {
+                        string json = BuildStatusJson("Profile not found");
+                        await WriteHttpResponseAsync(stream, 404, "Not Found", json, cancellationToken);
+                    }
+                }
+                else if (method == "POST" && path == "/profiles/save")
+                {
+                    HandheldProfile? profile = null;
+                    if (!string.IsNullOrWhiteSpace(body))
+                    {
+                        profile = ProfileManager.DeserializeProfile(body);
+                    }
+                    if (profile is null)
+                    {
+                        string? name = ExtractStringParameter(query, body, "name", "profileName") ?? "Custom Profile";
+                        profile = new HandheldProfile
+                        {
+                            Name = name,
+                            InvertX = _sensorService.ActiveProfile.InvertX,
+                            InvertY = _sensorService.ActiveProfile.InvertY,
+                            InvertZ = _sensorService.ActiveProfile.InvertZ,
+                            SwapAxes = _sensorService.ActiveProfile.SwapAxes,
+                            UsePitchOffset = _sensorService.UsePitchOffset
+                        };
+                    }
+
+                    ProfileManager.SaveProfile(profile);
+                    _settings.ActiveProfileName = profile.Name;
+                    SaveCurrentSettings();
+                    string json = BuildStatusJson($"Profile saved: {profile.Name}");
+                    await WriteHttpResponseAsync(stream, 200, "OK", json, cancellationToken);
+                }
+                else if (method == "POST" && path == "/profiles/delete")
+                {
+                    string? name = ExtractStringParameter(query, body, "name", "profile");
+                    if (!string.IsNullOrWhiteSpace(name))
+                    {
+                        ProfileManager.DeleteProfile(name);
+                    }
+                    string json = BuildStatusJson("Profile deleted");
                     await WriteHttpResponseAsync(stream, 200, "OK", json, cancellationToken);
                 }
                 else
@@ -276,6 +340,7 @@ public sealed class IpcHttpServer : IDisposable
         {
             message = message ?? "OK",
             language = _settings.Language,
+            activeProfileName = _settings.ActiveProfileName,
             serverPort = _udpServer.Port,
             ipcPort = _port,
             isStreamingEnabled = _udpServer.IsStreamingEnabled,

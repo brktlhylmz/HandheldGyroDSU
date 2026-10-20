@@ -21,6 +21,9 @@ public sealed class DsuStatusDto
     [JsonPropertyName("language")]
     public string Language { get; set; } = "tr";
 
+    [JsonPropertyName("activeProfileName")]
+    public string ActiveProfileName { get; set; } = "Standard Landscape";
+
     [JsonPropertyName("serverPort")]
     public int ServerPort { get; set; } = 26760;
 
@@ -168,6 +171,7 @@ public sealed class DsuIpcClient : IDisposable
         {
             Message = customMessage ?? "OK",
             Language = _embeddedSettings?.Language ?? "tr",
+            ActiveProfileName = _embeddedSettings?.ActiveProfileName ?? "Standard Landscape",
             ServerPort = _embeddedUdpServer.Port,
             IpcPort = IpcHttpServer.DefaultIpcPort,
             IsStreamingEnabled = _embeddedUdpServer.IsStreamingEnabled,
@@ -354,6 +358,98 @@ public sealed class DsuIpcClient : IDisposable
         }
 
         _embeddedIpcServer?.SetLanguage(language);
+        return BuildEmbeddedStatusDto();
+    }
+
+    public async Task<IReadOnlyList<HandheldProfile>> GetProfilesAsync(CancellationToken cancellationToken = default)
+    {
+        if (!_usingEmbeddedEngine)
+        {
+            try
+            {
+                string json = await _httpClient.GetStringAsync("/profiles", cancellationToken);
+                using JsonDocument doc = JsonDocument.Parse(json);
+                if (doc.RootElement.TryGetProperty("profiles", out JsonElement arrayProp))
+                {
+                    var parsed = JsonSerializer.Deserialize<List<HandheldProfile>>(arrayProp.GetRawText());
+                    if (parsed is not null && parsed.Count > 0)
+                        return parsed;
+                }
+            }
+            catch
+            {
+                // Fall back to local ProfileManager
+            }
+        }
+
+        return ProfileManager.LoadAllProfiles();
+    }
+
+    public async Task<DsuStatusDto> ApplyProfileAsync(string name, CancellationToken cancellationToken = default)
+    {
+        if (!_usingEmbeddedEngine)
+        {
+            string payload = JsonSerializer.Serialize(new { name });
+            DsuStatusDto? remote = await PostJsonAsync("/profiles/apply", payload, cancellationToken);
+            if (remote is not null)
+                return remote;
+
+            EnsureEmbeddedEngineStarted();
+        }
+
+        var profiles = ProfileManager.LoadAllProfiles();
+        var target = profiles.FirstOrDefault(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase));
+        if (target is not null)
+        {
+            _embeddedSensor!.UpdateAxisSettings(
+                target.InvertX,
+                target.InvertY,
+                target.InvertZ,
+                target.SwapAxes,
+                target.UsePitchOffset);
+            if (_embeddedSettings is not null)
+            {
+                _embeddedSettings.ActiveProfileName = target.Name;
+            }
+            _embeddedIpcServer?.SaveCurrentSettings();
+        }
+        return BuildEmbeddedStatusDto();
+    }
+
+    public async Task<DsuStatusDto> SaveProfileAsync(HandheldProfile profile, CancellationToken cancellationToken = default)
+    {
+        if (!_usingEmbeddedEngine)
+        {
+            string payload = JsonSerializer.Serialize(profile);
+            DsuStatusDto? remote = await PostJsonAsync("/profiles/save", payload, cancellationToken);
+            if (remote is not null)
+                return remote;
+
+            EnsureEmbeddedEngineStarted();
+        }
+
+        ProfileManager.SaveProfile(profile);
+        if (_embeddedSettings is not null)
+        {
+            _embeddedSettings.ActiveProfileName = profile.Name;
+        }
+        _embeddedIpcServer?.SaveCurrentSettings();
+        return BuildEmbeddedStatusDto();
+    }
+
+    public async Task<DsuStatusDto> DeleteProfileAsync(string name, CancellationToken cancellationToken = default)
+    {
+        if (!_usingEmbeddedEngine)
+        {
+            string payload = JsonSerializer.Serialize(new { name });
+            DsuStatusDto? remote = await PostJsonAsync("/profiles/delete", payload, cancellationToken);
+            if (remote is not null)
+                return remote;
+
+            EnsureEmbeddedEngineStarted();
+        }
+
+        ProfileManager.DeleteProfile(name);
         return BuildEmbeddedStatusDto();
     }
 
