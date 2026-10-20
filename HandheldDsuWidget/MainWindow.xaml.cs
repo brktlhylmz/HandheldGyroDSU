@@ -706,7 +706,7 @@ public partial class MainWindow : Window
                 var forgetBtn = new Button
                 {
                     Content = "✕",
-                    Style = (Style)FindResource("AppButtonStyle"),
+                    Style = (Style)FindResource("AppGhostButtonStyle"),
                     Width = 24,
                     Height = 24,
                     Padding = new Thickness(0),
@@ -888,7 +888,7 @@ public partial class MainWindow : Window
             var removeBtn = new Button
             {
                 Content = "✕",
-                Style = (Style)FindResource("AppButtonStyle"),
+                Style = (Style)FindResource("AppGhostButtonStyle"),
                 Width = 26,
                 Height = 26,
                 Padding = new Thickness(0),
