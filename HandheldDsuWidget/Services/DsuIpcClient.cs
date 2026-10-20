@@ -40,7 +40,7 @@ public sealed class DsuStatusDto
     public long TotalPacketsSent { get; set; }
 
     [JsonPropertyName("activeProfile")]
-    public string ActiveProfile { get; set; } = "Asus ROG Ally (Varsayılan)";
+    public string ActiveProfile { get; set; } = "Asus ROG Ally";
 
     [JsonPropertyName("invertX")]
     public bool InvertX { get; set; }
@@ -62,9 +62,6 @@ public sealed class DsuStatusDto
 
     [JsonPropertyName("calibrationProgress")]
     public int CalibrationProgress { get; set; } = 100;
-
-    [JsonPropertyName("isSimulatingShake")]
-    public bool IsSimulatingShake { get; set; }
 
     [JsonPropertyName("gyroPitch")]
     public double GyroPitch { get; set; }
@@ -95,8 +92,8 @@ public sealed class DsuStatusDto
 }
 
 /// <summary>
-/// DSU arka plan motoruyla (http://127.0.0.1:26761) iletişim kurar.
-/// Harici sunucu çalışmıyorsa gömülü DSU motorunu settings.json ayarlarıyla otomatik başlatır.
+/// Communicates with the background DSU engine (http://127.0.0.1:26761).
+/// Automatically starts an in-process embedded DSU engine using settings.json if no external server is running.
 /// </summary>
 public sealed class DsuIpcClient : IDisposable
 {
@@ -144,7 +141,7 @@ public sealed class DsuIpcClient : IDisposable
             _ = Task.Run(() => _embeddedUdpServer.RunAsync(token), token);
             _ = Task.Run(() => _embeddedIpcServer.RunAsync(token), token);
 
-            // Eğer daha önce kaydedilmiş bir kalibrasyon yoksa otomatik 1 sn kalibrasyon başlat
+            // Start an automatic 1-second calibration if no prior bias offsets were saved
             if (_embeddedSettings.BiasX == 0f && _embeddedSettings.BiasY == 0f && _embeddedSettings.BiasZ == 0f)
             {
                 _ = Task.Run(async () =>
@@ -169,7 +166,7 @@ public sealed class DsuIpcClient : IDisposable
 
         return new DsuStatusDto
         {
-            Message = customMessage ?? _embeddedUdpServer.LastClientPacketDebug,
+            Message = customMessage ?? "OK",
             ServerPort = _embeddedUdpServer.Port,
             IpcPort = IpcHttpServer.DefaultIpcPort,
             IsStreamingEnabled = _embeddedUdpServer.IsStreamingEnabled,
@@ -185,7 +182,6 @@ public sealed class DsuIpcClient : IDisposable
             UsePitchOffset = _embeddedSensor.UsePitchOffset,
             IsCalibrating = _embeddedSensor.IsCalibrating,
             CalibrationProgress = _embeddedSensor.CalibrationProgressPercent,
-            IsSimulatingShake = _embeddedSensor.IsSimulatingShake,
             GyroPitch = Math.Round(motion.GyroPitch, 2),
             GyroYaw = Math.Round(motion.GyroYaw, 2),
             GyroRoll = Math.Round(motion.GyroRoll, 2),
@@ -239,7 +235,7 @@ public sealed class DsuIpcClient : IDisposable
         }
 
         await Task.Delay(30, cancellationToken);
-        return BuildEmbeddedStatusDto("Kalibrasyon başlatıldı");
+        return BuildEmbeddedStatusDto("Calibration started");
     }
 
     public async Task<DsuStatusDto> SetProfileAsync(string profileKey, CancellationToken cancellationToken = default)
@@ -278,21 +274,6 @@ public sealed class DsuIpcClient : IDisposable
         return BuildEmbeddedStatusDto();
     }
 
-    public async Task<DsuStatusDto> TriggerShakeAsync(CancellationToken cancellationToken = default)
-    {
-        if (!_usingEmbeddedEngine)
-        {
-            DsuStatusDto? remote = await PostJsonAsync("/shake", "{}", cancellationToken);
-            if (remote is not null)
-                return remote;
-
-            EnsureEmbeddedEngineStarted();
-        }
-
-        _embeddedSensor!.TriggerShake(4500);
-        return BuildEmbeddedStatusDto();
-    }
-
     public async Task<(bool Success, DsuStatusDto Status)> ChangePortAsync(int newPort, CancellationToken cancellationToken = default)
     {
         if (!_usingEmbeddedEngine)
@@ -310,7 +291,7 @@ public sealed class DsuIpcClient : IDisposable
         {
             _embeddedIpcServer?.SaveCurrentSettings();
         }
-        return (ok, BuildEmbeddedStatusDto(ok ? $"UDP Port {newPort} aktif" : err));
+        return (ok, BuildEmbeddedStatusDto(ok ? $"UDP port {newPort} active" : err));
     }
 
     public async Task<DsuStatusDto> SetStartupAsync(bool enabled, CancellationToken cancellationToken = default)
@@ -388,7 +369,7 @@ public sealed class DsuIpcClient : IDisposable
         }
         catch
         {
-            // Yoksay
+            // Ignore disposal errors
         }
     }
 }

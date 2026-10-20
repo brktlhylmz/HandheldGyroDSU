@@ -13,8 +13,8 @@ using HandheldDsuServer.Protocol;
 namespace HandheldDsuServer.Services;
 
 /// <summary>
-/// UDP (varsayılan 0.0.0.0:26760, çalışma zamanında canlı değiştirilebilir) portu üzerinde çalışan Cemuhook DSU sunucusu.
-/// Cemu, Yuzu, Eden, Ryujinx, Dolphin, Citra ve RPCS3 gibi emülatörlerle tam uyumludur.
+/// Cemuhook DSU UDP Server (default 0.0.0.0:26760, hot-swappable at runtime).
+/// Compatible with Cemu, Yuzu, Eden, Ryujinx, Dolphin, Citra, and RPCS3.
 /// </summary>
 public sealed class DsuUdpServer : IDisposable
 {
@@ -37,7 +37,6 @@ public sealed class DsuUdpServer : IDisposable
     public uint ServerId => _serverId;
     public long TotalPacketsSent => Interlocked.Read(ref _totalPacketsSent);
     public bool IsStreamingEnabled => _isStreamingEnabled;
-    public string LastClientPacketDebug { get; private set; } = "NONE";
 
     public DsuUdpServer(SensorService sensorService, int port = DefaultPort)
     {
@@ -53,14 +52,14 @@ public sealed class DsuUdpServer : IDisposable
     }
 
     /// <summary>
-    /// UDP sunucu portunu uygulamayı yeniden başlatmaya gerek kalmadan canlı olarak değiştirir.
+    /// Hot-swaps the active UDP listening port without restarting the application.
     /// </summary>
     public bool TryChangePort(int newPort, out string errorMessage)
     {
         errorMessage = string.Empty;
         if (newPort is < 1024 or > 65535)
         {
-            errorMessage = "Port numarası 1024 ile 65535 arasında olmalıdır.";
+            errorMessage = "Port number must be between 1024 and 65535.";
             return false;
         }
 
@@ -77,7 +76,7 @@ public sealed class DsuUdpServer : IDisposable
             catch (Exception ex)
             {
                 newClient?.Dispose();
-                errorMessage = $"Port {newPort} açılamadı (başka bir uygulama kullanıyor olabilir): {ex.Message}";
+                errorMessage = $"Failed to bind UDP port {newPort}: {ex.Message}";
                 return false;
             }
 
@@ -93,7 +92,7 @@ public sealed class DsuUdpServer : IDisposable
             }
             catch
             {
-                // Yoksay
+                // Ignore old socket disposal errors
             }
 
             return true;
@@ -115,7 +114,7 @@ public sealed class DsuUdpServer : IDisposable
     }
 
     /// <summary>
-    /// Şu anda abone olan aktif emülatör istemcilerinin (IP:Port) listesini döner.
+    /// Returns the list of currently subscribed emulator client endpoints (IP:Port).
     /// </summary>
     public IReadOnlyList<IPEndPoint> GetActiveClients()
     {
@@ -138,7 +137,7 @@ public sealed class DsuUdpServer : IDisposable
     }
 
     /// <summary>
-    /// UDP sunucusunu başlatır; istemci dinleme ve hareket verisi yayın görevlerini yürütür.
+    /// Starts the UDP server receive loop and high-frequency motion broadcast loop.
     /// </summary>
     public async Task RunAsync(CancellationToken cancellationToken)
     {
@@ -170,13 +169,7 @@ public sealed class DsuUdpServer : IDisposable
                 byte[] buffer = result.Buffer;
                 IPEndPoint clientEndPoint = result.RemoteEndPoint;
 
-                bool parsed = DsuProtocol.TryParseClientPacket(buffer, out uint clientId, out uint messageType);
-                if (!parsed || messageType == DsuProtocol.MsgTypeControllerInfoRequest || LastClientPacketDebug == "NONE")
-                {
-                    LastClientPacketDebug = $"From={clientEndPoint} Len={buffer.Length} Parsed={parsed} Msg=0x{messageType:X6} Hex={Convert.ToHexString(buffer)}";
-                }
-
-                if (!parsed)
+                if (!DsuProtocol.TryParseClientPacket(buffer, out _, out uint messageType))
                     continue;
 
                 switch (messageType)
@@ -200,15 +193,15 @@ public sealed class DsuUdpServer : IDisposable
             }
             catch (ObjectDisposedException)
             {
-                // Port değiştirildiğinde eski soket kapatılır; döngü yeni soketle devam eder
+                // Expected when the socket is replaced during a live port change
             }
             catch (SocketException)
             {
-                // Geçici ağ hatalarında veya port değişiminde dinlemeye devam et
+                // Continue listening on transient socket errors
             }
             catch
             {
-                // Bozuk paketleri yoksay
+                // Ignore malformed packets
             }
         }
     }
@@ -245,9 +238,8 @@ public sealed class DsuUdpServer : IDisposable
             await udpClient.SendAsync(response, clientEndPoint, cancellationToken);
         }
 
-        // Cemu DSUControllerProvider (kMaxClients = 8) wait_update döngüsü 0..7 arasındaki
-        // tüm slotların yanıtlanmasını bekler; aksi halde açılır menüyü 3000 ms boyunca
-        // "Searching for controllers..." durumunda bloklar.
+        // Cemu DSUControllerProvider (kMaxClients = 8) waits for all slots 0..7 in wait_update();
+        // responding for slots 4..7 prevents Cemu's dropdown from blocking for 3000 ms.
         if (numPorts == 4)
         {
             for (byte extraSlot = 4; extraSlot < 8; extraSlot++)
@@ -330,7 +322,7 @@ public sealed class DsuUdpServer : IDisposable
             }
             catch
             {
-                // Gönderim hatalarında döngüyü kırma
+                // Keep broadcast loop alive on transient network errors
             }
         }
     }

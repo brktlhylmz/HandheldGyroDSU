@@ -12,8 +12,8 @@ using HandheldDsuServer.Models;
 namespace HandheldDsuServer.Services;
 
 /// <summary>
-/// Xbox Game Bar Widget ve harici araçların DSU Sunucu motorunu kontrol edebilmesi için
-/// http://127.0.0.1:26761 üzerinde çalışan hafif yerel HTTP/JSON IPC sunucusu.
+/// Lightweight local HTTP/JSON IPC server running on http://127.0.0.1:26761
+/// allowing the Xbox Game Bar Widget and external tools to monitor and control the DSU engine.
 /// </summary>
 public sealed class IpcHttpServer : IDisposable
 {
@@ -75,11 +75,11 @@ public sealed class IpcHttpServer : IDisposable
         }
         catch (OperationCanceledException)
         {
-            // Normal kapanış
+            // Normal shutdown
         }
         catch (SocketException) when (cancellationToken.IsCancellationRequested)
         {
-            // Normal kapanış
+            // Normal shutdown
         }
         finally
         {
@@ -161,7 +161,7 @@ public sealed class IpcHttpServer : IDisposable
                         }, cancellationToken);
                     }
 
-                    string json = BuildStatusJson("Kalibrasyon başlatıldı (1 sn)");
+                    string json = BuildStatusJson("Calibration started (1s)");
                     await WriteHttpResponseAsync(stream, 200, "OK", json, cancellationToken);
                 }
                 else if (method == "POST" && path == "/profile")
@@ -169,7 +169,7 @@ public sealed class IpcHttpServer : IDisposable
                     string? requestedProfile = ExtractStringParameter(query, body, "profile", "name");
                     DeviceProfile updated = _sensorService.SetOrCycleProfile(requestedProfile);
                     SaveCurrentSettings();
-                    string json = BuildStatusJson($"Aktif profil değiştirildi: {updated.Name}");
+                    string json = BuildStatusJson($"Active profile updated: {updated.Name}");
                     await WriteHttpResponseAsync(stream, 200, "OK", json, cancellationToken);
                 }
                 else if (method == "POST" && path == "/toggle")
@@ -177,23 +177,17 @@ public sealed class IpcHttpServer : IDisposable
                     bool? requestedState = ExtractBooleanParameter(query, body, "enabled");
                     bool isEnabled = _udpServer.ToggleStreaming(requestedState);
                     SaveCurrentSettings();
-                    string json = BuildStatusJson(isEnabled ? "DSU veri akışı açıldı" : "DSU veri akışı duraklatıldı");
-                    await WriteHttpResponseAsync(stream, 200, "OK", json, cancellationToken);
-                }
-                else if (method == "POST" && path == "/shake")
-                {
-                    _sensorService.TriggerShake(4500);
-                    string json = BuildStatusJson("4.5 sn Emülatör Shake sinyali başlatıldı");
+                    string json = BuildStatusJson(isEnabled ? "DSU stream enabled" : "DSU stream paused");
                     await WriteHttpResponseAsync(stream, 200, "OK", json, cancellationToken);
                 }
                 else if (method == "POST" && path == "/port")
                 {
                     int? requestedPort = ExtractIntParameter(query, body, "port");
-                    string err = "Geçersiz port numarası";
+                    string err = "Invalid port number";
                     if (requestedPort.HasValue && _udpServer.TryChangePort(requestedPort.Value, out err))
                     {
                         SaveCurrentSettings();
-                        string json = BuildStatusJson($"UDP portu {requestedPort.Value} olarak güncellendi");
+                        string json = BuildStatusJson($"UDP port updated to {requestedPort.Value}");
                         await WriteHttpResponseAsync(stream, 200, "OK", json, cancellationToken);
                     }
                     else
@@ -208,7 +202,7 @@ public sealed class IpcHttpServer : IDisposable
                     bool target = enableStartup ?? !StartupManager.IsStartupEnabled();
                     bool current = StartupManager.SetStartup(target);
                     SaveCurrentSettings();
-                    string json = BuildStatusJson(current ? "Windows ile otomatik başlatma açıldı" : "Windows ile otomatik başlatma kapatıldı");
+                    string json = BuildStatusJson(current ? "Start with Windows enabled" : "Start with Windows disabled");
                     await WriteHttpResponseAsync(stream, 200, "OK", json, cancellationToken);
                 }
                 else if (method == "POST" && path == "/axes")
@@ -220,21 +214,21 @@ public sealed class IpcHttpServer : IDisposable
                     bool? pitchOff = ExtractBooleanParameter(query, body, "usePitchOffset");
                     _sensorService.UpdateAxisSettings(invX, invY, invZ, swap, pitchOff);
                     SaveCurrentSettings();
-                    string json = BuildStatusJson("Eksen yönleri güncellendi");
+                    string json = BuildStatusJson("Axis orientation settings updated");
                     await WriteHttpResponseAsync(stream, 200, "OK", json, cancellationToken);
                 }
                 else
                 {
                     string notFoundJson = JsonSerializer.Serialize(new
                     {
-                        error = "Endpoint bulunamadı. Desteklenenler: GET /status, POST /calibrate, POST /profile, POST /toggle, POST /shake, POST /port, POST /startup"
+                        error = "Endpoint not found. Supported: GET /status, POST /calibrate, POST /profile, POST /toggle, POST /port, POST /startup, POST /axes"
                     });
                     await WriteHttpResponseAsync(stream, 404, "Not Found", notFoundJson, cancellationToken);
                 }
             }
             catch
             {
-                // Yoksay
+                // Ignore client connection errors
             }
         }
     }
@@ -261,7 +255,7 @@ public sealed class IpcHttpServer : IDisposable
 
         var payload = new
         {
-            message = message ?? _udpServer.LastClientPacketDebug,
+            message = message ?? "OK",
             serverPort = _udpServer.Port,
             ipcPort = _port,
             isStreamingEnabled = _udpServer.IsStreamingEnabled,
@@ -277,7 +271,6 @@ public sealed class IpcHttpServer : IDisposable
             usePitchOffset = _sensorService.UsePitchOffset,
             isCalibrating = _sensorService.IsCalibrating,
             calibrationProgress = _sensorService.CalibrationProgressPercent,
-            isSimulatingShake = _sensorService.IsSimulatingShake,
             gyroPitch = Math.Round(motion.GyroPitch, 2),
             gyroYaw = Math.Round(motion.GyroYaw, 2),
             gyroRoll = Math.Round(motion.GyroRoll, 2),
@@ -322,7 +315,7 @@ public sealed class IpcHttpServer : IDisposable
                 }
                 catch
                 {
-                    // Yoksay
+                    // Ignore malformed JSON
                 }
             }
             return trimmed.Trim('"');
@@ -367,7 +360,7 @@ public sealed class IpcHttpServer : IDisposable
                 }
                 catch
                 {
-                    // Yoksay
+                    // Ignore malformed JSON
                 }
             }
         }
@@ -409,7 +402,7 @@ public sealed class IpcHttpServer : IDisposable
                 }
                 catch
                 {
-                    // Yoksay
+                    // Ignore malformed JSON
                 }
             }
         }
@@ -451,7 +444,7 @@ public sealed class IpcHttpServer : IDisposable
         }
         catch
         {
-            // Yoksay
+            // Ignore listener stop errors
         }
     }
 }

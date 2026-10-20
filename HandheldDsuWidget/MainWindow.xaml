@@ -14,7 +14,7 @@
         WindowStartupLocation="CenterScreen">
 
     <Window.Resources>
-        <!-- Armoury Crate / Xbox Game Bar Koyu Tema Renkleri -->
+        <!-- Dark Theme Palette -->
         <SolidColorBrush x:Key="BgPrimaryBrush" Color="#F20D0F14" />
         <SolidColorBrush x:Key="CardBgBrush" Color="#181C24" />
         <SolidColorBrush x:Key="CardBorderBrush" Color="#2A303D" />
@@ -24,7 +24,7 @@
         <SolidColorBrush x:Key="TextPrimaryBrush" Color="#F5F7FA" />
         <SolidColorBrush x:Key="TextSecondaryBrush" Color="#9AA4B2" />
 
-        <!-- Modern Toggle Switch Şablonu -->
+        <!-- Toggle Switch Control Template -->
         <Style x:Key="GyroToggleSwitchStyle" TargetType="CheckBox">
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="Template">
@@ -37,11 +37,11 @@
                                     BorderBrush="#3E475B"
                                     BorderThickness="1" />
                             <Ellipse x:Name="SwitchThumb"
-                                     Width="18"
-                                     Height="18"
-                                     Fill="#FFFFFF"
-                                     HorizontalAlignment="Left"
-                                     Margin="4,0,0,0" />
+                                    Width="18"
+                                    Height="18"
+                                    Fill="#FFFFFF"
+                                    HorizontalAlignment="Left"
+                                    Margin="4,0,0,0" />
                         </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsChecked" Value="True">
@@ -56,7 +56,7 @@
             </Setter>
         </Style>
 
-        <!-- Armoury Crate / Xbox Stil Aksiyon Butonu -->
+        <!-- Primary Action Button Style -->
         <Style x:Key="CalibrateButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="#E50914" />
             <Setter Property="Foreground" Value="#FFFFFF" />
@@ -90,7 +90,7 @@
         </Style>
     </Window.Resources>
 
-    <!-- Ana Game Bar Widget Çerçevesi -->
+    <!-- Main Widget Frame -->
     <Border Background="{StaticResource BgPrimaryBrush}"
             BorderBrush="#303646"
             BorderThickness="1.5"
@@ -115,7 +115,7 @@
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
-            <!-- 1. Üst Başlık (Armoury Crate / Xbox Game Bar Başlığı) -->
+            <!-- 1. Window Header -->
             <Grid Grid.Row="0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
@@ -167,7 +167,7 @@
                 </StackPanel>
             </Grid>
 
-            <!-- 2. Durum Göstergesi Kartı (Emülatör Bağlı mı? Yeşil / Kırmızı Işık) -->
+            <!-- 2. Emulator Connection Status Card -->
             <Border Grid.Row="2"
                     Background="{StaticResource CardBgBrush}"
                     BorderBrush="{StaticResource CardBorderBrush}"
@@ -181,7 +181,7 @@
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
 
-                    <!-- Yeşil / Kırmızı Durum LED Işığı -->
+                    <!-- Status LED Indicator -->
                     <Grid VerticalAlignment="Center" Margin="0,0,10,0">
                         <Ellipse x:Name="StatusLedGlow"
                                  Width="18" Height="18"
@@ -218,7 +218,7 @@
                 </Grid>
             </Border>
 
-            <!-- 3. Jiroskop Açık/Kapalı & Windows ile Başlat Kartı -->
+            <!-- 3. DSU Stream Toggle & Start with Windows Card -->
             <Border Grid.Row="4"
                     Background="{StaticResource CardBgBrush}"
                     BorderBrush="{StaticResource CardBorderBrush}"
@@ -226,7 +226,7 @@
                     CornerRadius="8"
                     Padding="12,9">
                 <StackPanel>
-                    <!-- Jiroskop Veri Akışı -->
+                    <!-- DSU Motion Stream -->
                     <Grid Margin="0,0,0,8">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
@@ -254,7 +254,7 @@
 
                     <Border Height="1" Background="#252A36" Margin="0,0,0,8" />
 
-                    <!-- Windows ile Otomatik Başlat -->
+                    <!-- Auto-Start with Windows -->
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
@@ -282,7 +282,7 @@
                 </StackPanel>
             </Border>
 
-            <!-- 4. UDP Port Ayarı Kartı -->
+            <!-- 4. UDP Port Configuration Card -->
             <Border Grid.Row="6"
                     Background="{StaticResource CardBgBrush}"
                     BorderBrush="{StaticResource CardBorderBrush}"
@@ -337,7 +337,7 @@
                 </Grid>
             </Border>
 
-            <!-- 5. Cihaz Seçim Menüsü & Eksen Ters Çevirme (Invert) Anahtarları -->
+            <!-- 5. Device Profile & Axis Invert Switches Card -->
             <Border Grid.Row="8"
                     Background="{StaticResource CardBgBrush}"
                     BorderBrush="{StaticResource CardBorderBrush}"
@@ -362,7 +362,7 @@
                         <ComboBoxItem Content="MSI Claw" Tag="msi_claw" />
                     </ComboBox>
 
-                    <!-- Eksen Ters Çevirme (Invert X / Y / Z / Swap) 2x2 Grid -->
+                    <!-- Axis Inversion (Invert X / Y / Z / Swap) 2x2 Grid -->
                     <UniformGrid Columns="2" Margin="0,0,0,6">
                         <Border Background="#11141B" CornerRadius="6" Margin="0,0,4,4" Padding="8,5">
                             <Grid>
@@ -421,7 +421,7 @@
                         </Border>
                     </UniformGrid>
 
-                    <!-- Tutuş Açısını Merkezle (Öne Yatırmayı Önler) -->
+                    <!-- Resting Pitch Angle Compensation Toggle -->
                     <Border Background="#11141B" CornerRadius="6" Padding="8,5">
                         <Grid>
                             <Grid.ColumnDefinitions>
@@ -438,7 +438,7 @@
                 </StackPanel>
             </Border>
 
-            <!-- 6. Anlık Jiroskop & İvmeölçer Canlı Telemetri Kartı -->
+            <!-- 6. Live IMU Telemetry Card -->
             <Border Grid.Row="10"
                     Background="{StaticResource CardBgBrush}"
                     BorderBrush="{StaticResource CardBorderBrush}"
@@ -488,29 +488,13 @@
                 </Grid>
             </Border>
 
-            <!-- 7. [Kalibre Et] ve [Emülatör Salla (Bind)] Butonları -->
-            <Grid Grid.Row="12">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="8" />
-                    <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
-
-                <Button x:Name="CalibrateButton"
-                        Grid.Column="0"
-                        Style="{StaticResource CalibrateButtonStyle}"
-                        Content="🎯 KALİBRE ET"
-                        ToolTip="Cihaz sabitken 1 sn içinde sıfır noktası sapmasını (Drift Bias) sıfırlar"
-                        Click="CalibrateButton_Click" />
-
-                <Button x:Name="ShakeBindButton"
-                        Grid.Column="2"
-                        Style="{StaticResource CalibrateButtonStyle}"
-                        Background="#107C10"
-                        Content="📳 SALLA (4.5 SN)"
-                        ToolTip="Eden / Yuzu 'Motion 1 -> Shake!' ataması için 4.5 sn boyunca sallama sinyali gönderir"
-                        Click="ShakeBindButton_Click" />
-            </Grid>
+            <!-- 7. Calibrate Action Button -->
+            <Button x:Name="CalibrateButton"
+                    Grid.Row="12"
+                    Style="{StaticResource CalibrateButtonStyle}"
+                    Content="🎯 KALİBRE ET"
+                    ToolTip="Cihaz sabitken 1 sn içinde sıfır noktası sapmasını (Drift Bias) sıfırlar"
+                    Click="CalibrateButton_Click" />
         </Grid>
     </Border>
 </Window>

@@ -1,8 +1,8 @@
 namespace HandheldDsuServer.Models;
 
 /// <summary>
-/// Farklı el konsollarının (Asus ROG Ally, Lenovo Legion Go, MSI Claw vb.)
-/// IMU sensör montaj yönlerine göre eksen dönüşümlerini yöneten yapılandırma sınıfı.
+/// Manages axis mapping and orientation inversions for different Windows handhelds
+/// (Asus ROG Ally, Lenovo Legion Go, MSI Claw) according to their internal IMU sensor mounting.
 /// </summary>
 public sealed class DeviceProfile
 {
@@ -27,10 +27,10 @@ public sealed class DeviceProfile
     }
 
     /// <summary>
-    /// Asus ROG Ally / ROG Ally X için varsayılan eksen profili (Landscape).
+    /// Default axis profile for Asus ROG Ally / ROG Ally X (Landscape).
     /// </summary>
     public static DeviceProfile CreateAsusRogAlly() => new(
-        name: "Asus ROG Ally (Varsayılan)",
+        name: "Asus ROG Ally",
         invertX: false,
         invertY: true,
         invertZ: true,
@@ -38,7 +38,7 @@ public sealed class DeviceProfile
     );
 
     /// <summary>
-    /// Lenovo Legion Go (Dikey/Portrait panel tabanlı sensör yerleşimi) eksen profili.
+    /// Axis profile for Lenovo Legion Go (Portrait-native display sensor layout).
     /// </summary>
     public static DeviceProfile CreateLenovoLegionGo() => new(
         name: "Lenovo Legion Go",
@@ -49,7 +49,7 @@ public sealed class DeviceProfile
     );
 
     /// <summary>
-    /// MSI Claw eksen profili.
+    /// Axis profile for MSI Claw.
     /// </summary>
     public static DeviceProfile CreateMsiClaw() => new(
         name: "MSI Claw",
@@ -60,8 +60,8 @@ public sealed class DeviceProfile
     );
 
     /// <summary>
-    /// Ham WinRT sensör verilerini (Accelerometer G ve Gyrometer deg/s)
-    /// aktif cihaz profiline ve Cemuhook DSU koordinat sistemine dönüştürür.
+    /// Transforms raw WinRT sensor readings (Accelerometer in G and Gyrometer in deg/s)
+    /// into the active device profile and Cemuhook DSU coordinate space.
     /// </summary>
     public MotionData Transform(
         float rawAccX, float rawAccY, float rawAccZ,
@@ -76,14 +76,14 @@ public sealed class DeviceProfile
         float gy = calGyroY;
         float gz = calGyroZ;
 
-        // Farklı ekran/anakart montaj yönüne sahip konsollar için X ve Y eksenlerini takas et
+        // Swap X and Y axes for handhelds with portrait-oriented sensor mounting
         if (SwapAxes)
         {
             (ax, ay) = (ay, ax);
             (gx, gy) = (gy, gx);
         }
 
-        // Eksen yönü ters çevirme (Invert) ayarlarını uygula
+        // Apply per-axis inversions
         if (InvertX)
         {
             ax = -ax;
@@ -102,10 +102,10 @@ public sealed class DeviceProfile
             gz = -gz;
         }
 
-        // Cemuhook DSU standardı:
-        // Pitch = X ekseni etrafında dönüş
-        // Yaw   = Z ekseni etrafında dönüş
-        // Roll  = Y ekseni etrafında dönüş
+        // Cemuhook DSU standard coordinate mapping:
+        // Pitch = rotation around X-axis
+        // Yaw   = rotation around Z-axis
+        // Roll  = rotation around Y-axis
         return new MotionData(
             AccX: ax,
             AccY: az,
