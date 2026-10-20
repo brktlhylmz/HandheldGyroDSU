@@ -16,6 +16,9 @@
   "TrayTooltip": "Handheld Gyro DSU (Click to Show/Hide)",
 
   "SectionConnection": "EMULATOR & LIVE IMU TELEMETRY",
+  "CopyEndpointTooltip": "Click to copy DSU server address (127.0.0.1:Port) for Cemu, Eden, Yuzu, Ryujinx, or Dolphin",
+  "ToastEndpointCopiedTitleFormat": "📋 COPIED: {0}",
+  "ToastEndpointCopiedDesc": "Paste into Cemu / Eden / Yuzu / Ryujinx / Dolphin DSU client settings",
   "StatusConnected": "Emulator Connected (Active Stream)",
   "StatusWaiting": "DSU Engine Ready • Awaiting Emulator",
   "StatusReadyBadge": "READY",

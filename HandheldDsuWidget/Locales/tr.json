@@ -16,6 +16,9 @@
   "TrayTooltip": "Handheld Gyro DSU (Göster/Gizle için Tıkla)",
 
   "SectionConnection": "EMÜLATÖR & CANLI IMU TELEMETRİ",
+  "CopyEndpointTooltip": "Cemu, Eden, Yuzu, Ryujinx veya Dolphin için DSU sunucu adresini (127.0.0.1:Port) kopyalamak için tıklayın",
+  "ToastEndpointCopiedTitleFormat": "📋 KOPYALANDI: {0}",
+  "ToastEndpointCopiedDesc": "Cemu / Eden / Yuzu / Ryujinx / Dolphin DSU istemci ayarlarına yapıştırabilirsiniz",
   "StatusConnected": "Emülatör Bağlı (Aktif Yayın)",
   "StatusWaiting": "DSU Motoru Hazır • Emülatör Bekleniyor",
   "StatusReadyBadge": "HAZIR",

@@ -220,11 +220,29 @@
                         <!-- Card 1: Unified Emulator Link & Live IMU Telemetry -->
                         <Border Style="{DynamicResource AppCardStyle}" Margin="0,0,0,10">
                             <StackPanel>
-                                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                                    <Border Width="3" Height="12" Background="{DynamicResource BrushAccentPrimary}" Margin="0,0,7,0" />
-                                    <TextBlock Text="{Binding [SectionConnection], Source={x:Static services:LocalizationService.Instance}}"
-                                               Style="{DynamicResource AppSectionHeaderStyle}" />
-                                </StackPanel>
+                                <Grid Margin="0,0,0,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                                        <Border Width="3" Height="12" Background="{DynamicResource BrushAccentPrimary}" Margin="0,0,7,0" />
+                                        <TextBlock Text="{Binding [SectionConnection], Source={x:Static services:LocalizationService.Instance}}"
+                                                   Style="{DynamicResource AppSectionHeaderStyle}" />
+                                    </StackPanel>
+
+                                    <Button x:Name="CopyEndpointButton"
+                                            Grid.Column="1"
+                                            Style="{DynamicResource AppGhostButtonStyle}"
+                                            Height="22"
+                                            Padding="7,0"
+                                            FontFamily="{DynamicResource FontMonospace}"
+                                            FontSize="9.5"
+                                            Content="127.0.0.1:26760 ⧉"
+                                            ToolTip="{Binding [CopyEndpointTooltip], Source={x:Static services:LocalizationService.Instance}}"
+                                            Click="CopyEndpointButton_Click" />
+                                </Grid>
 
                                 <!-- Connection Status Bar (Single-Line Balanced Module) -->
                                 <Border Style="{DynamicResource AppSubPanelStyle}" Padding="8,6" Margin="0,0,0,6">
