@@ -629,17 +629,45 @@
     </Style>
 
     <Style TargetType="ScrollBar">
-        <Setter Property="Width" Value="6" />
+        <Setter Property="Width" Value="4" />
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ScrollBar">
-                    <Grid Width="6" Background="Transparent">
+                    <Grid Width="4" Background="Transparent">
                         <Track x:Name="PART_Track" IsDirectionReversed="True">
                             <Track.Thumb>
                                 <Thumb Style="{StaticResource AppScrollBarThumb}" />
                             </Track.Thumb>
                         </Track>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Overlay ScrollViewer Template: ScrollBar floats in the outer margin and never squeezes content width -->
+    <Style x:Key="AppOverlayScrollViewerStyle" TargetType="ScrollViewer">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ScrollViewer">
+                    <Grid Background="{TemplateBinding Background}">
+                        <ScrollContentPresenter x:Name="PART_ScrollContentPresenter"
+                                                CanContentScroll="{TemplateBinding CanContentScroll}"
+                                                CanHorizontallyScroll="False"
+                                                CanVerticallyScroll="False"
+                                                ContentTemplate="{TemplateBinding ContentTemplate}"
+                                                Content="{TemplateBinding Content}"
+                                                Margin="{TemplateBinding Padding}" />
+                        <ScrollBar x:Name="PART_VerticalScrollBar"
+                                   AutomationProperties.AutomationId="VerticalScrollBar"
+                                   HorizontalAlignment="Right"
+                                   Margin="0,6,3,6"
+                                   Maximum="{TemplateBinding ScrollableHeight}"
+                                   Minimum="0"
+                                   Value="{Binding VerticalOffset, Mode=OneWay, RelativeSource={RelativeSource TemplatedParent}}"
+                                   ViewportSize="{TemplateBinding ViewportHeight}"
+                                   Visibility="{TemplateBinding ComputedVerticalScrollBarVisibility}" />
                     </Grid>
                 </ControlTemplate>
             </Setter.Value>
