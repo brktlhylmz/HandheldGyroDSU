@@ -25,6 +25,7 @@ public partial class MainWindow : Window
     private readonly SystemTrayService _trayService = new();
     private readonly HudToastService _hudToastService = new();
     private readonly ControllerAndAppWatcherService _automationWatcher = new();
+    private readonly DsuLoopbackTesterService _loopbackTester = new();
     private readonly GamepadNavigationService _gamepadService;
     private readonly LocalizationService _loc = LocalizationService.Instance;
     private readonly DispatcherTimer _pollTimer;
@@ -119,6 +120,7 @@ public partial class MainWindow : Window
         Closed += (_, _) =>
         {
             _snackbarTimer?.Stop();
+            _loopbackTester.Dispose();
             _automationWatcher.Dispose();
             _hudToastService.Dispose();
             _gamepadService.Dispose();
@@ -173,6 +175,12 @@ public partial class MainWindow : Window
                     HudNotificationsToggle,
                     OpenDataFolderButton,
                     ResetAllSettingsButton,
+                    DevSimControllerComboBox,
+                    DevSimInjectButton,
+                    DevSimClearButton,
+                    DevSyntheticWaveToggle,
+                    DevLoopbackClientToggle,
+                    DevTestHudButton,
                     CalibrateButton
                 ];
             }
@@ -188,6 +196,12 @@ public partial class MainWindow : Window
                 HudNotificationsToggle,
                 OpenDataFolderButton,
                 ResetAllSettingsButton,
+                DevSimControllerComboBox,
+                DevSimInjectButton,
+                DevSimClearButton,
+                DevSyntheticWaveToggle,
+                DevLoopbackClientToggle,
+                DevTestHudButton,
                 CalibrateButton
             ];
         }
@@ -551,6 +565,11 @@ public partial class MainWindow : Window
 
             CloseToTrayToggle.IsChecked = status.CloseToTray;
             HudNotificationsToggle.IsChecked = status.HudNotificationsEnabled;
+            DevSyntheticWaveToggle.IsChecked = status.IsSyntheticWaveEnabled;
+            DevLoopbackClientToggle.IsChecked = _loopbackTester.IsRunning;
+            _loopbackTester.UpdateTargetPorts(status.ServerPort, status.SecondaryPort, status.IsSecondaryClusterActive);
+            DevLoopbackStatusText.Text = _loopbackTester.GetDiagnosticSummary();
+            DevSimClearButton.IsEnabled = _automationWatcher.SimulatedControllerCount > 0;
 
             // 3. Axis orientation switches, sensitivity/deadzone sliders, and active badge highlights
             PitchOffsetToggle.IsChecked = status.UsePitchOffset;
@@ -1160,6 +1179,9 @@ public partial class MainWindow : Window
         ResetAllSettingsButton.IsEnabled = false;
         try
         {
+            _loopbackTester.Stop();
+            _automationWatcher.ClearSimulatedControllers();
+
             DsuStatusDto status = await _ipcClient.ResetAllSettingsAsync();
             _automationWatcher.Config.AutoSwitchByController = true;
             _automationWatcher.Config.AutoSwitchByEmulator = true;
@@ -1182,6 +1204,76 @@ public partial class MainWindow : Window
         {
             ResetAllSettingsButton.IsEnabled = true;
         }
+    }
+
+    private void DevSimInjectButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (DevSimControllerComboBox.SelectedItem is not ComboBoxItem item || item.Tag is not string presetKey)
+            return;
+
+        int basePort = _lastStatus?.ServerPort ?? 26760;
+        int secPort = _lastStatus?.SecondaryPort ?? 26762;
+        _automationWatcher.SimulateVirtualControllerPreset(presetKey, basePort, secPort);
+        DevSimClearButton.IsEnabled = _automationWatcher.SimulatedControllerCount > 0;
+        RenderControllersAndRulesUi();
+    }
+
+    private void DevSimClearButton_Click(object sender, RoutedEventArgs e)
+    {
+        int basePort = _lastStatus?.ServerPort ?? 26760;
+        int secPort = _lastStatus?.SecondaryPort ?? 26762;
+        _automationWatcher.ClearSimulatedControllers(basePort, secPort);
+        DevSimClearButton.IsEnabled = false;
+
+        IReadOnlyList<KnownControllerConfig> remaining = _automationWatcher.ScanControllers(basePort, secPort);
+        int connectedCount = Math.Max(1, remaining.Count(c => c.IsConnected));
+        _ = _ipcClient.SetActiveSlotAsync(connectedCount - 1);
+        if (connectedCount <= 4)
+        {
+            _ipcClient.SetSecondaryClusterActive(false);
+        }
+
+        RenderControllersAndRulesUi();
+        ShowToastNotification(_loc["ToastDevSimClearedTitle"], _loc["ToastDevSimClearedDesc"]);
+    }
+
+    private async void DevSyntheticWaveToggle_Click(object sender, RoutedEventArgs e)
+    {
+        if (_suppressUiEvents)
+            return;
+
+        DsuStatusDto status = await _ipcClient.UpdatePreferencesAsync(
+            syntheticWaveEnabled: DevSyntheticWaveToggle.IsChecked == true);
+        UpdateUiFromStatus(status);
+    }
+
+    private void DevLoopbackClientToggle_Click(object sender, RoutedEventArgs e)
+    {
+        if (_suppressUiEvents)
+            return;
+
+        if (DevLoopbackClientToggle.IsChecked == true)
+        {
+            int primaryPort = _lastStatus?.ServerPort ?? 26760;
+            int secondaryPort = _lastStatus?.SecondaryPort ?? 26762;
+            bool cluster = _lastStatus?.IsSecondaryClusterActive ?? false;
+            _loopbackTester.Start(primaryPort, secondaryPort, cluster);
+        }
+        else
+        {
+            _loopbackTester.Stop();
+        }
+
+        DevLoopbackStatusText.Text = _loopbackTester.GetDiagnosticSummary();
+    }
+
+    private void DevTestHudButton_Click(object sender, RoutedEventArgs e)
+    {
+        ShowToastNotification(
+            _loc["ToastDevHudSampleTitle"],
+            _loc["ToastDevHudSampleDesc"],
+            isError: false,
+            showHudOverlay: true);
     }
 
     public async Task TriggerCalibrationFromControllerAsync()

@@ -23,6 +23,7 @@ public sealed class ControllerAndAppWatcherService : IDisposable
 
     private readonly DispatcherTimer _watcherTimer;
     private readonly object _syncLock = new();
+    private readonly List<(string HwId, string DisplayName, string DefaultProfile)> _simulatedControllers = [];
     private AutomationConfig _config;
     private string _lastDetectedEmulatorProcess = string.Empty;
     private HashSet<string> _previousConnectedHwIds = [];
@@ -30,6 +31,10 @@ public sealed class ControllerAndAppWatcherService : IDisposable
     private bool _isScanning;
 
     public AutomationConfig Config => _config;
+    public int SimulatedControllerCount
+    {
+        get { lock (_syncLock) return _simulatedControllers.Count; }
+    }
 
     public event EventHandler<(string Title, string Subtitle, string? ProfileToApply, int ConnectedCount)>? AutomationNotification;
     public event EventHandler? ControllersChanged;
@@ -37,6 +42,7 @@ public sealed class ControllerAndAppWatcherService : IDisposable
     public ControllerAndAppWatcherService()
     {
         _config = AutomationConfig.Load();
+        _config.Controllers.RemoveAll(c => c.HardwareId.StartsWith("SIM_VID_", StringComparison.OrdinalIgnoreCase));
 
         _watcherTimer = new DispatcherTimer
         {
@@ -67,11 +73,77 @@ public sealed class ControllerAndAppWatcherService : IDisposable
     {
         lock (_syncLock)
         {
+            _simulatedControllers.RemoveAll(s => string.Equals(s.HwId, hardwareId, StringComparison.OrdinalIgnoreCase));
             _config.Controllers.RemoveAll(c =>
                 string.Equals(c.HardwareId, hardwareId, StringComparison.OrdinalIgnoreCase) && !c.IsConnected);
             _config.Save();
         }
         ControllersChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    public void SimulateVirtualControllerPreset(string presetKey, int basePort = 26760, int secondaryPort = 26762)
+    {
+        lock (_syncLock)
+        {
+            switch (presetKey.ToLowerInvariant())
+            {
+                case "dualsense":
+                    AddSimulatedEntry("SIM_VID_054C&PID_0CE6", "Sony DualSense Wireless Controller (SIM)", "Standard Landscape");
+                    break;
+
+                case "switchpro":
+                    AddSimulatedEntry("SIM_VID_057E&PID_2009", "Nintendo Switch Pro Controller (SIM)", "Standard Landscape");
+                    break;
+
+                case "legiongo":
+                    AddSimulatedEntry("SIM_VID_17EF&PID_6182", "Lenovo Legion Go Controller (SIM)", "Portrait Sensor (Legion Go)");
+                    break;
+
+                case "cluster4":
+                    _simulatedControllers.Clear();
+                    AddSimulatedEntry("SIM_VID_054C&PID_0CE6", "Sony DualSense Wireless Controller (SIM)", "Standard Landscape");
+                    AddSimulatedEntry("SIM_VID_057E&PID_2009", "Nintendo Switch Pro Controller (SIM)", "Standard Landscape");
+                    AddSimulatedEntry("SIM_VID_054C&PID_09CC", "Sony DualShock 4 Wireless Controller (SIM)", "Standard Landscape");
+                    break;
+
+                case "cluster8":
+                    _simulatedControllers.Clear();
+                    AddSimulatedEntry("SIM_VID_054C&PID_0CE6", "Sony DualSense Wireless Controller #1 (SIM)", "Standard Landscape");
+                    AddSimulatedEntry("SIM_VID_054C&PID_0CE6#2", "Sony DualSense Wireless Controller #2 (SIM)", "Standard Landscape");
+                    AddSimulatedEntry("SIM_VID_057E&PID_2009", "Nintendo Switch Pro Controller #1 (SIM)", "Standard Landscape");
+                    AddSimulatedEntry("SIM_VID_057E&PID_2009#2", "Nintendo Switch Pro Controller #2 (SIM)", "Standard Landscape");
+                    AddSimulatedEntry("SIM_VID_2DC8&PID_3106", "8BitDo Motion Controller (SIM)", "Standard Landscape");
+                    AddSimulatedEntry("SIM_VID_3537&PID_1004", "GameSir Motion Controller (SIM)", "Standard Landscape");
+                    AddSimulatedEntry("SIM_VID_045E&PID_0B12", "Xbox Wireless Controller #2 (SIM)", "Standard Landscape");
+                    break;
+            }
+        }
+
+        ScanControllers(basePort, secondaryPort);
+    }
+
+    public void ClearSimulatedControllers(int basePort = 26760, int secondaryPort = 26762)
+    {
+        lock (_syncLock)
+        {
+            _simulatedControllers.Clear();
+            _config.Controllers.RemoveAll(c => c.HardwareId.StartsWith("SIM_VID_", StringComparison.OrdinalIgnoreCase));
+            _config.Save();
+        }
+
+        ScanControllers(basePort, secondaryPort);
+    }
+
+    private void AddSimulatedEntry(string baseHwId, string displayName, string defaultProfile)
+    {
+        string uniqueKey = baseHwId;
+        int suffix = 2;
+        while (_simulatedControllers.Any(s => string.Equals(s.HwId, uniqueKey, StringComparison.OrdinalIgnoreCase)))
+        {
+            uniqueKey = $"{baseHwId}#{suffix++}";
+        }
+
+        _simulatedControllers.Add((uniqueKey, displayName, defaultProfile));
     }
 
     public void AddOrUpdateEmulatorRule(string processName, string displayName, string profileName, bool isEnabled)
@@ -238,14 +310,58 @@ public sealed class ControllerAndAppWatcherService : IDisposable
                             loc.Format("ToastControllerConnectedTitleFormat", known.DisplayName),
                             loc.Format("ToastControllerConnectedSubFormat", playerIndex + 1, known.AssignedUdpPort, known.AssignedDsuSlot, known.AssignedProfileName),
                             profileToApply,
-                            rawSnapshot.Count
+                            rawSnapshot.Count + _simulatedControllers.Count
                         ));
                     }
 
                     playerIndex++;
                 }
 
-                if (rawSnapshot.Count == 0)
+                // Append Developer Options simulated controllers
+                foreach (var sim in _simulatedControllers)
+                {
+                    currentConnectedHwIds.Add(sim.HwId);
+                    var known = _config.Controllers.FirstOrDefault(c =>
+                        string.Equals(c.HardwareId, sim.HwId, StringComparison.OrdinalIgnoreCase));
+
+                    if (known is null)
+                    {
+                        known = new KnownControllerConfig
+                        {
+                            HardwareId = sim.HwId,
+                            DisplayName = sim.DisplayName,
+                            AssignedProfileName = sim.DefaultProfile,
+                            AutoSwitchProfile = true,
+                            LastSeenUtc = DateTime.UtcNow
+                        };
+                        _config.Controllers.Add(known);
+                    }
+
+                    known.IsConnected = true;
+                    known.LastSeenUtc = DateTime.UtcNow;
+                    known.AssignedPlayerIndex = playerIndex;
+                    known.AssignedUdpPort = playerIndex < 4 ? basePort : secondaryPort;
+                    known.AssignedDsuSlot = playerIndex % 4;
+
+                    if (!_isInitialScan && !_previousConnectedHwIds.Contains(sim.HwId))
+                    {
+                        string? profileToApply = (_config.AutoSwitchByController && known.AutoSwitchProfile)
+                            ? known.AssignedProfileName
+                            : null;
+
+                        var loc = LocalizationService.Instance;
+                        pendingNotifications.Add((
+                            loc.Format("ToastControllerConnectedTitleFormat", known.DisplayName),
+                            loc.Format("ToastControllerConnectedSubFormat", playerIndex + 1, known.AssignedUdpPort, known.AssignedDsuSlot, known.AssignedProfileName),
+                            profileToApply,
+                            rawSnapshot.Count + _simulatedControllers.Count
+                        ));
+                    }
+
+                    playerIndex++;
+                }
+
+                if (rawSnapshot.Count == 0 && _simulatedControllers.Count == 0)
                 {
                     const string builtInId = "BUILTIN_HANDHELD_IMU";
                     currentConnectedHwIds.Add(builtInId);

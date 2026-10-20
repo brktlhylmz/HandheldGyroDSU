@@ -41,6 +41,7 @@ public sealed class SensorService : IDisposable
     private float _restAccY;
     private float _restAccZ = -1.0f;
     private volatile bool _usePitchOffset = true;
+    private volatile bool _syntheticWaveEnabled;
     private float _sensitivity = 1.0f;
     private float _deadzone;
     private volatile bool _isCalibrating;
@@ -57,6 +58,11 @@ public sealed class SensorService : IDisposable
     public int CalibrationProgressPercent => _calibrationProgressPercent;
     public GyroBias CurrentBias => _gyroBias;
     public bool UsePitchOffset => _usePitchOffset;
+    public bool IsSyntheticWaveEnabled
+    {
+        get => _syntheticWaveEnabled;
+        set => _syntheticWaveEnabled = value;
+    }
     public float Sensitivity => _sensitivity;
     public float Deadzone => _deadzone;
     public float RestAccX => _restAccX;
@@ -379,6 +385,16 @@ public sealed class SensorService : IDisposable
                 calGy = 0f;
                 calGz = 0f;
             }
+        }
+
+        // Developer Options: inject synthetic figure-8 test wave before deadzone, sensitivity, and axis mapping
+        if (_syntheticWaveEnabled)
+        {
+            double t = nowTicks / (double)Stopwatch.Frequency;
+            calGx += MathF.Sin((float)(t * 2.2)) * 28f;
+            calGy += MathF.Sin((float)(t * 1.1)) * 18f;
+            calGz += MathF.Cos((float)(t * 1.6)) * 32f;
+            rawAx += MathF.Sin((float)(t * 1.1)) * 0.35f;
         }
 
         // Apply soft-knee deadzone filter and sensitivity gain multiplier

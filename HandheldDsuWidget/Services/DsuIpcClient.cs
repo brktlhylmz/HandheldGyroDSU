@@ -54,6 +54,9 @@ public sealed class DsuStatusDto
     [JsonPropertyName("hudNotificationsEnabled")]
     public bool HudNotificationsEnabled { get; set; } = true;
 
+    [JsonPropertyName("isSyntheticWaveEnabled")]
+    public bool IsSyntheticWaveEnabled { get; set; }
+
     [JsonPropertyName("isEmulatorConnected")]
     public bool IsEmulatorConnected { get; set; }
 
@@ -214,6 +217,7 @@ public sealed class DsuIpcClient : IDisposable
             StartWithWindows = StartupManager.IsStartupEnabled(),
             CloseToTray = _embeddedSettings?.CloseToTray ?? false,
             HudNotificationsEnabled = _embeddedSettings?.HudNotificationsEnabled ?? true,
+            IsSyntheticWaveEnabled = _embeddedSensor.IsSyntheticWaveEnabled,
             IsEmulatorConnected = clients.Count > 0,
             ConnectedClients = clients.Select(c => c.ToString()).ToArray(),
             TotalPacketsSent = _embeddedUdpServer.TotalPacketsSent,
@@ -547,6 +551,7 @@ public sealed class DsuIpcClient : IDisposable
     public async Task<DsuStatusDto> UpdatePreferencesAsync(
         bool? closeToTray = null,
         bool? hudNotificationsEnabled = null,
+        bool? syntheticWaveEnabled = null,
         CancellationToken cancellationToken = default)
     {
         if (!_usingEmbeddedEngine)
@@ -554,7 +559,8 @@ public sealed class DsuIpcClient : IDisposable
             string payload = JsonSerializer.Serialize(new
             {
                 closeToTray,
-                hudNotificationsEnabled
+                hudNotificationsEnabled,
+                syntheticWaveEnabled
             });
             DsuStatusDto? remote = await PostJsonAsync("/preferences", payload, cancellationToken);
             if (remote is not null)
@@ -563,7 +569,7 @@ public sealed class DsuIpcClient : IDisposable
             EnsureEmbeddedEngineStarted();
         }
 
-        _embeddedIpcServer?.SetPreferences(closeToTray, hudNotificationsEnabled);
+        _embeddedIpcServer?.SetPreferences(closeToTray, hudNotificationsEnabled, syntheticWaveEnabled);
         return BuildEmbeddedStatusDto();
     }
 
