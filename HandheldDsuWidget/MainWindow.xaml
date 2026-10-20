@@ -271,9 +271,9 @@
                                           SelectedIndex="0"
                                           Margin="0,0,0,8"
                                           SelectionChanged="DeviceProfileComboBox_SelectionChanged">
-                                    <ComboBoxItem Content="{Binding [ProfileLandscapeStandard], Source={x:Static services:LocalizationService.Instance}}" Tag="landscape_standard" />
-                                    <ComboBoxItem Content="{Binding [ProfilePortraitSensor], Source={x:Static services:LocalizationService.Instance}}" Tag="portrait_native" />
-                                    <ComboBoxItem Content="{Binding [ProfileAlternativeLandscape], Source={x:Static services:LocalizationService.Instance}}" Tag="landscape_alt" />
+                                    <ComboBoxItem Content="{Binding [ProfileRogAlly], Source={x:Static services:LocalizationService.Instance}}" Tag="rog_ally" />
+                                    <ComboBoxItem Content="{Binding [ProfileLegionGo], Source={x:Static services:LocalizationService.Instance}}" Tag="legion_go" />
+                                    <ComboBoxItem Content="{Binding [ProfileMsiClaw], Source={x:Static services:LocalizationService.Instance}}" Tag="msi_claw" />
                                 </ComboBox>
 
                                 <!-- 2x2 Axis Inversion Grid -->
