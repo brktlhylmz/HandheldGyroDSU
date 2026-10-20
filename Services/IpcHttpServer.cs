@@ -52,6 +52,34 @@ public sealed class IpcHttpServer : IDisposable
         return _settings.Language;
     }
 
+    public void SetPreferences(bool? startMinimized = null, bool? closeToTray = null, bool? hudNotificationsEnabled = null)
+    {
+        if (startMinimized.HasValue)
+            _settings.StartMinimized = startMinimized.Value;
+        if (closeToTray.HasValue)
+            _settings.CloseToTray = closeToTray.Value;
+        if (hudNotificationsEnabled.HasValue)
+            _settings.HudNotificationsEnabled = hudNotificationsEnabled.Value;
+        SaveCurrentSettings();
+    }
+
+    public void ResetToFactoryDefaults()
+    {
+        _udpServer.TryChangePort(26760, out _);
+        _udpServer.TryChangeSecondaryPort(26762, out _);
+        _udpServer.SetSecondaryClusterActive(false, 26762);
+        _udpServer.SetActiveSlot(0);
+        _udpServer.ToggleStreaming(true);
+        _sensorService.ResetAxisSettings();
+        StartupManager.SetStartup(false);
+
+        _settings.ActiveProfileName = "Standard Landscape";
+        _settings.StartMinimized = false;
+        _settings.CloseToTray = false;
+        _settings.HudNotificationsEnabled = true;
+        SaveCurrentSettings();
+    }
+
     public void SaveCurrentSettings()
     {
         GyroBias bias = _sensorService.CurrentBias;
@@ -338,6 +366,21 @@ public sealed class IpcHttpServer : IDisposable
                     string json = BuildStatusJson("Secondary cluster updated");
                     await WriteHttpResponseAsync(stream, 200, "OK", json, cancellationToken);
                 }
+                else if (method == "POST" && path == "/preferences")
+                {
+                    bool? startMin = ExtractBooleanParameter(query, body, "startMinimized");
+                    bool? closeTray = ExtractBooleanParameter(query, body, "closeToTray");
+                    bool? hudNotif = ExtractBooleanParameter(query, body, "hudNotificationsEnabled");
+                    SetPreferences(startMin, closeTray, hudNotif);
+                    string json = BuildStatusJson("Preferences updated");
+                    await WriteHttpResponseAsync(stream, 200, "OK", json, cancellationToken);
+                }
+                else if (method == "POST" && path == "/reset")
+                {
+                    ResetToFactoryDefaults();
+                    string json = BuildStatusJson("All settings reset to defaults");
+                    await WriteHttpResponseAsync(stream, 200, "OK", json, cancellationToken);
+                }
                 else
                 {
                     string notFoundJson = JsonSerializer.Serialize(new
@@ -387,6 +430,9 @@ public sealed class IpcHttpServer : IDisposable
             ipcPort = _port,
             isStreamingEnabled = _udpServer.IsStreamingEnabled,
             startWithWindows = StartupManager.IsStartupEnabled(),
+            startMinimized = _settings.StartMinimized,
+            closeToTray = _settings.CloseToTray,
+            hudNotificationsEnabled = _settings.HudNotificationsEnabled,
             isEmulatorConnected = clients.Count > 0,
             connectedClients = clients.Select(c => c.ToString()).ToArray(),
             totalPacketsSent = _udpServer.TotalPacketsSent,

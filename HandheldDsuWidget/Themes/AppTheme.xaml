@@ -102,6 +102,8 @@
     <Geometry x:Key="IconExport">M 8,10.5 V 2 M 4.5,5.5 L 8,2 L 11.5,5.5 M 2.5,11.5 V 13.5 H 13.5 V 11.5</Geometry>
     <Geometry x:Key="IconGamepad">M 3.5,4.5 H 12.5 A 2.2,2.2 0 0 1 14.5,6.7 L 13.8,11.5 A 1.8,1.8 0 0 1 10.8,12.5 L 9.5,10.5 H 6.5 L 5.2,12.5 A 1.8,1.8 0 0 1 2.2,11.5 L 1.5,6.7 A 2.2,2.2 0 0 1 3.5,4.5 Z M 5,6.5 V 9.5 M 3.5,8 H 6.5 M 11,7.2 A 0.6,0.6 0 1 0 11,8.4 A 0.6,0.6 0 1 0 11,7.2 Z M 12.5,6.2 A 0.6,0.6 0 1 0 12.5,7.4 A 0.6,0.6 0 1 0 12.5,6.2 Z</Geometry>
     <Geometry x:Key="IconProfiles">M 2,4 H 14 M 5,2.2 V 5.8 M 2,8 H 14 M 11,6.2 V 9.8 M 2,12 H 14 M 7,10.2 V 13.8</Geometry>
+    <Geometry x:Key="IconFolder">M 2,3.5 H 6.2 L 7.8,5.2 H 14 V 13 H 2 Z</Geometry>
+    <Geometry x:Key="IconReset">M 3.2,5.5 A 5.2,5.2 0 1 1 2.8,9.2 M 3.2,2.5 V 5.8 H 6.5</Geometry>
 
     <!-- ====================================================================== -->
     <!-- 4. CONTROLLER / KEYBOARD FOCUS VISUAL STYLE                            -->

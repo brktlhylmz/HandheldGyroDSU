@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Windows;
+using HandheldDsuServer.Models;
 
 namespace HandheldDsuWidget;
 
@@ -29,7 +30,8 @@ public partial class App : Application
         {
             bool startMinimized = e.Args.Any(a =>
                 string.Equals(a, "--minimized", StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(a, "-m", StringComparison.OrdinalIgnoreCase));
+                string.Equals(a, "-m", StringComparison.OrdinalIgnoreCase)) ||
+                AppSettings.Load().StartMinimized;
 
             var window = new MainWindow(startMinimized);
             MainWindow = window;

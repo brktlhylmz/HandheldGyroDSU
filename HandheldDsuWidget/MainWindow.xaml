@@ -1070,8 +1070,8 @@
                                 </StackPanel>
                             </Border>
 
-                            <!-- Settings Card 3: System Integration (Start with Windows) -->
-                            <Border Style="{DynamicResource AppCardStyle}">
+                            <!-- Settings Card 3: System & Tray Behavior -->
+                            <Border Style="{DynamicResource AppCardStyle}" Margin="0,0,0,10">
                                 <StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                                         <Border Width="3" Height="12" Background="{DynamicResource BrushAccentPrimary}" Margin="0,0,7,0" />
@@ -1079,6 +1079,7 @@
                                                    Style="{DynamicResource AppSectionHeaderStyle}" />
                                     </StackPanel>
 
+                                    <!-- 1. Launch on Windows Startup -->
                                     <Grid>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
@@ -1089,11 +1090,11 @@
                                             <TextBlock Text="{Binding [StartupTitle], Source={x:Static services:LocalizationService.Instance}}"
                                                        Foreground="{DynamicResource BrushTextPrimary}"
                                                        FontWeight="SemiBold"
-                                                       FontSize="12" />
+                                                       FontSize="11.5" />
                                             <TextBlock x:Name="StartupToggleSubtitle"
                                                        Text="{Binding [StartupDisabledDesc], Source={x:Static services:LocalizationService.Instance}}"
                                                        Foreground="{DynamicResource BrushTextSecondary}"
-                                                       FontSize="10"
+                                                       FontSize="9.5"
                                                        TextWrapping="Wrap"
                                                        Margin="0,2,0,0" />
                                         </StackPanel>
@@ -1104,6 +1105,159 @@
                                                   IsChecked="False"
                                                   VerticalAlignment="Center"
                                                   Click="StartupToggle_Click" />
+                                    </Grid>
+
+                                    <Border Style="{DynamicResource AppRowDividerStyle}" Margin="0,10,0,10" />
+
+                                    <!-- 2. Start Minimized in System Tray -->
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <StackPanel VerticalAlignment="Center" Margin="0,0,10,0">
+                                            <TextBlock Text="{Binding [StartMinimizedTitle], Source={x:Static services:LocalizationService.Instance}}"
+                                                       Foreground="{DynamicResource BrushTextPrimary}"
+                                                       FontWeight="SemiBold"
+                                                       FontSize="11.5" />
+                                            <TextBlock Text="{Binding [StartMinimizedDesc], Source={x:Static services:LocalizationService.Instance}}"
+                                                       Foreground="{DynamicResource BrushTextSecondary}"
+                                                       FontSize="9.5"
+                                                       TextWrapping="Wrap"
+                                                       Margin="0,2,0,0" />
+                                        </StackPanel>
+
+                                        <CheckBox x:Name="StartMinimizedToggle"
+                                                  Grid.Column="1"
+                                                  Style="{DynamicResource AppToggleSwitchStyle}"
+                                                  IsChecked="False"
+                                                  VerticalAlignment="Center"
+                                                  Click="StartMinimizedToggle_Click" />
+                                    </Grid>
+
+                                    <Border Style="{DynamicResource AppRowDividerStyle}" Margin="0,10,0,10" />
+
+                                    <!-- 3. Close ('✕') Button Minimizes to System Tray -->
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <StackPanel VerticalAlignment="Center" Margin="0,0,10,0">
+                                            <TextBlock Text="{Binding [CloseToTrayTitle], Source={x:Static services:LocalizationService.Instance}}"
+                                                       Foreground="{DynamicResource BrushTextPrimary}"
+                                                       FontWeight="SemiBold"
+                                                       FontSize="11.5" />
+                                            <TextBlock Text="{Binding [CloseToTrayDesc], Source={x:Static services:LocalizationService.Instance}}"
+                                                       Foreground="{DynamicResource BrushTextSecondary}"
+                                                       FontSize="9.5"
+                                                       TextWrapping="Wrap"
+                                                       Margin="0,2,0,0" />
+                                        </StackPanel>
+
+                                        <CheckBox x:Name="CloseToTrayToggle"
+                                                  Grid.Column="1"
+                                                  Style="{DynamicResource AppToggleSwitchStyle}"
+                                                  IsChecked="False"
+                                                  VerticalAlignment="Center"
+                                                  Click="CloseToTrayToggle_Click" />
+                                    </Grid>
+
+                                    <Border Style="{DynamicResource AppRowDividerStyle}" Margin="0,10,0,10" />
+
+                                    <!-- 4. In-Game HUD Overlay Notifications -->
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <StackPanel VerticalAlignment="Center" Margin="0,0,10,0">
+                                            <TextBlock Text="{Binding [HudNotificationsTitle], Source={x:Static services:LocalizationService.Instance}}"
+                                                       Foreground="{DynamicResource BrushTextPrimary}"
+                                                       FontWeight="SemiBold"
+                                                       FontSize="11.5" />
+                                            <TextBlock Text="{Binding [HudNotificationsDesc], Source={x:Static services:LocalizationService.Instance}}"
+                                                       Foreground="{DynamicResource BrushTextSecondary}"
+                                                       FontSize="9.5"
+                                                       TextWrapping="Wrap"
+                                                       Margin="0,2,0,0" />
+                                        </StackPanel>
+
+                                        <CheckBox x:Name="HudNotificationsToggle"
+                                                  Grid.Column="1"
+                                                  Style="{DynamicResource AppToggleSwitchStyle}"
+                                                  IsChecked="True"
+                                                  VerticalAlignment="Center"
+                                                  Click="HudNotificationsToggle_Click" />
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Settings Card 4: Data & Maintenance Shortcuts -->
+                            <Border Style="{DynamicResource AppCardStyle}">
+                                <StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                        <Border Width="3" Height="12" Background="{DynamicResource BrushAccentPrimary}" Margin="0,0,7,0" />
+                                        <TextBlock Text="{Binding [SectionDataMaintenance], Source={x:Static services:LocalizationService.Instance}}"
+                                                   Style="{DynamicResource AppSectionHeaderStyle}" />
+                                    </StackPanel>
+
+                                    <TextBlock Text="{Binding [DataMaintenanceDesc], Source={x:Static services:LocalizationService.Instance}}"
+                                               Foreground="{DynamicResource BrushTextSecondary}"
+                                               FontSize="9.5"
+                                               TextWrapping="Wrap"
+                                               Margin="0,0,0,10" />
+
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="8" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <Button x:Name="OpenDataFolderButton"
+                                                Grid.Column="0"
+                                                Style="{DynamicResource AppGhostButtonStyle}"
+                                                FontSize="10"
+                                                Height="32"
+                                                Padding="8,0"
+                                                Click="OpenDataFolderButton_Click">
+                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                <Path Data="{DynamicResource IconFolder}"
+                                                      Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                                      StrokeThickness="1.4"
+                                                      StrokeStartLineCap="Round"
+                                                      StrokeEndLineCap="Round"
+                                                      StrokeLineJoin="Round"
+                                                      Width="12" Height="12" Stretch="Uniform" Margin="0,0,6,0" />
+                                                <TextBlock Text="{Binding [BtnOpenDataFolder], Source={x:Static services:LocalizationService.Instance}}"
+                                                           VerticalAlignment="Center" />
+                                            </StackPanel>
+                                        </Button>
+
+                                        <Button x:Name="ResetAllSettingsButton"
+                                                Grid.Column="2"
+                                                Style="{DynamicResource AppGhostButtonStyle}"
+                                                Foreground="{DynamicResource BrushStatusOffline}"
+                                                FontSize="10"
+                                                Height="32"
+                                                Padding="8,0"
+                                                Click="ResetAllSettingsButton_Click">
+                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                <Path Data="{DynamicResource IconReset}"
+                                                      Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                                      StrokeThickness="1.5"
+                                                      StrokeStartLineCap="Round"
+                                                      StrokeEndLineCap="Round"
+                                                      StrokeLineJoin="Round"
+                                                      Width="12" Height="12" Stretch="Uniform" Margin="0,0,6,0" />
+                                                <TextBlock Text="{Binding [BtnResetAllSettings], Source={x:Static services:LocalizationService.Instance}}"
+                                                           VerticalAlignment="Center" />
+                                            </StackPanel>
+                                        </Button>
                                     </Grid>
                                 </StackPanel>
                             </Border>
