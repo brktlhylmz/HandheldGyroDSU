@@ -18,6 +18,9 @@ public sealed class DsuStatusDto
     [JsonPropertyName("message")]
     public string Message { get; set; } = string.Empty;
 
+    [JsonPropertyName("language")]
+    public string Language { get; set; } = "tr";
+
     [JsonPropertyName("serverPort")]
     public int ServerPort { get; set; } = 26760;
 
@@ -167,6 +170,7 @@ public sealed class DsuIpcClient : IDisposable
         return new DsuStatusDto
         {
             Message = customMessage ?? "OK",
+            Language = _embeddedSettings?.Language ?? "tr",
             ServerPort = _embeddedUdpServer.Port,
             IpcPort = IpcHttpServer.DefaultIpcPort,
             IsStreamingEnabled = _embeddedUdpServer.IsStreamingEnabled,
@@ -338,6 +342,22 @@ public sealed class DsuIpcClient : IDisposable
 
         _embeddedSensor!.UpdateAxisSettings(invertX, invertY, invertZ, swapAxes, usePitchOffset);
         _embeddedIpcServer?.SaveCurrentSettings();
+        return BuildEmbeddedStatusDto();
+    }
+
+    public async Task<DsuStatusDto> SetLanguageAsync(string language, CancellationToken cancellationToken = default)
+    {
+        if (!_usingEmbeddedEngine)
+        {
+            string payload = JsonSerializer.Serialize(new { language });
+            DsuStatusDto? remote = await PostJsonAsync("/language", payload, cancellationToken);
+            if (remote is not null)
+                return remote;
+
+            EnsureEmbeddedEngineStarted();
+        }
+
+        _embeddedIpcServer?.SetLanguage(language);
         return BuildEmbeddedStatusDto();
     }
 
