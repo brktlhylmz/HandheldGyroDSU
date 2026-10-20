@@ -1,0 +1,18 @@
+# Build results
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+# Visual Studio / .NET user-specific files
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Certificates & local artifacts
+*.pfx
+*.cer
+*.msix
+*.appx
