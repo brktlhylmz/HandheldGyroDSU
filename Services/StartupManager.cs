@@ -6,8 +6,8 @@ using Microsoft.Win32;
 namespace HandheldDsuServer.Services;
 
 /// <summary>
-/// Windows başlangıcında (HKCU\Software\Microsoft\Windows\CurrentVersion\Run)
-/// uygulamanın sistem tepsisinde (gizli / arka plan modunda) otomatik başlatılmasını yönetir.
+/// Manages automatic Windows startup registration (HKCU\Software\Microsoft\Windows\CurrentVersion\Run)
+/// so the application can launch minimized into the system tray.
 /// </summary>
 public static class StartupManager
 {
@@ -70,7 +70,7 @@ public static class StartupManager
             ?? Process.GetCurrentProcess().MainModule?.FileName
             ?? Path.Combine(AppContext.BaseDirectory, "HandheldDsuWidget.exe");
 
-        // Eğer şu an konsol sunucusu içindeysek ve yan klasörde HandheldDsuWidget.exe varsa onu tercih et
+        // If called from the console server binary and HandheldDsuWidget.exe exists alongside, prefer the Widget binary
         if (currentExe.EndsWith("HandheldDsuServer.exe", StringComparison.OrdinalIgnoreCase))
         {
             string baseDir = AppContext.BaseDirectory;

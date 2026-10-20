@@ -5,12 +5,13 @@ using System.Text.Json;
 namespace HandheldDsuServer.Models;
 
 /// <summary>
-/// Kullanıcı ayarlarını (%LocalAppData%\HandheldDsu\settings.json) kalıcı olarak saklar ve yükler.
+/// Persists user configuration in %LocalAppData%\HandheldDsu\settings.json.
 /// </summary>
 public sealed class AppSettings
 {
     public int UdpPort { get; set; } = 26760;
     public string ActiveProfileKey { get; set; } = "rog_ally";
+    public string Language { get; set; } = "tr";
     public bool IsStreamingEnabled { get; set; } = true;
     public bool StartWithWindows { get; set; }
     public bool? InvertX { get; set; }
@@ -49,13 +50,15 @@ public sealed class AppSettings
                 {
                     if (loaded.UdpPort is < 1024 or > 65535)
                         loaded.UdpPort = 26760;
+                    if (string.IsNullOrWhiteSpace(loaded.Language))
+                        loaded.Language = "tr";
                     return loaded;
                 }
             }
         }
         catch
         {
-            // Bozuk dosya durumunda varsayılan ayarları dön
+            // Return default settings if the configuration file is missing or corrupted
         }
 
         return new AppSettings();
@@ -73,7 +76,7 @@ public sealed class AppSettings
         }
         catch
         {
-            // Disk yazma hatalarını yoksay
+            // Ignore transient disk write failures
         }
     }
 }

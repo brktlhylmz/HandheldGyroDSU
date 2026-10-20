@@ -5,8 +5,7 @@ using Windows.ApplicationModel.Activation;
 namespace Microsoft.Gaming.XboxGameBar
 {
     /// <summary>
-    /// Microsoft.Gaming.XboxGameBar.winmd (v5.8.220627001) içindeki XboxGameBarWidget
-    /// WinRT sınıfının .NET 10 C#/WinRT interop projeksiyonu.
+    /// .NET 10 C#/WinRT interop projection for XboxGameBarWidget from Microsoft.Gaming.XboxGameBar.winmd (v5.8.220627001).
     /// </summary>
     public sealed class XboxGameBarWidget
     {
@@ -38,7 +37,7 @@ namespace Microsoft.Gaming.XboxGameBar
     }
 
     /// <summary>
-    /// Microsoft.Gaming.XboxGameBar.winmd içindeki XboxGameBarWidgetControl projeksiyonu.
+    /// Interop projection for XboxGameBarWidgetControl in Microsoft.Gaming.XboxGameBar.winmd.
     /// </summary>
     public sealed class XboxGameBarWidgetControl
     {
@@ -58,9 +57,8 @@ namespace HandheldDsuWidget.Services
     using Microsoft.Gaming.XboxGameBar;
 
     /// <summary>
-    /// Microsoft.Gaming.XboxGameBar SDK entegrasyon katmanı.
-    /// Widget, Windows Xbox Game Bar (Win + G) tarafından başlatıldığında
-    /// XboxGameBarWidget ve XboxGameBarWidgetControl yaşam döngüsünü yönetir.
+    /// Microsoft.Gaming.XboxGameBar SDK integration adapter.
+    /// Manages the XboxGameBarWidget and XboxGameBarWidgetControl lifecycle when launched via Xbox Game Bar (Win + G).
     /// </summary>
     public sealed class GameBarWidgetAdapter
     {
@@ -74,7 +72,7 @@ namespace HandheldDsuWidget.Services
         public event EventHandler? RequestedOpacityChanged;
 
         /// <summary>
-        /// Xbox Game Bar aktivasyon nesnesi mevcutsa SDK bileşenlerini bağlar.
+        /// Binds SDK components when an Xbox Game Bar activation instance is provided.
         /// </summary>
         public void AttachGameBarWidget(XboxGameBarWidget widget)
         {

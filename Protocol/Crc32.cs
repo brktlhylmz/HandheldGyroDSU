@@ -3,7 +3,7 @@ using System;
 namespace HandheldDsuServer.Protocol;
 
 /// <summary>
-/// Cemuhook DSU protokolü için standart IEEE 802.3 (0xEDB88320) CRC32 hesaplayıcısı.
+/// Standard IEEE 802.3 (0xEDB88320) CRC32 calculator for the Cemuhook DSU protocol.
 /// </summary>
 public static class Crc32
 {
@@ -31,7 +31,7 @@ public static class Crc32
     }
 
     /// <summary>
-    /// Verilen byte dizisinin CRC32 checksum değerini hesaplar.
+    /// Computes the CRC32 checksum of the provided byte span.
     /// </summary>
     public static uint Compute(ReadOnlySpan<byte> data)
     {

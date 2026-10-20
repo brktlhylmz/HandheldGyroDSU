@@ -21,7 +21,7 @@ public partial class App : Application
             }
             catch
             {
-                // Yoksay
+                // Ignore logging failures
             }
         };
 
@@ -36,7 +36,7 @@ public partial class App : Application
 
             if (startMinimized)
             {
-                // Sistem tepsisi kancası ve motorun başlaması için HWND oluşturup gizle
+                // Initialize HWND for system tray hook and background DSU engine, then hide to tray
                 window.ShowActivated = false;
                 window.ShowInTaskbar = false;
                 window.Opacity = 0;

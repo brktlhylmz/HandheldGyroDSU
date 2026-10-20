@@ -5,26 +5,26 @@ using HandheldDsuServer.Models;
 namespace HandheldDsuServer.Protocol;
 
 /// <summary>
-/// Cemuhook DSU (DualShock UDP) protokol sabitleri, paket ayrıştırıcıları ve oluşturucuları.
-/// (SteamDeckGyroDSU, Cemu, Eden, Yuzu, Ryujinx ve Dolphin DSU v1001 ile tam uyumludur)
+/// Cemuhook DSU (DualShock UDP) protocol constants, packet parsers, and builders.
+/// Fully compatible with SteamDeckGyroDSU, Cemu, Eden, Yuzu, Ryujinx, and Dolphin (DSU v1001).
 /// </summary>
 public static class DsuProtocol
 {
     public const ushort ProtocolVersion = 1001;
     public const int HeaderSize = 16; // Magic(4) + Version(2) + Length(2) + CRC32(4) + ID(4)
 
-    // Mesaj Tipleri
+    // Message Types
     public const uint MsgTypeVersionRequest        = 0x100000;
     public const uint MsgTypeControllerInfoRequest = 0x100001;
     public const uint MsgTypeControllerDataRequest = 0x100002;
 
-    // Sabit Sanal MAC Adresi (Slot 0 için)
+    // Virtual MAC address for Slot 0
     private static readonly byte[] DefaultMacAddress = [0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0x01];
 
     /// <summary>
-    /// İstemciden (Cemu, Eden, Yuzu, Ryujinx, Dolphin) gelen DSUC paketini ayrıştırır.
-    /// Not: Bazı emülatörler (örn. Cemu 0x100001 PortInfo isteğinde) C++ struct padding nedeniyle
-    /// header.length ile UDP datagram boyutunu farklı gönderebildiğinden esnek doğrulama kullanılır.
+    /// Parses an incoming DSUC packet from an emulator client (Cemu, Eden, Yuzu, Ryujinx, Dolphin).
+    /// Uses flexible length handling because some clients (e.g., Cemu 0x100001 PortInfo requests)
+    /// may include C++ struct padding that differs from header.length.
     /// </summary>
     public static bool TryParseClientPacket(
         ReadOnlySpan<byte> packet,
@@ -37,7 +37,7 @@ public static class DsuProtocol
         if (packet.Length < 20)
             return false;
 
-        // Magic string kontrolü: 'DSUC' (Client)
+        // Verify magic string: 'DSUC' (Client)
         if (packet[0] != (byte)'D' ||
             packet[1] != (byte)'S' ||
             packet[2] != (byte)'U' ||
@@ -52,7 +52,7 @@ public static class DsuProtocol
     }
 
     /// <summary>
-    /// 0x100000 (Protocol Version) yanıt paketi oluşturur (24 byte).
+    /// Builds a 0x100000 (Protocol Version) response packet (24 bytes).
     /// </summary>
     public static byte[] BuildVersionResponse(uint serverId)
     {
@@ -67,8 +67,8 @@ public static class DsuProtocol
     }
 
     /// <summary>
-    /// 0x100001 (Controller Info) yanıt paketi oluşturur (32 byte).
-    /// Slot 0 bağlı ve Full Gyro destekli olarak, diğer slotlar bağlı değil olarak işaretlenir.
+    /// Builds a 0x100001 (Controller Info) response packet (32 bytes).
+    /// Slot 0 is reported as connected with Full Gyro support; other slots are reported as disconnected.
     /// </summary>
     public static byte[] BuildControllerInfoResponse(uint serverId, byte slot)
     {
@@ -84,7 +84,7 @@ public static class DsuProtocol
     }
 
     /// <summary>
-    /// 0x100002 (Controller Data) hareket verisi yayın paketi oluşturur (100 byte).
+    /// Builds a 0x100002 (Controller Data) motion broadcast packet (100 bytes).
     /// </summary>
     public static void BuildMotionDataPacket(
         Span<byte> packet,
@@ -97,7 +97,7 @@ public static class DsuProtocol
         // [16..19] Message Type (0x100002)
         BinaryPrimitives.WriteUInt32LittleEndian(packet.Slice(16, 4), MsgTypeControllerDataRequest);
 
-        // [20..30] Shared Controller Info (11 byte) - Slot 0 aktif
+        // [20..30] Shared Controller Info (11 bytes) - Slot 0 active
         WriteSharedControllerInfo(packet.Slice(20, 11), slot: 0, isConnected: true);
 
         // [31] Is Connected (1 = Connected)
@@ -106,26 +106,26 @@ public static class DsuProtocol
         // [32..35] Packet Number (uint32 LE)
         BinaryPrimitives.WriteUInt32LittleEndian(packet.Slice(32, 4), packetNumber);
 
-        // [40..43] Sol ve Sağ Analog Çubuklar (Merkez = 128)
+        // [40..43] Left and Right Analog Sticks (Center = 128)
         packet[40] = 128;
         packet[41] = 128;
         packet[42] = 128;
         packet[43] = 128;
 
-        // [68..75] Motion Data Timestamp (uint64 LE, mikrosaniye cinsinden)
+        // [68..75] Motion Data Timestamp (uint64 LE, in microseconds)
         BinaryPrimitives.WriteUInt64LittleEndian(packet.Slice(68, 8), motion.TimestampUs);
 
-        // [76..87] İvmeölçer Verileri (AccX, AccY, AccZ - G cinsinden float LE)
+        // [76..87] Accelerometer Data (AccX, AccY, AccZ - float LE in G)
         BinaryPrimitives.WriteSingleLittleEndian(packet.Slice(76, 4), motion.AccX);
         BinaryPrimitives.WriteSingleLittleEndian(packet.Slice(80, 4), motion.AccY);
         BinaryPrimitives.WriteSingleLittleEndian(packet.Slice(84, 4), motion.AccZ);
 
-        // [88..99] Jiroskop Verileri (Pitch, Yaw, Roll - deg/s cinsinden float LE)
+        // [88..99] Gyroscope Data (Pitch, Yaw, Roll - float LE in deg/s)
         BinaryPrimitives.WriteSingleLittleEndian(packet.Slice(88, 4), motion.GyroPitch);
         BinaryPrimitives.WriteSingleLittleEndian(packet.Slice(92, 4), motion.GyroYaw);
         BinaryPrimitives.WriteSingleLittleEndian(packet.Slice(96, 4), motion.GyroRoll);
 
-        // [0..15] Header ve CRC32 hesaplaması
+        // [0..15] Header and CRC32 calculation
         FinalizeServerHeader(packet, serverId);
     }
 

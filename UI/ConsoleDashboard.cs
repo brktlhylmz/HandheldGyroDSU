@@ -10,7 +10,7 @@ using HandheldDsuServer.Services;
 namespace HandheldDsuServer.UI;
 
 /// <summary>
-/// Konsolda renkli, titreşimsiz (flicker-free) canlı durum ekranı ve klavye kısayollarını yönetir.
+/// Manages a flicker-free live console status dashboard and keyboard shortcuts.
 /// </summary>
 public sealed class ConsoleDashboard
 {
@@ -43,7 +43,7 @@ public sealed class ConsoleDashboard
             }
         }
 
-        // Başlangıçta otomatik 1 saniyelik kalibrasyon başlat
+        // Run an automatic 1-second calibration on startup
         Task initialCalTask = Task.Run(() => _sensorService.CalibrateAsync(cts.Token), cts.Token);
 
         if (!isInteractive)
@@ -56,16 +56,16 @@ public sealed class ConsoleDashboard
             {
                 MotionData m = _sensorService.GetProcessedMotionData();
                 IReadOnlyList<IPEndPoint> clients = _udpServer.GetActiveClients();
-                string clientInfo = clients.Count > 0 ? string.Join(", ", clients) : "Bekleniyor";
+                string clientInfo = clients.Count > 0 ? string.Join(", ", clients) : "Waiting";
                 Console.WriteLine(
-                    $"[{DateTime.Now:HH:mm:ss}] UDP:{_udpServer.Port} | IPC:{_ipcServer.Port} | Akış:{(_udpServer.IsStreamingEnabled ? "AÇIK" : "KAPALI")} | " +
-                    $"İstemci:{clientInfo} | Profil:{_sensorService.ActiveProfile.Name} | " +
+                    $"[{DateTime.Now:HH:mm:ss}] UDP:{_udpServer.Port} | IPC:{_ipcServer.Port} | Stream:{(_udpServer.IsStreamingEnabled ? "ON" : "OFF")} | " +
+                    $"Client:{clientInfo} | Profile:{_sensorService.ActiveProfile.Name} | " +
                     $"Gyro(P/Y/R): {m.GyroPitch,6:F2}, {m.GyroYaw,6:F2}, {m.GyroRoll,6:F2} deg/s");
             }
             return;
         }
 
-        using var uiTimer = new PeriodicTimer(TimeSpan.FromMilliseconds(100)); // 10 FPS ekran yenileme
+        using var uiTimer = new PeriodicTimer(TimeSpan.FromMilliseconds(100)); // 10 FPS refresh rate
 
         try
         {
@@ -80,7 +80,7 @@ public sealed class ConsoleDashboard
         }
         catch (OperationCanceledException)
         {
-            // Normal çıkış
+            // Normal exit
         }
         finally
         {
@@ -91,7 +91,7 @@ public sealed class ConsoleDashboard
             }
             catch
             {
-                // Yoksay
+                // Ignore console state errors
             }
         }
     }
@@ -151,7 +151,7 @@ public sealed class ConsoleDashboard
             }
             catch
             {
-                // Yoksay
+                // Ignore cursor positioning errors
             }
         }
 
@@ -161,84 +161,84 @@ public sealed class ConsoleDashboard
         IReadOnlyList<IPEndPoint> activeClients = _udpServer.GetActiveClients();
 
         WriteColoredLine("======================================================================", ConsoleColor.DarkCyan);
-        WriteColoredLine("   HANDHELD CEMUHOOK DSU (GYRO/MOTION) SUNUCUSU - .NET 10 (WinRT)     ", ConsoleColor.Cyan);
+        WriteColoredLine("   HANDHELD CEMUHOOK DSU (GYRO/MOTION) SERVER - .NET 10 (WinRT)       ", ConsoleColor.Cyan);
         WriteColoredLine("   Asus ROG Ally | Lenovo Legion Go | MSI Claw + Xbox Game Bar IPC    ", ConsoleColor.DarkGray);
         WriteColoredLine("======================================================================", ConsoleColor.DarkCyan);
 
-        // 1. Sunucu ve IPC Durumu
-        WriteLabelValue("  UDP Sunucu Adresi : ", $"0.0.0.0:{_udpServer.Port} (DSUS v1001 | ID: 0x{_udpServer.ServerId:X8})", ConsoleColor.Green);
+        // 1. Server and IPC Status
+        WriteLabelValue("  UDP Server Address: ", $"0.0.0.0:{_udpServer.Port} (DSUS v1001 | ID: 0x{_udpServer.ServerId:X8})", ConsoleColor.Green);
         WriteLabelValue("  Game Bar IPC API  : ", $"http://127.0.0.1:{_ipcServer.Port} (/status, /calibrate, /profile, /toggle)", ConsoleColor.Cyan);
         WriteLabelValue(
-            "  DSU Veri Akışı    : ",
-            _udpServer.IsStreamingEnabled ? "AÇIK (Aktif Yayın)" : "DURAKLATILDI (Kapalı)",
+            "  DSU Data Stream   : ",
+            _udpServer.IsStreamingEnabled ? "ENABLED (Active Broadcast)" : "PAUSED (Disabled)",
             _udpServer.IsStreamingEnabled ? ConsoleColor.Green : ConsoleColor.Red);
 
         if (activeClients.Count > 0)
         {
             string clientsText = string.Join(", ", activeClients);
-            WriteLabelValue("  Bağlı Emülatör IP : ", $"{clientsText} (Paket: {_udpServer.TotalPacketsSent:N0})", ConsoleColor.Green);
+            WriteLabelValue("  Connected Clients : ", $"{clientsText} (Packets: {_udpServer.TotalPacketsSent:N0})", ConsoleColor.Green);
         }
         else
         {
-            WriteLabelValue("  Bağlı Emülatör IP : ", "Bekleniyor... (Cemu/Yuzu/Ryujinx/Dolphin: 127.0.0.1:26760)", ConsoleColor.Yellow);
+            WriteLabelValue("  Connected Clients : ", "Waiting... (Cemu/Eden/Yuzu/Ryujinx/Dolphin: 127.0.0.1:26760)", ConsoleColor.Yellow);
         }
 
-        // 2. Donanım / Sensör Durumu
+        // 2. Hardware Sensor Status
         string gyroStatus = _sensorService.IsGyroAvailable
-            ? $"Aktif ({_sensorService.GyroReportIntervalMs} ms / ~{1000 / Math.Max(1u, _sensorService.GyroReportIntervalMs)} Hz)"
-            : "Bulunamadı (Simülasyon / Sabit Mod)";
+            ? $"Active ({_sensorService.GyroReportIntervalMs} ms / ~{1000 / Math.Max(1u, _sensorService.GyroReportIntervalMs)} Hz)"
+            : "Not Found (Fallback Mode)";
 
         string accelStatus = _sensorService.IsAccelerometerAvailable
-            ? $"Aktif ({_sensorService.AccelReportIntervalMs} ms / ~{1000 / Math.Max(1u, _sensorService.AccelReportIntervalMs)} Hz)"
-            : "Bulunamadı (Simülasyon / Sabit Mod)";
+            ? $"Active ({_sensorService.AccelReportIntervalMs} ms / ~{1000 / Math.Max(1u, _sensorService.AccelReportIntervalMs)} Hz)"
+            : "Not Found (Fallback Mode)";
 
         WriteLabelValue("  Gyrometer (WinRT) : ", gyroStatus, _sensorService.IsGyroAvailable ? ConsoleColor.Green : ConsoleColor.Red);
         WriteLabelValue("  Accelerometer     : ", accelStatus, _sensorService.IsAccelerometerAvailable ? ConsoleColor.Green : ConsoleColor.Red);
 
         WriteColoredLine("----------------------------------------------------------------------", ConsoleColor.DarkGray);
 
-        // 3. Cihaz Profili ve Eksen Ayarları
-        WriteLabelValue("  Aktif Cihaz Profil: ", profile.Name, ConsoleColor.Magenta);
+        // 3. Device Profile and Axis Orientation
+        WriteLabelValue("  Active Profile    : ", profile.Name, ConsoleColor.Magenta);
         WriteLabelValue(
-            "  Eksen Ayarları    : ",
-            $"InvertX: {(profile.InvertX ? "AÇIK " : "KAPALI")} | InvertY: {(profile.InvertY ? "AÇIK " : "KAPALI")} | InvertZ: {(profile.InvertZ ? "AÇIK " : "KAPALI")} | SwapAxes: {(profile.SwapAxes ? "AÇIK " : "KAPALI")}",
+            "  Axis Orientation  : ",
+            $"InvertX: {(profile.InvertX ? "ON " : "OFF")} | InvertY: {(profile.InvertY ? "ON " : "OFF")} | InvertZ: {(profile.InvertZ ? "ON " : "OFF")} | SwapAxes: {(profile.SwapAxes ? "ON " : "OFF")}",
             ConsoleColor.White);
 
         WriteColoredLine("----------------------------------------------------------------------", ConsoleColor.DarkGray);
 
-        // 4. Anlık Hareket Verileri
-        WriteColoredLine("  [ANLIK JİROSKOP VERİLERİ (deg/s)]", ConsoleColor.Cyan);
+        // 4. Live Motion Telemetry
+        WriteColoredLine("  [LIVE GYROSCOPE TELEMETRY (deg/s)]", ConsoleColor.Cyan);
         WriteLabelValue("    Pitch (X) : ", $"{motion.GyroPitch,9:F2} deg/s", ConsoleColor.Yellow);
         WriteLabelValue("    Yaw   (Z) : ", $"{motion.GyroYaw,9:F2} deg/s", ConsoleColor.Yellow);
         WriteLabelValue("    Roll  (Y) : ", $"{motion.GyroRoll,9:F2} deg/s", ConsoleColor.Yellow);
 
-        WriteColoredLine("  [ANLIK İVMEÖLÇER VERİLERİ (G)]", ConsoleColor.Cyan);
+        WriteColoredLine("  [LIVE ACCELEROMETER TELEMETRY (G)]", ConsoleColor.Cyan);
         WriteLabelValue("    Acc X     : ", $"{motion.AccX,9:F3} G", ConsoleColor.White);
         WriteLabelValue("    Acc Y     : ", $"{motion.AccY,9:F3} G", ConsoleColor.White);
         WriteLabelValue("    Acc Z     : ", $"{motion.AccZ,9:F3} G", ConsoleColor.White);
 
         WriteColoredLine("----------------------------------------------------------------------", ConsoleColor.DarkGray);
 
-        // 5. Kalibrasyon Durumu
+        // 5. Calibration Status
         if (_sensorService.IsCalibrating)
         {
             WriteLabelValue(
-                "  Kalibrasyon Durumu: ",
-                $"KALİBRE EDİLİYOR... Lütfen cihazı sabit tutun (%{_sensorService.CalibrationProgressPercent})",
+                "  Calibration State : ",
+                $"CALIBRATING... Keep device stationary ({_sensorService.CalibrationProgressPercent}%)",
                 ConsoleColor.Yellow);
         }
         else
         {
             WriteLabelValue(
-                "  Drift Bias Sapması: ",
+                "  Drift Bias Offset : ",
                 $"X: {bias.BiasX:+0.00;-0.00;0.00} | Y: {bias.BiasY:+0.00;-0.00;0.00} | Z: {bias.BiasZ:+0.00;-0.00;0.00} deg/s",
                 ConsoleColor.Green);
         }
 
         WriteColoredLine("======================================================================", ConsoleColor.DarkCyan);
-        WriteColoredLine("  [C] Kalibrasyon için 'C' tuşuna bas (Cihazı 1 sn düz ve sabit tutun)", ConsoleColor.Green);
-        WriteColoredLine("  [P] Cihaz Profili Değiştir (ROG Ally -> Legion Go -> MSI Claw)      ", ConsoleColor.Gray);
-        WriteColoredLine("  [T] Akışı Aç/Kapat | [X/Y/Z] Eksen Ters Çevir | [S] Swap | [Q] Çıkış", ConsoleColor.Gray);
+        WriteColoredLine("  [C] Calibrate (Hold stationary for 1s)                              ", ConsoleColor.Green);
+        WriteColoredLine("  [P] Cycle Device Profile (ROG Ally -> Legion Go -> MSI Claw)        ", ConsoleColor.Gray);
+        WriteColoredLine("  [T] Toggle Stream | [X/Y/Z] Invert Axis | [S] Swap Axes | [Q] Quit  ", ConsoleColor.Gray);
         WriteColoredLine("======================================================================", ConsoleColor.DarkCyan);
         Console.ResetColor();
     }

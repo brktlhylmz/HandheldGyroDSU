@@ -41,7 +41,7 @@ public partial class MainWindow : Window
 
         SourceInitialized += (_, _) =>
         {
-            _trayService.Initialize(this, "Handheld Gyro DSU (Tıkla: Göster/Gizle)");
+            _trayService.Initialize(this, "Handheld Gyro DSU (Click to Show/Hide)");
             _trayService.TrayLeftClicked += (_, _) => ToggleWindowVisibility();
             _trayService.TrayRightClicked += (_, _) => ShowFromTray();
         };
@@ -113,13 +113,13 @@ public partial class MainWindow : Window
         {
             EngineSubtitleText.Text = $"UDP 0.0.0.0:{status.ServerPort} • IPC 127.0.0.1:{status.IpcPort}";
 
-            // Kullanıcı port kutusunda yazmıyorsa aktif portu göster
+            // Update the port input field unless the user is actively typing in it
             if (!PortTextBox.IsKeyboardFocusWithin)
             {
                 PortTextBox.Text = status.ServerPort.ToString();
             }
 
-            // 1. Emülatör Bağlantı Durumu (Yeşil / Kırmızı Işık)
+            // 1. Emulator connection status indicator
             if (status.IsEmulatorConnected)
             {
                 StatusLedGlow.Fill = GreenLedBrush;
@@ -139,7 +139,7 @@ public partial class MainWindow : Window
                     : "HAZIR";
             }
 
-            // 2. Jiroskop Açık/Kapalı ve Windows ile Başlat Anahtarları
+            // 2. DSU stream and Start with Windows switches
             GyroStreamToggle.IsChecked = status.IsStreamingEnabled;
             GyroToggleSubtitle.Text = status.IsStreamingEnabled
                 ? "Aktif • Emülatöre hareket verisi gönderiliyor"
@@ -150,7 +150,7 @@ public partial class MainWindow : Window
                 ? "Açık • Windows başlangıcında tepside (gizli) başlar"
                 : "Kapalı • Yalnızca manuel çalıştırıldığında açılır";
 
-            // 3. Aktif Cihaz Profili Seçimi
+            // 3. Active device profile selection
             int targetIndex = 0;
             if (status.ActiveProfile.Contains("Legion", StringComparison.OrdinalIgnoreCase))
                 targetIndex = 1;
@@ -168,7 +168,7 @@ public partial class MainWindow : Window
             SwapAxesToggle.IsChecked = status.SwapAxes;
             PitchOffsetToggle.IsChecked = status.UsePitchOffset;
 
-            // 4. Canlı IMU Değerleri (deg/s & G)
+            // 4. Live IMU values (deg/s & G)
             PitchValueText.Text = $"{status.GyroPitch:+0.00;-0.00;0.00}°/s";
             YawValueText.Text = $"{status.GyroYaw:+0.00;-0.00;0.00}°/s";
             RollValueText.Text = $"{status.GyroRoll:+0.00;-0.00;0.00}°/s";
@@ -176,7 +176,7 @@ public partial class MainWindow : Window
             BiasStatusText.Text =
                 $"Acc (X/Y/Z): {status.AccX:F2}, {status.AccY:F2}, {status.AccZ:F2}G | Bias: {status.BiasX:+0.00;-0.00;0.00}, {status.BiasY:+0.00;-0.00;0.00}, {status.BiasZ:+0.00;-0.00;0.00}";
 
-            // 5. Kalibrasyon ve Shake Butonu Durumu
+            // 5. Calibration button state
             if (status.IsCalibrating)
             {
                 CalibrateButton.IsEnabled = false;
@@ -187,10 +187,6 @@ public partial class MainWindow : Window
                 CalibrateButton.IsEnabled = true;
                 CalibrateButton.Content = "🎯 KALİBRE ET";
             }
-
-            ShakeBindButton.Content = status.IsSimulatingShake
-                ? "📳 SALLANIYOR..."
-                : "📳 SALLA (4.5 SN)";
         }
         finally
         {
@@ -251,13 +247,6 @@ public partial class MainWindow : Window
 
         bool targetState = StartupToggle.IsChecked == true;
         DsuStatusDto status = await _ipcClient.SetStartupAsync(targetState);
-        UpdateUiFromStatus(status);
-    }
-
-    private async void ShakeBindButton_Click(object sender, RoutedEventArgs e)
-    {
-        ShakeBindButton.Content = "📳 SALLANIYOR...";
-        DsuStatusDto status = await _ipcClient.TriggerShakeAsync();
         UpdateUiFromStatus(status);
     }
 

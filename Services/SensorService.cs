@@ -9,8 +9,8 @@ using Windows.Devices.Sensors;
 namespace HandheldDsuServer.Services;
 
 /// <summary>
-/// Windows.Devices.Sensors (WinRT) API'lerini kullanarak dahili IMU (Bosch BOSC0200 / Gyrometer + Accelerometer)
-/// sensörlerini yöneten, yüksek yenileme hızı sağlayan ve Drift Bias kalibrasyonu yapan servis.
+/// Manages internal WinRT IMU sensors (Bosch BOSC0200 / Gyrometer + Accelerometer),
+/// providing high-frequency event-driven sampling, drift bias calibration, and resting pitch compensation.
 /// </summary>
 public sealed class SensorService : IDisposable
 {
@@ -25,7 +25,7 @@ public sealed class SensorService : IDisposable
     private volatile bool _stopRequested;
     private readonly ManualResetEventSlim _initCompleted = new(false);
 
-    // Ham sensör verileri (WinRT ReadingChanged event-driven)
+    // Raw sensor telemetry updated via WinRT ReadingChanged events
     private float _rawAccX;
     private float _rawAccY;
     private float _rawAccZ = -1.0f;
@@ -38,16 +38,13 @@ public sealed class SensorService : IDisposable
     private long _gyroEventsReceived;
     private long _accelEventsReceived;
 
-    // Kalibrasyon (Drift Bias ve Tutuş Açısı) sapma değerleri
+    // Calibration offsets (Drift Bias and Resting Pitch Attitude)
     private GyroBias _gyroBias = GyroBias.Zero;
     private float _restAccY;
     private float _restAccZ = -1.0f;
     private volatile bool _usePitchOffset = true;
     private volatile bool _isCalibrating;
     private volatile int _calibrationProgressPercent = 100;
-
-    // Emülatör (Eden/Yuzu) "Motion 1 -> Shake!" eşleştirmesi için sanal sallama zamanlayıcısı
-    private long _shakeUntilTimestamp;
 
     public bool IsGyroAvailable { get; private set; }
     public bool IsAccelerometerAvailable { get; private set; }
@@ -58,7 +55,6 @@ public sealed class SensorService : IDisposable
 
     public bool IsCalibrating => _isCalibrating;
     public int CalibrationProgressPercent => _calibrationProgressPercent;
-    public bool IsSimulatingShake => Stopwatch.GetTimestamp() < Interlocked.Read(ref _shakeUntilTimestamp);
     public GyroBias CurrentBias => _gyroBias;
     public bool UsePitchOffset => _usePitchOffset;
     public float RestAccY => _restAccY;
@@ -171,16 +167,6 @@ public sealed class SensorService : IDisposable
         }
     }
 
-    /// <summary>
-    /// Emülatörlerde (Eden, Yuzu, Ryujinx) "Motion 1 -> Shake!" atamasını mouse'a takılmadan
-    /// kolayca yapabilmek için belirtilen süre boyunca güçlü bir sallama (Shake) sinyali üretir.
-    /// </summary>
-    public void TriggerShake(int durationMs = 4500)
-    {
-        long targetTicks = Stopwatch.GetTimestamp() + (long)(durationMs / 1000.0 * Stopwatch.Frequency);
-        Interlocked.Exchange(ref _shakeUntilTimestamp, targetTicks);
-    }
-
     public void Initialize()
     {
         if (_sensorThread is not null)
@@ -262,7 +248,7 @@ public sealed class SensorService : IDisposable
             }
             catch
             {
-                // Yoksay
+                // Ignore cleanup exceptions on shutdown
             }
         }
     }
@@ -359,22 +345,6 @@ public sealed class SensorService : IDisposable
         long nowTicks = Stopwatch.GetTimestamp();
         ulong timestampUs = (ulong)(nowTicks * 1_000_000.0 / Stopwatch.Frequency);
 
-        // Eğer emülatör eşleştirmesi için Shake simülasyonu aktifse güçlü bir sallama dalgası üret:
-        if (nowTicks < Interlocked.Read(ref _shakeUntilTimestamp))
-        {
-            double t = nowTicks / (double)Stopwatch.Frequency;
-            float wave = MathF.Sin((float)(t * 35.0)); // ~5.5 Hz hızlı sallama
-            return new MotionData(
-                AccX: wave * 2.8f,
-                AccY: -1.0f + (wave * 1.8f),
-                AccZ: wave * 2.2f,
-                GyroPitch: wave * 340.0f,
-                GyroYaw: -wave * 280.0f,
-                GyroRoll: wave * 260.0f,
-                TimestampUs: timestampUs
-            );
-        }
-
         float rawAx, rawAy, rawAz;
         float rawGx, rawGy, rawGz;
         float restAy, restAz;
@@ -397,8 +367,8 @@ public sealed class SensorService : IDisposable
             profile = _activeProfile;
         }
 
-        // Eğer "Tutuş Açısını Merkezle (Pitch Offset)" açıksa, kalibrasyon anındaki
-        // tutuş açısını 0° düz referans (ay=0, az=-1G) kabul edecek şekilde Y-Z düzlemini döndür:
+        // When pitch offset compensation is enabled, rotate the Y-Z accelerometer plane
+        // so the calibrated holding angle acts as the 0-degree neutral reference (ay = 0, az = -1G)
         if (_usePitchOffset)
         {
             float mag = MathF.Sqrt((restAy * restAy) + (restAz * restAz));
@@ -417,8 +387,7 @@ public sealed class SensorService : IDisposable
         float calGy = rawGy - bias.BiasY;
         float calGz = rawGz - bias.BiasZ;
 
-        // Cihaz hareketsizken Bosch BOSC0200 yeni ReadingChanged göndermediğinde
-        // son açısal hızın takılı kalmasını önle (200ms hareketsizlik sonrası sıfırla):
+        // Zero angular velocity if the Bosch BOSC0200 driver stops firing ReadingChanged while stationary (> 200ms)
         long lastGyroTicks = Interlocked.Read(ref _lastGyroEventTimestamp);
         if (lastGyroTicks > 0)
         {

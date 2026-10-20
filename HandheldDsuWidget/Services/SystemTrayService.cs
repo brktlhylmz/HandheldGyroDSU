@@ -6,8 +6,7 @@ using System.Windows.Interop;
 namespace HandheldDsuWidget.Services;
 
 /// <summary>
-/// Ekstra bağımlılık gerektirmeden doğrudan Win32 Shell_NotifyIconW API'si ile
-/// Windows Sistem Tepsisi (System Tray) ikonu oluşturur ve tıklama olaylarını yönetir.
+/// Manages the Windows System Tray icon and click events directly via Win32 Shell_NotifyIconW without external dependencies.
 /// </summary>
 public sealed class SystemTrayService : IDisposable
 {
@@ -52,7 +51,7 @@ public sealed class SystemTrayService : IDisposable
     public event EventHandler? TrayLeftClicked;
     public event EventHandler? TrayRightClicked;
 
-    public void Initialize(Window window, string tooltip = "Handheld Gyro DSU (Sol Tık: Göster/Gizle)")
+    public void Initialize(Window window, string tooltip = "Handheld Gyro DSU (Click: Show/Hide)")
     {
         if (_isAdded)
             return;
