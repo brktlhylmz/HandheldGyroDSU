@@ -165,8 +165,16 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="CheckBox">
-                    <Grid Width="46" Height="24" Background="Transparent">
+                    <Grid Width="50" Height="28" Background="Transparent">
+                        <Border x:Name="FocusRing"
+                                CornerRadius="14"
+                                BorderBrush="Transparent"
+                                BorderThickness="2"
+                                Margin="-2"
+                                SnapsToDevicePixels="True" />
                         <Border x:Name="Track"
+                                Width="46"
+                                Height="24"
                                 CornerRadius="12"
                                 Background="{DynamicResource BrushBgSwitchOff}"
                                 BorderBrush="{DynamicResource BrushBorderSwitchOff}"
@@ -178,7 +186,7 @@
                                  Fill="{DynamicResource BrushTextSecondary}"
                                  HorizontalAlignment="Left"
                                  VerticalAlignment="Center"
-                                 Margin="4,0,0,0"
+                                 Margin="6,0,0,0"
                                  SnapsToDevicePixels="True" />
                     </Grid>
                     <ControlTemplate.Triggers>
@@ -186,15 +194,16 @@
                             <Setter TargetName="Track" Property="BorderBrush" Value="{DynamicResource BrushTextPrimary}" />
                             <Setter TargetName="Thumb" Property="Fill" Value="{DynamicResource BrushTextPrimary}" />
                         </Trigger>
-                        <Trigger Property="IsKeyboardFocused" Value="True">
-                            <Setter TargetName="Track" Property="BorderBrush" Value="{DynamicResource BrushAccentPrimary}" />
-                        </Trigger>
                         <Trigger Property="IsChecked" Value="True">
                             <Setter TargetName="Track" Property="Background" Value="{DynamicResource BrushAccentPrimary}" />
                             <Setter TargetName="Track" Property="BorderBrush" Value="{DynamicResource BrushAccentPrimaryHover}" />
                             <Setter TargetName="Thumb" Property="Fill" Value="{DynamicResource BrushTextOnAccent}" />
                             <Setter TargetName="Thumb" Property="HorizontalAlignment" Value="Right" />
-                            <Setter TargetName="Thumb" Property="Margin" Value="0,0,4,0" />
+                            <Setter TargetName="Thumb" Property="Margin" Value="0,0,6,0" />
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter TargetName="FocusRing" Property="BorderBrush" Value="{DynamicResource BrushTelemetryReadout}" />
+                            <Setter TargetName="Thumb" Property="Fill" Value="{DynamicResource BrushTextOnAccent}" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -235,7 +244,7 @@
                             <Setter TargetName="BtnBorder" Property="Background" Value="{DynamicResource BrushAccentPrimaryPressed}" />
                         </Trigger>
                         <Trigger Property="IsKeyboardFocused" Value="True">
-                            <Setter TargetName="BtnBorder" Property="BorderBrush" Value="{DynamicResource BrushTextOnAccent}" />
+                            <Setter TargetName="BtnBorder" Property="BorderBrush" Value="{DynamicResource BrushTelemetryReadout}" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="BtnBorder" Property="Background" Value="{DynamicResource BrushBgDisabled}" />
@@ -279,7 +288,7 @@
                             <Setter TargetName="BtnBorder" Property="Background" Value="{DynamicResource BrushAccentDim}" />
                         </Trigger>
                         <Trigger Property="IsKeyboardFocused" Value="True">
-                            <Setter TargetName="BtnBorder" Property="BorderBrush" Value="{DynamicResource BrushAccentPrimary}" />
+                            <Setter TargetName="BtnBorder" Property="BorderBrush" Value="{DynamicResource BrushTelemetryReadout}" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="BtnBorder" Property="Background" Value="{DynamicResource BrushBgDisabled}" />
@@ -317,6 +326,10 @@
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="BtnBorder" Property="BorderBrush" Value="{DynamicResource BrushAccentPrimary}" />
                             <Setter TargetName="BtnBorder" Property="Background" Value="{DynamicResource BrushBgControlHover}" />
+                            <Setter Property="Foreground" Value="{DynamicResource BrushTextPrimary}" />
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter TargetName="BtnBorder" Property="BorderBrush" Value="{DynamicResource BrushTelemetryReadout}" />
                             <Setter Property="Foreground" Value="{DynamicResource BrushTextPrimary}" />
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
@@ -570,7 +583,17 @@
                                 </Border>
                             </Grid>
                         </Popup>
+                        <Border x:Name="ComboFocusBorder"
+                                CornerRadius="3"
+                                BorderBrush="Transparent"
+                                BorderThickness="1.5"
+                                IsHitTestVisible="False" />
                     </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                            <Setter TargetName="ComboFocusBorder" Property="BorderBrush" Value="{DynamicResource BrushTelemetryReadout}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
