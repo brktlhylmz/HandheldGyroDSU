@@ -1109,36 +1109,7 @@
 
                                     <Border Style="{DynamicResource AppRowDividerStyle}" Margin="0,10,0,10" />
 
-                                    <!-- 2. Start Minimized in System Tray -->
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="Auto" />
-                                        </Grid.ColumnDefinitions>
-
-                                        <StackPanel VerticalAlignment="Center" Margin="0,0,10,0">
-                                            <TextBlock Text="{Binding [StartMinimizedTitle], Source={x:Static services:LocalizationService.Instance}}"
-                                                       Foreground="{DynamicResource BrushTextPrimary}"
-                                                       FontWeight="SemiBold"
-                                                       FontSize="11.5" />
-                                            <TextBlock Text="{Binding [StartMinimizedDesc], Source={x:Static services:LocalizationService.Instance}}"
-                                                       Foreground="{DynamicResource BrushTextSecondary}"
-                                                       FontSize="9.5"
-                                                       TextWrapping="Wrap"
-                                                       Margin="0,2,0,0" />
-                                        </StackPanel>
-
-                                        <CheckBox x:Name="StartMinimizedToggle"
-                                                  Grid.Column="1"
-                                                  Style="{DynamicResource AppToggleSwitchStyle}"
-                                                  IsChecked="False"
-                                                  VerticalAlignment="Center"
-                                                  Click="StartMinimizedToggle_Click" />
-                                    </Grid>
-
-                                    <Border Style="{DynamicResource AppRowDividerStyle}" Margin="0,10,0,10" />
-
-                                    <!-- 3. Close ('✕') Button Minimizes to System Tray -->
+                                    <!-- 2. Close ('✕') Button Minimizes to System Tray -->
                                     <Grid>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
