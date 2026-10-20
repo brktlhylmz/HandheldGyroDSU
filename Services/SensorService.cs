@@ -71,9 +71,9 @@ public sealed class SensorService : IDisposable
     {
         _presets =
         [
-            DeviceProfile.CreateAsusRogAlly(),
-            DeviceProfile.CreateLenovoLegionGo(),
-            DeviceProfile.CreateMsiClaw()
+            DeviceProfile.CreateLandscapeStandard(),
+            DeviceProfile.CreatePortraitNative(),
+            DeviceProfile.CreateAlternativeLandscape()
         ];
         _currentPresetIndex = 0;
         _activeProfile = initialProfile ?? _presets[0];
@@ -132,11 +132,13 @@ public sealed class SensorService : IDisposable
 
     public static string GetProfileKey(DeviceProfile profile)
     {
-        if (profile.Name.Contains("Legion", StringComparison.OrdinalIgnoreCase))
-            return "legion_go";
-        if (profile.Name.Contains("Claw", StringComparison.OrdinalIgnoreCase))
-            return "msi_claw";
-        return "rog_ally";
+        if (profile.Name.Contains("Portrait", StringComparison.OrdinalIgnoreCase) ||
+            profile.Name.Contains("Legion", StringComparison.OrdinalIgnoreCase))
+            return "portrait_native";
+        if (profile.Name.Contains("Alternative", StringComparison.OrdinalIgnoreCase) ||
+            profile.Name.Contains("Claw", StringComparison.OrdinalIgnoreCase))
+            return "landscape_alt";
+        return "landscape_standard";
     }
 
     public DeviceProfile SetOrCycleProfile(string? profileKey = null)
@@ -152,11 +154,11 @@ public sealed class SensorService : IDisposable
             }
 
             string key = profileKey.Trim().ToLowerInvariant();
-            if (key.Contains("ally") || key == "0")
+            if (key.Contains("standard") || key.Contains("ally") || key == "0")
                 _currentPresetIndex = 0;
-            else if (key.Contains("legion") || key == "1")
+            else if (key.Contains("portrait") || key.Contains("legion") || key == "1")
                 _currentPresetIndex = 1;
-            else if (key.Contains("claw") || key == "2")
+            else if (key.Contains("alt") || key.Contains("claw") || key == "2")
                 _currentPresetIndex = 2;
             else
                 _currentPresetIndex = (_currentPresetIndex + 1) % _presets.Length;

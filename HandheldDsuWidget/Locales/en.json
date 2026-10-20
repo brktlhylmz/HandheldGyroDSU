@@ -2,7 +2,7 @@
   "@@locale": "en",
   "@@languageName": "English",
 
-  "AppTitle": "ROG MOTION DSU ENGINE",
+  "AppTitle": "HANDHELD GYRO DSU",
   "HeaderSubtitleFormat": "UDP 0.0.0.0:{0} • IPC 127.0.0.1:{1}",
   "TabDashboard": "DASHBOARD",
   "TabSettings": "SETTINGS",
@@ -21,10 +21,10 @@
   "StreamActiveDesc": "Active • Broadcasting motion data to emulator",
   "StreamPausedDesc": "Paused • DSU motion output is muted",
 
-  "SectionProfileAxes": "HANDHELD PROFILE & AXIS ORIENTATION",
-  "ProfileRogAlly": "ASUS ROG Ally / Ally X (Default)",
-  "ProfileLegionGo": "Lenovo Legion Go",
-  "ProfileMsiClaw": "MSI Claw",
+  "SectionProfileAxes": "SENSOR MOUNTING PROFILE & AXIS ORIENTATION",
+  "ProfileLandscapeStandard": "Standard Landscape Sensor (Default)",
+  "ProfilePortraitSensor": "Portrait-Native Sensor Layout",
+  "ProfileAlternativeLandscape": "Alternative Landscape Sensor",
   "InvertXTitle": "Invert X (Pitch)",
   "InvertXDesc": "Tilt Up / Down",
   "InvertYTitle": "Invert Y (Roll)",

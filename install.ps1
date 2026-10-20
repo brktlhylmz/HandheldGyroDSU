@@ -1,7 +1,7 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-    Handheld Gyro DSU - Xbox Game Bar Widget Sideloading & Setup Script (ROG Ally / Legion Go / MSI Claw)
+    Handheld Gyro DSU - Xbox Game Bar Widget Sideloading & Setup Script
 .DESCRIPTION
     Configures and registers the Xbox Game Bar Widget locally in Windows Developer Mode:
     1. Verifies/enables Windows Developer Mode and Sideloading registry keys.
