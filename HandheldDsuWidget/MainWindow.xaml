@@ -1382,7 +1382,7 @@
                             </Border>
 
                             <!-- Settings Card 4: Data & Maintenance Shortcuts -->
-                            <Border Style="{DynamicResource AppCardStyle}">
+                            <Border Style="{DynamicResource AppCardStyle}" Margin="0,0,0,10">
                                 <StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                                         <Border Width="3" Height="12" Background="{DynamicResource BrushAccentPrimary}" Margin="0,0,7,0" />
@@ -1443,6 +1443,166 @@
                                                            VerticalAlignment="Center" />
                                             </StackPanel>
                                         </Button>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Settings Card 5: Developer Options & Diagnostics -->
+                            <Border Style="{DynamicResource AppCardStyle}">
+                                <StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                        <Border Width="3" Height="12" Background="{DynamicResource BrushTelemetryReadout}" Margin="0,0,7,0" />
+                                        <TextBlock Text="{Binding [SectionDeveloperOptions], Source={x:Static services:LocalizationService.Instance}}"
+                                                   Style="{DynamicResource AppSectionHeaderStyle}"
+                                                   Foreground="{DynamicResource BrushTelemetryReadout}" />
+                                    </StackPanel>
+
+                                    <!-- 1. Virtual Controller & Multi-Slot Simulator -->
+                                    <TextBlock Text="{Binding [DevSimControllerTitle], Source={x:Static services:LocalizationService.Instance}}"
+                                               Foreground="{DynamicResource BrushTextPrimary}"
+                                               FontWeight="SemiBold"
+                                               FontSize="11.5" />
+                                    <TextBlock Text="{Binding [DevSimControllerDesc], Source={x:Static services:LocalizationService.Instance}}"
+                                               Foreground="{DynamicResource BrushTextSecondary}"
+                                               FontSize="9.5"
+                                               TextWrapping="Wrap"
+                                               Margin="0,2,0,8" />
+
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="6" />
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="6" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <ComboBox x:Name="DevSimControllerComboBox"
+                                                  Grid.Column="0"
+                                                  Style="{DynamicResource AppComboBoxStyle}"
+                                                  SelectedIndex="0">
+                                            <ComboBoxItem Tag="dualsense" Content="{Binding [DevSimPresetDualSense], Source={x:Static services:LocalizationService.Instance}}" />
+                                            <ComboBoxItem Tag="switchpro" Content="{Binding [DevSimPresetSwitchPro], Source={x:Static services:LocalizationService.Instance}}" />
+                                            <ComboBoxItem Tag="legiongo" Content="{Binding [DevSimPresetLegionGo], Source={x:Static services:LocalizationService.Instance}}" />
+                                            <ComboBoxItem Tag="cluster4" Content="{Binding [DevSimPresetCluster4], Source={x:Static services:LocalizationService.Instance}}" />
+                                            <ComboBoxItem Tag="cluster8" Content="{Binding [DevSimPresetCluster8], Source={x:Static services:LocalizationService.Instance}}" />
+                                        </ComboBox>
+
+                                        <Button x:Name="DevSimInjectButton"
+                                                Grid.Column="2"
+                                                Style="{DynamicResource AppSecondaryButtonStyle}"
+                                                Content="{Binding [BtnDevSimInject], Source={x:Static services:LocalizationService.Instance}}"
+                                                Height="30"
+                                                Padding="10,0"
+                                                Click="DevSimInjectButton_Click" />
+
+                                        <Button x:Name="DevSimClearButton"
+                                                Grid.Column="4"
+                                                Style="{DynamicResource AppGhostButtonStyle}"
+                                                Content="{Binding [BtnDevSimClear], Source={x:Static services:LocalizationService.Instance}}"
+                                                Height="30"
+                                                Padding="10,0"
+                                                Click="DevSimClearButton_Click" />
+                                    </Grid>
+
+                                    <Border Style="{DynamicResource AppRowDividerStyle}" Margin="0,10,0,10" />
+
+                                    <!-- 2. Synthetic Gyro Wave Generator -->
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,10,0">
+                                            <TextBlock Text="{Binding [DevSyntheticWaveTitle], Source={x:Static services:LocalizationService.Instance}}"
+                                                       Foreground="{DynamicResource BrushTextPrimary}"
+                                                       FontWeight="SemiBold"
+                                                       FontSize="11.5" />
+                                            <TextBlock Text="{Binding [DevSyntheticWaveDesc], Source={x:Static services:LocalizationService.Instance}}"
+                                                       Foreground="{DynamicResource BrushTextSecondary}"
+                                                       FontSize="9.5"
+                                                       TextWrapping="Wrap"
+                                                       Margin="0,2,0,0" />
+                                        </StackPanel>
+
+                                        <CheckBox x:Name="DevSyntheticWaveToggle"
+                                                  Grid.Column="1"
+                                                  Style="{DynamicResource AppToggleSwitchStyle}"
+                                                  IsChecked="False"
+                                                  VerticalAlignment="Center"
+                                                  Click="DevSyntheticWaveToggle_Click" />
+                                    </Grid>
+
+                                    <Border Style="{DynamicResource AppRowDividerStyle}" Margin="0,10,0,10" />
+
+                                    <!-- 3. Built-in DSU Loopback Client & UDP Slot Inspector -->
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,10,0">
+                                            <TextBlock Text="{Binding [DevLoopbackTitle], Source={x:Static services:LocalizationService.Instance}}"
+                                                       Foreground="{DynamicResource BrushTextPrimary}"
+                                                       FontWeight="SemiBold"
+                                                       FontSize="11.5" />
+                                            <TextBlock Text="{Binding [DevLoopbackDesc], Source={x:Static services:LocalizationService.Instance}}"
+                                                       Foreground="{DynamicResource BrushTextSecondary}"
+                                                       FontSize="9.5"
+                                                       TextWrapping="Wrap"
+                                                       Margin="0,2,0,0" />
+                                        </StackPanel>
+
+                                        <CheckBox x:Name="DevLoopbackClientToggle"
+                                                  Grid.Column="1"
+                                                  Style="{DynamicResource AppToggleSwitchStyle}"
+                                                  IsChecked="False"
+                                                  VerticalAlignment="Center"
+                                                  Click="DevLoopbackClientToggle_Click" />
+                                    </Grid>
+
+                                    <Border Style="{DynamicResource AppSubPanelStyle}" Padding="8,5" Margin="0,8,0,0">
+                                        <TextBlock x:Name="DevLoopbackStatusText"
+                                                   Text="{Binding [DevLoopbackIdleStatus], Source={x:Static services:LocalizationService.Instance}}"
+                                                   Foreground="{DynamicResource BrushTelemetryReadout}"
+                                                   FontFamily="{DynamicResource FontMonospace}"
+                                                   FontSize="9.5"
+                                                   HorizontalAlignment="Center"
+                                                   TextWrapping="Wrap" />
+                                    </Border>
+
+                                    <Border Style="{DynamicResource AppRowDividerStyle}" Margin="0,10,0,10" />
+
+                                    <!-- 4. In-Game HUD Overlay Preview -->
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,10,0">
+                                            <TextBlock Text="{Binding [DevHudTestTitle], Source={x:Static services:LocalizationService.Instance}}"
+                                                       Foreground="{DynamicResource BrushTextPrimary}"
+                                                       FontWeight="SemiBold"
+                                                       FontSize="11.5" />
+                                            <TextBlock Text="{Binding [DevHudTestDesc], Source={x:Static services:LocalizationService.Instance}}"
+                                                       Foreground="{DynamicResource BrushTextSecondary}"
+                                                       FontSize="9.5"
+                                                       TextWrapping="Wrap"
+                                                       Margin="0,2,0,0" />
+                                        </StackPanel>
+
+                                        <Button x:Name="DevTestHudButton"
+                                                Grid.Column="1"
+                                                Style="{DynamicResource AppGhostButtonStyle}"
+                                                Content="{Binding [BtnDevHudTest], Source={x:Static services:LocalizationService.Instance}}"
+                                                FontSize="9.5"
+                                                Height="30"
+                                                Padding="10,0"
+                                                VerticalAlignment="Center"
+                                                Click="DevTestHudButton_Click" />
                                     </Grid>
                                 </StackPanel>
                             </Border>

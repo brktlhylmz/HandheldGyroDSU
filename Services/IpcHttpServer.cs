@@ -52,12 +52,14 @@ public sealed class IpcHttpServer : IDisposable
         return _settings.Language;
     }
 
-    public void SetPreferences(bool? closeToTray = null, bool? hudNotificationsEnabled = null)
+    public void SetPreferences(bool? closeToTray = null, bool? hudNotificationsEnabled = null, bool? syntheticWaveEnabled = null)
     {
         if (closeToTray.HasValue)
             _settings.CloseToTray = closeToTray.Value;
         if (hudNotificationsEnabled.HasValue)
             _settings.HudNotificationsEnabled = hudNotificationsEnabled.Value;
+        if (syntheticWaveEnabled.HasValue)
+            _sensorService.IsSyntheticWaveEnabled = syntheticWaveEnabled.Value;
         SaveCurrentSettings();
     }
 
@@ -376,7 +378,8 @@ public sealed class IpcHttpServer : IDisposable
                 {
                     bool? closeTray = ExtractBooleanParameter(query, body, "closeToTray");
                     bool? hudNotif = ExtractBooleanParameter(query, body, "hudNotificationsEnabled");
-                    SetPreferences(closeTray, hudNotif);
+                    bool? synthWave = ExtractBooleanParameter(query, body, "syntheticWaveEnabled");
+                    SetPreferences(closeTray, hudNotif, synthWave);
                     string json = BuildStatusJson("Preferences updated");
                     await WriteHttpResponseAsync(stream, 200, "OK", json, cancellationToken);
                 }
@@ -437,6 +440,7 @@ public sealed class IpcHttpServer : IDisposable
             startWithWindows = StartupManager.IsStartupEnabled(),
             closeToTray = _settings.CloseToTray,
             hudNotificationsEnabled = _settings.HudNotificationsEnabled,
+            isSyntheticWaveEnabled = _sensorService.IsSyntheticWaveEnabled,
             isEmulatorConnected = clients.Count > 0,
             connectedClients = clients.Select(c => c.ToString()).ToArray(),
             totalPacketsSent = _udpServer.TotalPacketsSent,
