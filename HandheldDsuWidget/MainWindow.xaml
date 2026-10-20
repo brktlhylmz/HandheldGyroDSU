@@ -285,53 +285,129 @@
                                     </Grid>
                                 </Border>
 
-                                <!-- 3-Column Live Angular Velocity Readout (Pitch / Yaw / Roll) -->
-                                <UniformGrid Columns="3" Margin="0,0,0,6">
-                                    <Border Style="{DynamicResource AppSubPanelStyle}" Margin="0,0,4,0" Padding="8,7">
-                                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                                            <TextBlock Text="{Binding [AxisPitchLabel], Source={x:Static services:LocalizationService.Instance}}"
-                                                       Foreground="{DynamicResource BrushTextSecondary}" FontSize="9.5" FontWeight="Bold" HorizontalAlignment="Center" />
-                                            <TextBlock x:Name="PitchValueText"
-                                                       Text="+0.00°/s"
-                                                       Foreground="{DynamicResource BrushTelemetryReadout}"
-                                                       FontFamily="{DynamicResource FontMonospace}"
-                                                       FontSize="13"
-                                                       FontWeight="Bold"
-                                                       HorizontalAlignment="Center"
-                                                       Margin="0,2,0,0" />
-                                        </StackPanel>
+                                <!-- Live Gyro Radar / Crosshair Scope + 3-Column Angular Velocity Readout -->
+                                <Grid Margin="0,0,0,6">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="68" />
+                                        <ColumnDefinition Width="6" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <!-- Live Gyro Crosshair / Horizon Radar Scope -->
+                                    <Border Grid.Column="0"
+                                            Style="{DynamicResource AppSubPanelStyle}"
+                                            Height="62"
+                                            Padding="0"
+                                            ClipToBounds="True">
+                                        <Grid>
+                                            <!-- Concentric Radar Rings -->
+                                            <Ellipse Width="46" Height="46"
+                                                     Stroke="#222A3A"
+                                                     StrokeThickness="1"
+                                                     HorizontalAlignment="Center"
+                                                     VerticalAlignment="Center" />
+                                            <Ellipse Width="22" Height="22"
+                                                     Stroke="#1A202E"
+                                                     StrokeThickness="1"
+                                                     HorizontalAlignment="Center"
+                                                     VerticalAlignment="Center" />
+
+                                            <!-- Center Hairlines -->
+                                            <Border Height="1"
+                                                    Background="#1E2534"
+                                                    VerticalAlignment="Center"
+                                                    HorizontalAlignment="Stretch" />
+                                            <Border Width="1"
+                                                    Background="#1E2534"
+                                                    HorizontalAlignment="Center"
+                                                    VerticalAlignment="Stretch" />
+
+                                            <!-- Artificial Horizon Tilt Bar (Roll) -->
+                                            <Border Width="38"
+                                                    Height="1.2"
+                                                    Background="#4500F0FF"
+                                                    HorizontalAlignment="Center"
+                                                    VerticalAlignment="Center"
+                                                    RenderTransformOrigin="0.5,0.5">
+                                                <Border.RenderTransform>
+                                                    <RotateTransform x:Name="RadarRollRotate" Angle="0" />
+                                                </Border.RenderTransform>
+                                            </Border>
+
+                                            <!-- Live Aiming Reticle (Yaw X / Pitch Y) -->
+                                            <Grid Width="14"
+                                                  Height="14"
+                                                  HorizontalAlignment="Center"
+                                                  VerticalAlignment="Center">
+                                                <Grid.RenderTransform>
+                                                    <TranslateTransform x:Name="RadarDotTranslate" X="0" Y="0" />
+                                                </Grid.RenderTransform>
+                                                <Ellipse x:Name="RadarDotRing"
+                                                         Width="11"
+                                                         Height="11"
+                                                         Stroke="#9000F0FF"
+                                                         StrokeThickness="1.2"
+                                                         Fill="#2400F0FF"
+                                                         HorizontalAlignment="Center"
+                                                         VerticalAlignment="Center" />
+                                                <Ellipse x:Name="RadarDotCore"
+                                                         Width="4"
+                                                         Height="4"
+                                                         Fill="{DynamicResource BrushTelemetryReadout}"
+                                                         HorizontalAlignment="Center"
+                                                         VerticalAlignment="Center" />
+                                            </Grid>
+                                        </Grid>
                                     </Border>
 
-                                    <Border Style="{DynamicResource AppSubPanelStyle}" Margin="2,0,2,0" Padding="8,7">
-                                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                                            <TextBlock Text="{Binding [AxisYawLabel], Source={x:Static services:LocalizationService.Instance}}"
-                                                       Foreground="{DynamicResource BrushTextSecondary}" FontSize="9.5" FontWeight="Bold" HorizontalAlignment="Center" />
-                                            <TextBlock x:Name="YawValueText"
-                                                       Text="+0.00°/s"
-                                                       Foreground="{DynamicResource BrushTelemetryReadout}"
-                                                       FontFamily="{DynamicResource FontMonospace}"
-                                                       FontSize="13"
-                                                       FontWeight="Bold"
-                                                       HorizontalAlignment="Center"
-                                                       Margin="0,2,0,0" />
-                                        </StackPanel>
-                                    </Border>
+                                    <!-- 3-Column Live Angular Velocity Readout (Pitch / Yaw / Roll) -->
+                                    <UniformGrid Grid.Column="2" Columns="3" Height="62">
+                                        <Border Style="{DynamicResource AppSubPanelStyle}" Margin="0,0,3,0" Padding="6,6">
+                                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding [AxisPitchLabel], Source={x:Static services:LocalizationService.Instance}}"
+                                                           Foreground="{DynamicResource BrushTextSecondary}" FontSize="9" FontWeight="Bold" HorizontalAlignment="Center" />
+                                                <TextBlock x:Name="PitchValueText"
+                                                           Text="+0.00°/s"
+                                                           Foreground="{DynamicResource BrushTelemetryReadout}"
+                                                           FontFamily="{DynamicResource FontMonospace}"
+                                                           FontSize="12"
+                                                           FontWeight="Bold"
+                                                           HorizontalAlignment="Center"
+                                                           Margin="0,3,0,0" />
+                                            </StackPanel>
+                                        </Border>
 
-                                    <Border Style="{DynamicResource AppSubPanelStyle}" Margin="4,0,0,0" Padding="8,7">
-                                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                                            <TextBlock Text="{Binding [AxisRollLabel], Source={x:Static services:LocalizationService.Instance}}"
-                                                       Foreground="{DynamicResource BrushTextSecondary}" FontSize="9.5" FontWeight="Bold" HorizontalAlignment="Center" />
-                                            <TextBlock x:Name="RollValueText"
-                                                       Text="+0.00°/s"
-                                                       Foreground="{DynamicResource BrushTelemetryReadout}"
-                                                       FontFamily="{DynamicResource FontMonospace}"
-                                                       FontSize="13"
-                                                       FontWeight="Bold"
-                                                       HorizontalAlignment="Center"
-                                                       Margin="0,2,0,0" />
-                                        </StackPanel>
-                                    </Border>
-                                </UniformGrid>
+                                        <Border Style="{DynamicResource AppSubPanelStyle}" Margin="1.5,0,1.5,0" Padding="6,6">
+                                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding [AxisYawLabel], Source={x:Static services:LocalizationService.Instance}}"
+                                                           Foreground="{DynamicResource BrushTextSecondary}" FontSize="9" FontWeight="Bold" HorizontalAlignment="Center" />
+                                                <TextBlock x:Name="YawValueText"
+                                                           Text="+0.00°/s"
+                                                           Foreground="{DynamicResource BrushTelemetryReadout}"
+                                                           FontFamily="{DynamicResource FontMonospace}"
+                                                           FontSize="12"
+                                                           FontWeight="Bold"
+                                                           HorizontalAlignment="Center"
+                                                           Margin="0,3,0,0" />
+                                            </StackPanel>
+                                        </Border>
+
+                                        <Border Style="{DynamicResource AppSubPanelStyle}" Margin="3,0,0,0" Padding="6,6">
+                                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding [AxisRollLabel], Source={x:Static services:LocalizationService.Instance}}"
+                                                           Foreground="{DynamicResource BrushTextSecondary}" FontSize="9" FontWeight="Bold" HorizontalAlignment="Center" />
+                                                <TextBlock x:Name="RollValueText"
+                                                           Text="+0.00°/s"
+                                                           Foreground="{DynamicResource BrushTelemetryReadout}"
+                                                           FontFamily="{DynamicResource FontMonospace}"
+                                                           FontSize="12"
+                                                           FontWeight="Bold"
+                                                           HorizontalAlignment="Center"
+                                                           Margin="0,3,0,0" />
+                                            </StackPanel>
+                                        </Border>
+                                    </UniformGrid>
+                                </Grid>
 
                                 <!-- Accelerometer & Bias Footer -->
                                 <Border Style="{DynamicResource AppSubPanelStyle}" Padding="8,5">
