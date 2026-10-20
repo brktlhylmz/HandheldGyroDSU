@@ -57,6 +57,8 @@ public sealed class IpcHttpServer : IDisposable
         GyroBias bias = _sensorService.CurrentBias;
         DeviceProfile profile = _sensorService.ActiveProfile;
         _settings.UdpPort = _udpServer.Port;
+        _settings.SecondaryUdpPort = _udpServer.SecondaryPort;
+        _settings.IsSecondaryClusterActive = _udpServer.IsSecondaryClusterActive;
         _settings.ActiveSlot = _udpServer.ActiveSlot;
         _settings.InvertX = profile.InvertX;
         _settings.InvertY = profile.InvertY;
@@ -310,6 +312,30 @@ public sealed class IpcHttpServer : IDisposable
                         SaveCurrentSettings();
                     }
                     string json = BuildStatusJson($"Active DSU slot set to {_udpServer.ActiveSlot}");
+                    await WriteHttpResponseAsync(stream, 200, "OK", json, cancellationToken);
+                }
+                else if (method == "POST" && path == "/cluster")
+                {
+                    int? requestedPort = ExtractIntParameter(query, body, "port");
+                    bool? requestedEnabled = ExtractBooleanParameter(query, body, "enabled");
+
+                    if (requestedPort.HasValue)
+                    {
+                        if (!_udpServer.TryChangeSecondaryPort(requestedPort.Value, out string err))
+                        {
+                            string errJson = BuildStatusJson(err);
+                            await WriteHttpResponseAsync(stream, 400, "Bad Request", errJson, cancellationToken);
+                            return;
+                        }
+                    }
+
+                    if (requestedEnabled.HasValue)
+                    {
+                        _udpServer.SetSecondaryClusterActive(requestedEnabled.Value, requestedPort);
+                    }
+
+                    SaveCurrentSettings();
+                    string json = BuildStatusJson("Secondary cluster updated");
                     await WriteHttpResponseAsync(stream, 200, "OK", json, cancellationToken);
                 }
                 else

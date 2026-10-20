@@ -147,8 +147,16 @@ public sealed class DsuIpcClient : IDisposable
             _embeddedSensor = new SensorService(DeviceProfile.CreateDefault(), _embeddedSettings);
             _embeddedSensor.Initialize();
 
-            _embeddedUdpServer = new DsuUdpServer(_embeddedSensor, _embeddedSettings.UdpPort, (byte)_embeddedSettings.ActiveSlot);
+            _embeddedUdpServer = new DsuUdpServer(
+                _embeddedSensor,
+                _embeddedSettings.UdpPort,
+                (byte)_embeddedSettings.ActiveSlot,
+                _embeddedSettings.SecondaryUdpPort);
             _embeddedUdpServer.ToggleStreaming(_embeddedSettings.IsStreamingEnabled);
+            if (_embeddedSettings.IsSecondaryClusterActive)
+            {
+                _embeddedUdpServer.SetSecondaryClusterActive(true, _embeddedSettings.SecondaryUdpPort);
+            }
 
             _embeddedIpcServer = new IpcHttpServer(_embeddedSensor, _embeddedUdpServer, _embeddedSettings, IpcHttpServer.DefaultIpcPort);
 
@@ -489,7 +497,29 @@ public sealed class DsuIpcClient : IDisposable
     public bool SetSecondaryClusterActive(bool enabled)
     {
         EnsureEmbeddedEngineStarted();
-        return _embeddedUdpServer!.SetSecondaryClusterActive(enabled);
+        bool result = _embeddedUdpServer!.SetSecondaryClusterActive(enabled);
+        _embeddedIpcServer?.SaveCurrentSettings();
+        return result;
+    }
+
+    public async Task<(bool Success, DsuStatusDto Status)> ChangeSecondaryPortAsync(int newSecondaryPort, CancellationToken cancellationToken = default)
+    {
+        if (!_usingEmbeddedEngine)
+        {
+            string payload = JsonSerializer.Serialize(new { port = newSecondaryPort });
+            DsuStatusDto? remote = await PostJsonAsync("/cluster", payload, cancellationToken);
+            if (remote is not null)
+                return (remote.SecondaryPort == newSecondaryPort, remote);
+
+            EnsureEmbeddedEngineStarted();
+        }
+
+        bool ok = _embeddedUdpServer!.TryChangeSecondaryPort(newSecondaryPort, out string err);
+        if (ok)
+        {
+            _embeddedIpcServer?.SaveCurrentSettings();
+        }
+        return (ok, BuildEmbeddedStatusDto(ok ? $"Secondary UDP port {newSecondaryPort} saved" : err));
     }
 
     private async Task<DsuStatusDto?> PostJsonAsync(string path, string jsonBody, CancellationToken cancellationToken)
