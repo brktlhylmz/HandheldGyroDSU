@@ -44,8 +44,37 @@ public sealed class SystemTrayService : IDisposable
     [DllImport("user32.dll")]
     private static extern IntPtr LoadIcon(IntPtr hInstance, IntPtr lpIconName);
 
+    [DllImport("user32.dll")]
+    private static extern bool SetForegroundWindow(IntPtr hWnd);
+
+    [DllImport("user32.dll")]
+    private static extern bool PostMessageW(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam);
+
+    [DllImport("user32.dll")]
+    private static extern IntPtr CreateIconIndirect(ref ICONINFO iconInfo);
+
+    [DllImport("user32.dll")]
+    private static extern bool DestroyIcon(IntPtr hIcon);
+
+    [DllImport("gdi32.dll")]
+    private static extern IntPtr CreateBitmap(int nWidth, int nHeight, uint cPlanes, uint cBitsPerPel, IntPtr lpvBits);
+
+    [DllImport("gdi32.dll")]
+    private static extern bool DeleteObject(IntPtr hObject);
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct ICONINFO
+    {
+        public bool fIcon;
+        public int xHotspot;
+        public int yHotspot;
+        public IntPtr hbmMask;
+        public IntPtr hbmColor;
+    }
+
     private HwndSource? _hwndSource;
     private NOTIFYICONDATA _notifyData;
+    private IntPtr _customIconHandle;
     private bool _isAdded;
 
     public event EventHandler? TrayLeftClicked;
@@ -61,7 +90,10 @@ public sealed class SystemTrayService : IDisposable
         _hwndSource = HwndSource.FromHwnd(hwnd);
         _hwndSource?.AddHook(WndProc);
 
-        IntPtr hIcon = LoadIcon(IntPtr.Zero, IDI_APPLICATION);
+        _customIconHandle = CreateCustomGyroTrayIcon();
+        IntPtr hIcon = _customIconHandle != IntPtr.Zero
+            ? _customIconHandle
+            : LoadIcon(IntPtr.Zero, IDI_APPLICATION);
 
         _notifyData = new NOTIFYICONDATA
         {
@@ -75,6 +107,93 @@ public sealed class SystemTrayService : IDisposable
         };
 
         _isAdded = Shell_NotifyIconW(NIM_ADD, ref _notifyData);
+    }
+
+    public void PrepareForContextMenu()
+    {
+        if (_notifyData.hWnd != IntPtr.Zero)
+        {
+            SetForegroundWindow(_notifyData.hWnd);
+        }
+    }
+
+    public void CompleteContextMenu()
+    {
+        if (_notifyData.hWnd != IntPtr.Zero)
+        {
+            PostMessageW(_notifyData.hWnd, 0, IntPtr.Zero, IntPtr.Zero);
+        }
+    }
+
+    private static IntPtr CreateCustomGyroTrayIcon()
+    {
+        try
+        {
+            const int size = 32;
+            uint[] pixels = new uint[size * size];
+
+            for (int y = 0; y < size; y++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    float dx = x - 15.5f;
+                    float dy = y - 15.5f;
+                    float dist = MathF.Sqrt(dx * dx + dy * dy);
+
+                    // Rounded dark badge background (#141821) with crimson ring (#FF0032) and cyan center (#00F0FF)
+                    if (dist <= 14.5f)
+                    {
+                        if (dist is >= 11.2f and <= 13.6f)
+                        {
+                            pixels[y * size + x] = 0xFFFF0032; // Crimson ring
+                        }
+                        else if (dist <= 3.2f)
+                        {
+                            pixels[y * size + x] = 0xFF00F0FF; // Cyan center core
+                        }
+                        else if ((MathF.Abs(dx) <= 1.1f && dist is >= 5.0f and <= 9.8f) ||
+                                 (MathF.Abs(dy) <= 1.1f && dist is >= 5.0f and <= 9.8f))
+                        {
+                            pixels[y * size + x] = 0xFFF2F5FA; // Crosshair ticks
+                        }
+                        else
+                        {
+                            pixels[y * size + x] = 0xFF141821; // Dark slate interior
+                        }
+                    }
+                }
+            }
+
+            GCHandle handle = GCHandle.Alloc(pixels, GCHandleType.Pinned);
+            try
+            {
+                IntPtr hbmColor = CreateBitmap(size, size, 1, 32, handle.AddrOfPinnedObject());
+                IntPtr hbmMask = CreateBitmap(size, size, 1, 1, IntPtr.Zero);
+                try
+                {
+                    var iconInfo = new ICONINFO
+                    {
+                        fIcon = true,
+                        hbmMask = hbmMask,
+                        hbmColor = hbmColor
+                    };
+                    return CreateIconIndirect(ref iconInfo);
+                }
+                finally
+                {
+                    if (hbmColor != IntPtr.Zero) DeleteObject(hbmColor);
+                    if (hbmMask != IntPtr.Zero) DeleteObject(hbmMask);
+                }
+            }
+            finally
+            {
+                handle.Free();
+            }
+        }
+        catch
+        {
+            return IntPtr.Zero;
+        }
     }
 
     public void UpdateTooltip(string tooltip)
@@ -112,6 +231,12 @@ public sealed class SystemTrayService : IDisposable
         {
             Shell_NotifyIconW(NIM_DELETE, ref _notifyData);
             _isAdded = false;
+        }
+
+        if (_customIconHandle != IntPtr.Zero)
+        {
+            DestroyIcon(_customIconHandle);
+            _customIconHandle = IntPtr.Zero;
         }
 
         _hwndSource?.RemoveHook(WndProc);
