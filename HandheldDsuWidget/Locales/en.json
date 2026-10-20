@@ -123,6 +123,8 @@
   "StartupDisabledDesc": "Disabled • Only runs when launched manually",
   "CloseToTrayTitle": "Close ('✕') Button Minimizes to Tray",
   "CloseToTrayDesc": "Hides the window to the system tray instead of stopping the DSU server",
+  "GameBarOverlayTitle": "Show Automatically with Xbox Game Bar (Win + G)",
+  "GameBarOverlayDesc": "Pops up as an overlay when Win + G is pressed and auto-hides when returning to the game",
   "HudNotificationsTitle": "In-Game HUD Overlay Notifications",
   "HudNotificationsDesc": "Shows click-through top-right notifications when controllers or profiles switch",
   "SectionDataMaintenance": "DATA & MAINTENANCE",

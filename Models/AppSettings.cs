@@ -20,6 +20,7 @@ public sealed class AppSettings
     public bool IsStreamingEnabled { get; set; } = true;
     public bool StartWithWindows { get; set; }
     public bool CloseToTray { get; set; }
+    public bool GameBarOverlayEnabled { get; set; } = true;
     public bool HudNotificationsEnabled { get; set; } = true;
     public bool InvertX { get; set; } = false;
     public bool InvertY { get; set; } = true;

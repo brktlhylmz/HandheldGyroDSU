@@ -36,6 +36,7 @@ public partial class MainWindow : Window
     private ContextMenu? _trayContextMenu;
     private bool _suppressUiEvents;
     private bool _isPollBusy;
+    private bool _isPinnedByUser;
     private DsuStatusDto? _lastStatus;
     private int _lastSyncedServerPort = -1;
     private int _lastSyncedSecondaryPort = -1;
@@ -72,6 +73,9 @@ public partial class MainWindow : Window
 
         _automationWatcher.ControllersChanged += (_, _) => RenderControllersAndRulesUi();
         _automationWatcher.AutomationNotification += OnAutomationNotification;
+
+        _gameBarAdapter.OverlayShowRequested += (_, _) => ShowForGameBarOverlay();
+        _gameBarAdapter.OverlayHideRequested += (_, _) => HideFromGameBarOverlay();
 
         _loc.LanguageChanged += (_, _) =>
         {
@@ -181,6 +185,7 @@ public partial class MainWindow : Window
                     ApplySecondaryPortButton,
                     StartupToggle,
                     CloseToTrayToggle,
+                    GameBarOverlayToggle,
                     HudNotificationsToggle,
                     OpenDataFolderButton,
                     ResetAllSettingsButton,
@@ -241,6 +246,11 @@ public partial class MainWindow : Window
 
     public void HideToTray()
     {
+        _gameBarAdapter.ResetOverlaySession();
+        if (!_isPinnedByUser)
+        {
+            Topmost = false;
+        }
         ShowInTaskbar = false;
         Hide();
     }
@@ -255,6 +265,27 @@ public partial class MainWindow : Window
         }
         Activate();
         Focus();
+    }
+
+    private void ShowForGameBarOverlay()
+    {
+        Topmost = true;
+        ShowInTaskbar = true;
+        Show();
+        if (WindowState == WindowState.Minimized)
+        {
+            WindowState = WindowState.Normal;
+        }
+        Activate();
+    }
+
+    private void HideFromGameBarOverlay()
+    {
+        Topmost = _isPinnedByUser;
+        if (!_isPinnedByUser)
+        {
+            HideToTray();
+        }
     }
 
     private void ToggleWindowVisibility()
@@ -470,6 +501,11 @@ public partial class MainWindow : Window
 
     private async void PollTimer_Tick(object? sender, EventArgs e)
     {
+        _gameBarAdapter.PollGameBarCompanionState(
+            isEnabled: _lastStatus?.GameBarOverlayEnabled ?? true,
+            isOurWindowActive: IsVisible && (IsActive || IsMouseOver),
+            isPinnedByUser: _isPinnedByUser);
+
         if (_isPollBusy)
             return;
 
@@ -576,6 +612,7 @@ public partial class MainWindow : Window
                 : _loc["StartupDisabledDesc"];
 
             CloseToTrayToggle.IsChecked = status.CloseToTray;
+            GameBarOverlayToggle.IsChecked = status.GameBarOverlayEnabled;
             HudNotificationsToggle.IsChecked = status.HudNotificationsEnabled;
             DevSyntheticWaveToggle.IsChecked = status.IsSyntheticWaveEnabled;
             DevLoopbackClientToggle.IsChecked = _loopbackTester.IsRunning;
@@ -1163,6 +1200,15 @@ public partial class MainWindow : Window
             return;
 
         DsuStatusDto status = await _ipcClient.UpdatePreferencesAsync(closeToTray: CloseToTrayToggle.IsChecked == true);
+        UpdateUiFromStatus(status);
+    }
+
+    private async void GameBarOverlayToggle_Click(object sender, RoutedEventArgs e)
+    {
+        if (_suppressUiEvents)
+            return;
+
+        DsuStatusDto status = await _ipcClient.UpdatePreferencesAsync(gameBarOverlayEnabled: GameBarOverlayToggle.IsChecked == true);
         UpdateUiFromStatus(status);
     }
 
@@ -1755,8 +1801,9 @@ public partial class MainWindow : Window
 
     private void PinButton_Click(object sender, RoutedEventArgs e)
     {
-        Topmost = !Topmost;
-        PinButton.Foreground = Topmost ? StatusOnlineBrush : TextSecondaryBrush;
+        _isPinnedByUser = !_isPinnedByUser;
+        Topmost = _isPinnedByUser;
+        PinButton.Foreground = _isPinnedByUser ? StatusOnlineBrush : TextSecondaryBrush;
     }
 
     private void MinimizeToTrayButton_Click(object sender, RoutedEventArgs e)

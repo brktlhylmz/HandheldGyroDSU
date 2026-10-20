@@ -51,6 +51,9 @@ public sealed class DsuStatusDto
     [JsonPropertyName("closeToTray")]
     public bool CloseToTray { get; set; }
 
+    [JsonPropertyName("gameBarOverlayEnabled")]
+    public bool GameBarOverlayEnabled { get; set; } = true;
+
     [JsonPropertyName("hudNotificationsEnabled")]
     public bool HudNotificationsEnabled { get; set; } = true;
 
@@ -216,6 +219,7 @@ public sealed class DsuIpcClient : IDisposable
             IsStreamingEnabled = _embeddedUdpServer.IsStreamingEnabled,
             StartWithWindows = StartupManager.IsStartupEnabled(),
             CloseToTray = _embeddedSettings?.CloseToTray ?? false,
+            GameBarOverlayEnabled = _embeddedSettings?.GameBarOverlayEnabled ?? true,
             HudNotificationsEnabled = _embeddedSettings?.HudNotificationsEnabled ?? true,
             IsSyntheticWaveEnabled = _embeddedSensor.IsSyntheticWaveEnabled,
             IsEmulatorConnected = clients.Count > 0,
@@ -550,6 +554,7 @@ public sealed class DsuIpcClient : IDisposable
 
     public async Task<DsuStatusDto> UpdatePreferencesAsync(
         bool? closeToTray = null,
+        bool? gameBarOverlayEnabled = null,
         bool? hudNotificationsEnabled = null,
         bool? syntheticWaveEnabled = null,
         bool? rebindSensors = null,
@@ -560,6 +565,7 @@ public sealed class DsuIpcClient : IDisposable
             string payload = JsonSerializer.Serialize(new
             {
                 closeToTray,
+                gameBarOverlayEnabled,
                 hudNotificationsEnabled,
                 syntheticWaveEnabled,
                 rebindSensors
@@ -571,7 +577,7 @@ public sealed class DsuIpcClient : IDisposable
             EnsureEmbeddedEngineStarted();
         }
 
-        _embeddedIpcServer?.SetPreferences(closeToTray, hudNotificationsEnabled, syntheticWaveEnabled, rebindSensors);
+        _embeddedIpcServer?.SetPreferences(closeToTray, gameBarOverlayEnabled, hudNotificationsEnabled, syntheticWaveEnabled, rebindSensors);
         return BuildEmbeddedStatusDto();
     }
 

@@ -54,12 +54,15 @@ public sealed class IpcHttpServer : IDisposable
 
     public void SetPreferences(
         bool? closeToTray = null,
+        bool? gameBarOverlayEnabled = null,
         bool? hudNotificationsEnabled = null,
         bool? syntheticWaveEnabled = null,
         bool? rebindSensors = null)
     {
         if (closeToTray.HasValue)
             _settings.CloseToTray = closeToTray.Value;
+        if (gameBarOverlayEnabled.HasValue)
+            _settings.GameBarOverlayEnabled = gameBarOverlayEnabled.Value;
         if (hudNotificationsEnabled.HasValue)
             _settings.HudNotificationsEnabled = hudNotificationsEnabled.Value;
         if (syntheticWaveEnabled.HasValue)
@@ -81,6 +84,7 @@ public sealed class IpcHttpServer : IDisposable
 
         _settings.ActiveProfileName = "Standard Landscape";
         _settings.CloseToTray = false;
+        _settings.GameBarOverlayEnabled = true;
         _settings.HudNotificationsEnabled = true;
         SaveCurrentSettings();
     }
@@ -383,10 +387,11 @@ public sealed class IpcHttpServer : IDisposable
                 else if (method == "POST" && path == "/preferences")
                 {
                     bool? closeTray = ExtractBooleanParameter(query, body, "closeToTray");
+                    bool? gameBar = ExtractBooleanParameter(query, body, "gameBarOverlayEnabled");
                     bool? hudNotif = ExtractBooleanParameter(query, body, "hudNotificationsEnabled");
                     bool? synthWave = ExtractBooleanParameter(query, body, "syntheticWaveEnabled");
                     bool? rebind = ExtractBooleanParameter(query, body, "rebindSensors");
-                    SetPreferences(closeTray, hudNotif, synthWave, rebind);
+                    SetPreferences(closeTray, gameBar, hudNotif, synthWave, rebind);
                     string json = BuildStatusJson("Preferences updated");
                     await WriteHttpResponseAsync(stream, 200, "OK", json, cancellationToken);
                 }
@@ -446,6 +451,7 @@ public sealed class IpcHttpServer : IDisposable
             isStreamingEnabled = _udpServer.IsStreamingEnabled,
             startWithWindows = StartupManager.IsStartupEnabled(),
             closeToTray = _settings.CloseToTray,
+            gameBarOverlayEnabled = _settings.GameBarOverlayEnabled,
             hudNotificationsEnabled = _settings.HudNotificationsEnabled,
             isSyntheticWaveEnabled = _sensorService.IsSyntheticWaveEnabled,
             isEmulatorConnected = clients.Count > 0,
