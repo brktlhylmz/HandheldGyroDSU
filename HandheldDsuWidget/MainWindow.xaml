@@ -1,0 +1,516 @@
+<Window x:Class="HandheldDsuWidget.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Handheld Gyro DSU Widget"
+        Width="400"
+        Height="680"
+        MinWidth="360"
+        MinHeight="600"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        Topmost="True"
+        ResizeMode="NoResize"
+        WindowStartupLocation="CenterScreen">
+
+    <Window.Resources>
+        <!-- Armoury Crate / Xbox Game Bar Koyu Tema Renkleri -->
+        <SolidColorBrush x:Key="BgPrimaryBrush" Color="#F20D0F14" />
+        <SolidColorBrush x:Key="CardBgBrush" Color="#181C24" />
+        <SolidColorBrush x:Key="CardBorderBrush" Color="#2A303D" />
+        <SolidColorBrush x:Key="RogAccentBrush" Color="#E50914" />
+        <SolidColorBrush x:Key="XboxGreenBrush" Color="#00E676" />
+        <SolidColorBrush x:Key="AlertRedBrush" Color="#FF4D4F" />
+        <SolidColorBrush x:Key="TextPrimaryBrush" Color="#F5F7FA" />
+        <SolidColorBrush x:Key="TextSecondaryBrush" Color="#9AA4B2" />
+
+        <!-- Modern Toggle Switch Şablonu -->
+        <Style x:Key="GyroToggleSwitchStyle" TargetType="CheckBox">
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="CheckBox">
+                        <Grid Width="48" Height="26">
+                            <Border x:Name="SwitchTrack"
+                                    CornerRadius="13"
+                                    Background="#2E3545"
+                                    BorderBrush="#3E475B"
+                                    BorderThickness="1" />
+                            <Ellipse x:Name="SwitchThumb"
+                                     Width="18"
+                                     Height="18"
+                                     Fill="#FFFFFF"
+                                     HorizontalAlignment="Left"
+                                     Margin="4,0,0,0" />
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="SwitchTrack" Property="Background" Value="#107C10" />
+                                <Setter TargetName="SwitchTrack" Property="BorderBrush" Value="#00E676" />
+                                <Setter TargetName="SwitchThumb" Property="HorizontalAlignment" Value="Right" />
+                                <Setter TargetName="SwitchThumb" Property="Margin" Value="0,0,4,0" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Armoury Crate / Xbox Stil Aksiyon Butonu -->
+        <Style x:Key="CalibrateButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="#E50914" />
+            <Setter Property="Foreground" Value="#FFFFFF" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="FontSize" Value="12.5" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="BtnBorder"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="8"
+                                Padding="10,9">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="BtnBorder" Property="UIElement.Opacity" Value="0.88" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="BtnBorder" Property="UIElement.Opacity" Value="0.72" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="BtnBorder" Property="Background" Value="#323846" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <!-- Ana Game Bar Widget Çerçevesi -->
+    <Border Background="{StaticResource BgPrimaryBrush}"
+            BorderBrush="#303646"
+            BorderThickness="1.5"
+            CornerRadius="12"
+            Padding="16"
+            MouseLeftButtonDown="Header_MouseLeftButtonDown">
+
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="10" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="8" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="8" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="8" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="8" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="10" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <!-- 1. Üst Başlık (Armoury Crate / Xbox Game Bar Başlığı) -->
+            <Grid Grid.Row="0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <Border Width="4" Height="22" Background="{StaticResource RogAccentBrush}" CornerRadius="2" Margin="0,0,10,0" />
+
+                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                    <TextBlock Text="HANDHELD GYRO DSU"
+                               Foreground="{StaticResource TextPrimaryBrush}"
+                               FontSize="14"
+                               FontWeight="Bold" />
+                    <TextBlock x:Name="EngineSubtitleText"
+                               Text="Xbox Game Bar Motion Overlay • Port 26760"
+                               Foreground="{StaticResource TextSecondaryBrush}"
+                               FontSize="10.5" />
+                </StackPanel>
+
+                <StackPanel Grid.Column="2" Orientation="Horizontal">
+                    <Button x:Name="PinButton"
+                            Content="📌"
+                            ToolTip="Üstte Tut (Pin)"
+                            Width="28" Height="28"
+                            Background="#222733"
+                            Foreground="#00E676"
+                            BorderThickness="0"
+                            Cursor="Hand"
+                            Margin="0,0,5,0"
+                            Click="PinButton_Click" />
+                    <Button Content="─"
+                            ToolTip="Sistem Tepsisine Küçült (Arka Planda Çalışmaya Devam Eder)"
+                            Width="28" Height="28"
+                            Background="#222733"
+                            Foreground="#9AA4B2"
+                            BorderThickness="0"
+                            Cursor="Hand"
+                            Margin="0,0,5,0"
+                            Click="MinimizeToTrayButton_Click" />
+                    <Button Content="✕"
+                            ToolTip="Tamamen Kapat"
+                            Width="28" Height="28"
+                            Background="#222733"
+                            Foreground="#9AA4B2"
+                            BorderThickness="0"
+                            Cursor="Hand"
+                            Click="CloseButton_Click" />
+                </StackPanel>
+            </Grid>
+
+            <!-- 2. Durum Göstergesi Kartı (Emülatör Bağlı mı? Yeşil / Kırmızı Işık) -->
+            <Border Grid.Row="2"
+                    Background="{StaticResource CardBgBrush}"
+                    BorderBrush="{StaticResource CardBorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="12,9">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Yeşil / Kırmızı Durum LED Işığı -->
+                    <Grid VerticalAlignment="Center" Margin="0,0,10,0">
+                        <Ellipse x:Name="StatusLedGlow"
+                                 Width="18" Height="18"
+                                 Fill="#FF4D4F"
+                                 Opacity="0.28" />
+                        <Ellipse x:Name="StatusLedDot"
+                                 Width="10" Height="10"
+                                 Fill="#FF4D4F" />
+                    </Grid>
+
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                        <TextBlock x:Name="ConnectionStatusTitle"
+                                   Text="DSU Motoru Aktif • Emülatör Bekleniyor"
+                                   Foreground="{StaticResource TextPrimaryBrush}"
+                                   FontWeight="SemiBold"
+                                   FontSize="12" />
+                        <TextBlock x:Name="ConnectionStatusDetail"
+                                   Text="Eden / Yuzu / Cemu / Ryujinx (127.0.0.1:26760)"
+                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                   FontSize="10" />
+                    </StackPanel>
+
+                    <Border Grid.Column="2"
+                            Background="#101319"
+                            CornerRadius="6"
+                            Padding="8,4"
+                            VerticalAlignment="Center">
+                        <TextBlock x:Name="PacketCounterText"
+                                   Text="HAZIR"
+                                   Foreground="#00E676"
+                                   FontFamily="Consolas"
+                                   FontSize="11" />
+                    </Border>
+                </Grid>
+            </Border>
+
+            <!-- 3. Jiroskop Açık/Kapalı & Windows ile Başlat Kartı -->
+            <Border Grid.Row="4"
+                    Background="{StaticResource CardBgBrush}"
+                    BorderBrush="{StaticResource CardBorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="12,9">
+                <StackPanel>
+                    <!-- Jiroskop Veri Akışı -->
+                    <Grid Margin="0,0,0,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="Jiroskop Veri Akışı (DSU)"
+                                       Foreground="{StaticResource TextPrimaryBrush}"
+                                       FontWeight="SemiBold"
+                                       FontSize="12" />
+                            <TextBlock x:Name="GyroToggleSubtitle"
+                                       Text="Aktif • Emülatöre hareket verisi gönderiliyor"
+                                       Foreground="{StaticResource TextSecondaryBrush}"
+                                       FontSize="10" />
+                        </StackPanel>
+
+                        <CheckBox x:Name="GyroStreamToggle"
+                                  Grid.Column="1"
+                                  Style="{StaticResource GyroToggleSwitchStyle}"
+                                  IsChecked="True"
+                                  VerticalAlignment="Center"
+                                  Click="GyroStreamToggle_Click" />
+                    </Grid>
+
+                    <Border Height="1" Background="#252A36" Margin="0,0,0,8" />
+
+                    <!-- Windows ile Otomatik Başlat -->
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="Windows Açılışında Otomatik Başlat"
+                                       Foreground="{StaticResource TextPrimaryBrush}"
+                                       FontWeight="SemiBold"
+                                       FontSize="12" />
+                            <TextBlock x:Name="StartupToggleSubtitle"
+                                       Text="Sistem tepsisinde (gizli) olarak başlar"
+                                       Foreground="{StaticResource TextSecondaryBrush}"
+                                       FontSize="10" />
+                        </StackPanel>
+
+                        <CheckBox x:Name="StartupToggle"
+                                  Grid.Column="1"
+                                  Style="{StaticResource GyroToggleSwitchStyle}"
+                                  IsChecked="False"
+                                  VerticalAlignment="Center"
+                                  Click="StartupToggle_Click" />
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <!-- 4. UDP Port Ayarı Kartı -->
+            <Border Grid.Row="6"
+                    Background="{StaticResource CardBgBrush}"
+                    BorderBrush="{StaticResource CardBorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="12,8">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="85" />
+                        <ColumnDefinition Width="8" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                        <TextBlock Text="DSU UDP Sunucu Portu"
+                                   Foreground="{StaticResource TextPrimaryBrush}"
+                                   FontWeight="SemiBold"
+                                   FontSize="12" />
+                        <TextBlock x:Name="PortStatusSubtitle"
+                                   Text="Varsayılan: 26760 (settings.json)"
+                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                   FontSize="10" />
+                    </StackPanel>
+
+                    <TextBox x:Name="PortTextBox"
+                             Grid.Column="1"
+                             Text="26760"
+                             Height="28"
+                             VerticalContentAlignment="Center"
+                             HorizontalContentAlignment="Center"
+                             Background="#101319"
+                             Foreground="#00E676"
+                             BorderBrush="#353D4F"
+                             FontFamily="Consolas"
+                             FontWeight="Bold"
+                             FontSize="12.5"
+                             KeyDown="PortTextBox_KeyDown" />
+
+                    <Button x:Name="ApplyPortButton"
+                            Grid.Column="3"
+                            Content="Uygula"
+                            Height="28"
+                            Padding="12,0"
+                            Background="#283040"
+                            Foreground="#F5F7FA"
+                            FontWeight="SemiBold"
+                            FontSize="11.5"
+                            BorderThickness="0"
+                            Cursor="Hand"
+                            Click="ApplyPortButton_Click" />
+                </Grid>
+            </Border>
+
+            <!-- 5. Cihaz Seçim Menüsü & Eksen Ters Çevirme (Invert) Anahtarları -->
+            <Border Grid.Row="8"
+                    Background="{StaticResource CardBgBrush}"
+                    BorderBrush="{StaticResource CardBorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="12,9">
+                <StackPanel>
+                    <TextBlock Text="EL KONSOLU PROFİLİ &amp; EKSEN YÖNLERİ (INVERT)"
+                               Foreground="{StaticResource TextSecondaryBrush}"
+                               FontSize="10"
+                               FontWeight="Bold"
+                               Margin="0,0,0,5" />
+                    <ComboBox x:Name="DeviceProfileComboBox"
+                              SelectedIndex="0"
+                              Height="28"
+                              FontSize="12"
+                              FontWeight="SemiBold"
+                              Margin="0,0,0,8"
+                              SelectionChanged="DeviceProfileComboBox_SelectionChanged">
+                        <ComboBoxItem Content="Asus ROG Ally (Varsayılan)" Tag="rog_ally" />
+                        <ComboBoxItem Content="Lenovo Legion Go" Tag="legion_go" />
+                        <ComboBoxItem Content="MSI Claw" Tag="msi_claw" />
+                    </ComboBox>
+
+                    <!-- Eksen Ters Çevirme (Invert X / Y / Z / Swap) 2x2 Grid -->
+                    <UniformGrid Columns="2" Margin="0,0,0,6">
+                        <Border Background="#11141B" CornerRadius="6" Margin="0,0,4,4" Padding="8,5">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock Text="Ters X (Pitch)" Foreground="#F5F7FA" FontSize="11" FontWeight="SemiBold" />
+                                    <TextBlock Text="Yukarı / Aşağı" Foreground="#9AA4B2" FontSize="9" />
+                                </StackPanel>
+                                <CheckBox x:Name="InvertXToggle" Grid.Column="1" Style="{StaticResource GyroToggleSwitchStyle}" VerticalAlignment="Center" Click="AxisConfigToggle_Click" />
+                            </Grid>
+                        </Border>
+
+                        <Border Background="#11141B" CornerRadius="6" Margin="4,0,0,4" Padding="8,5">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock Text="Ters Y (Roll)" Foreground="#F5F7FA" FontSize="11" FontWeight="SemiBold" />
+                                    <TextBlock Text="Sağa / Sola Bakış" Foreground="#9AA4B2" FontSize="9" />
+                                </StackPanel>
+                                <CheckBox x:Name="InvertYToggle" Grid.Column="1" Style="{StaticResource GyroToggleSwitchStyle}" VerticalAlignment="Center" Click="AxisConfigToggle_Click" />
+                            </Grid>
+                        </Border>
+
+                        <Border Background="#11141B" CornerRadius="6" Margin="0,2,4,0" Padding="8,5">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock Text="Ters Z (Yaw)" Foreground="#F5F7FA" FontSize="11" FontWeight="SemiBold" />
+                                    <TextBlock Text="Direksiyon Eğimi" Foreground="#9AA4B2" FontSize="9" />
+                                </StackPanel>
+                                <CheckBox x:Name="InvertZToggle" Grid.Column="1" Style="{StaticResource GyroToggleSwitchStyle}" VerticalAlignment="Center" Click="AxisConfigToggle_Click" />
+                            </Grid>
+                        </Border>
+
+                        <Border Background="#11141B" CornerRadius="6" Margin="4,2,0,0" Padding="8,5">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock Text="X ↔ Y Takas" Foreground="#F5F7FA" FontSize="11" FontWeight="SemiBold" />
+                                    <TextBlock Text="Swap X/Y Axes" Foreground="#9AA4B2" FontSize="9" />
+                                </StackPanel>
+                                <CheckBox x:Name="SwapAxesToggle" Grid.Column="1" Style="{StaticResource GyroToggleSwitchStyle}" VerticalAlignment="Center" Click="AxisConfigToggle_Click" />
+                            </Grid>
+                        </Border>
+                    </UniformGrid>
+
+                    <!-- Tutuş Açısını Merkezle (Öne Yatırmayı Önler) -->
+                    <Border Background="#11141B" CornerRadius="6" Padding="8,5">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="Tutuş Açısını Merkezle (Zero Pitch)" Foreground="#F5F7FA" FontSize="11" FontWeight="SemiBold" />
+                                <TextBlock Text="Kalibre ettiğiniz tutuş açısını düz (0°) kabul eder" Foreground="#9AA4B2" FontSize="9.5" />
+                            </StackPanel>
+                            <CheckBox x:Name="PitchOffsetToggle" Grid.Column="1" Style="{StaticResource GyroToggleSwitchStyle}" IsChecked="True" VerticalAlignment="Center" Click="AxisConfigToggle_Click" />
+                        </Grid>
+                    </Border>
+                </StackPanel>
+            </Border>
+
+            <!-- 6. Anlık Jiroskop & İvmeölçer Canlı Telemetri Kartı -->
+            <Border Grid.Row="10"
+                    Background="{StaticResource CardBgBrush}"
+                    BorderBrush="{StaticResource CardBorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="12,8">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Text="CANLI IMU TELEMETRİ (deg/s &amp; G)"
+                               Foreground="{StaticResource TextSecondaryBrush}"
+                               FontSize="10"
+                               FontWeight="Bold" />
+
+                    <UniformGrid Grid.Row="1" Columns="3" Margin="0,6,0,4">
+                        <Border Background="#11141B" CornerRadius="6" Margin="0,0,4,0" Padding="5">
+                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <TextBlock Text="PITCH (X)" Foreground="#9AA4B2" FontSize="9" HorizontalAlignment="Center" />
+                                <TextBlock x:Name="PitchValueText" Text="0.00°/s" Foreground="#00E676" FontFamily="Consolas" FontSize="12.5" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,2,0,0" />
+                            </StackPanel>
+                        </Border>
+                        <Border Background="#11141B" CornerRadius="6" Margin="2,0,2,0" Padding="5">
+                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <TextBlock Text="YAW (Z)" Foreground="#9AA4B2" FontSize="9" HorizontalAlignment="Center" />
+                                <TextBlock x:Name="YawValueText" Text="0.00°/s" Foreground="#00E676" FontFamily="Consolas" FontSize="12.5" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,2,0,0" />
+                            </StackPanel>
+                        </Border>
+                        <Border Background="#11141B" CornerRadius="6" Margin="4,0,0,0" Padding="5">
+                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <TextBlock Text="ROLL (Y)" Foreground="#9AA4B2" FontSize="9" HorizontalAlignment="Center" />
+                                <TextBlock x:Name="RollValueText" Text="0.00°/s" Foreground="#00E676" FontFamily="Consolas" FontSize="12.5" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,2,0,0" />
+                            </StackPanel>
+                        </Border>
+                    </UniformGrid>
+
+                    <TextBlock x:Name="BiasStatusText"
+                               Grid.Row="2"
+                               Text="Drift Bias: X: 0.00 | Y: 0.00 | Z: 0.00 deg/s"
+                               Foreground="{StaticResource TextSecondaryBrush}"
+                               FontFamily="Consolas"
+                               FontSize="9.5"
+                               HorizontalAlignment="Center" />
+                </Grid>
+            </Border>
+
+            <!-- 7. [Kalibre Et] ve [Emülatör Salla (Bind)] Butonları -->
+            <Grid Grid.Row="12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="8" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <Button x:Name="CalibrateButton"
+                        Grid.Column="0"
+                        Style="{StaticResource CalibrateButtonStyle}"
+                        Content="🎯 KALİBRE ET"
+                        ToolTip="Cihaz sabitken 1 sn içinde sıfır noktası sapmasını (Drift Bias) sıfırlar"
+                        Click="CalibrateButton_Click" />
+
+                <Button x:Name="ShakeBindButton"
+                        Grid.Column="2"
+                        Style="{StaticResource CalibrateButtonStyle}"
+                        Background="#107C10"
+                        Content="📳 SALLA (4.5 SN)"
+                        ToolTip="Eden / Yuzu 'Motion 1 -> Shake!' ataması için 4.5 sn boyunca sallama sinyali gönderir"
+                        Click="ShakeBindButton_Click" />
+            </Grid>
+        </Grid>
+    </Border>
+</Window>
