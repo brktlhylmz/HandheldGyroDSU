@@ -22,9 +22,9 @@ public partial class MainWindow : Window
     private bool _isPollBusy;
     private DsuStatusDto? _lastStatus;
 
-    private static readonly SolidColorBrush GreenLedBrush = new(Color.FromRgb(0x00, 0xE6, 0x76));
-    private static readonly SolidColorBrush RedLedBrush = new(Color.FromRgb(0xFF, 0x4D, 0x4F));
-    private static readonly SolidColorBrush MutedBrush = new(Color.FromRgb(0x9A, 0xA4, 0xB2));
+    private Brush StatusOnlineBrush => (Brush)FindResource("BrushStatusOnline");
+    private Brush StatusOfflineBrush => (Brush)FindResource("BrushStatusOffline");
+    private Brush TextSecondaryBrush => (Brush)FindResource("BrushTextSecondary");
 
     public MainWindow() : this(startMinimized: false)
     {
@@ -42,7 +42,7 @@ public partial class MainWindow : Window
         {
             _trayService.UpdateTooltip(_loc["TrayTooltip"]);
             PortStatusSubtitle.Text = _loc["PortDefaultDesc"];
-            PortStatusSubtitle.Foreground = MutedBrush;
+            PortStatusSubtitle.Foreground = TextSecondaryBrush;
             if (_lastStatus is not null)
             {
                 UpdateUiFromStatus(_lastStatus);
@@ -88,9 +88,11 @@ public partial class MainWindow : Window
     {
         ShowInTaskbar = true;
         Show();
-        WindowState = WindowState.Normal;
+        if (WindowState == WindowState.Minimized)
+        {
+            WindowState = WindowState.Normal;
+        }
         Activate();
-        Topmost = true;
         Focus();
     }
 
@@ -104,6 +106,29 @@ public partial class MainWindow : Window
         {
             ShowFromTray();
         }
+    }
+
+    public void SwitchTab(bool showSettings)
+    {
+        if (showSettings)
+        {
+            SettingsTabButton.IsChecked = true;
+        }
+        else
+        {
+            DashboardTabButton.IsChecked = true;
+        }
+    }
+
+    private void NavTab_Checked(object sender, RoutedEventArgs e)
+    {
+        if (DashboardViewPanel is null || SettingsViewPanel is null)
+            return;
+
+        bool isSettings = SettingsTabButton.IsChecked == true;
+        DashboardViewPanel.Visibility = isSettings ? Visibility.Collapsed : Visibility.Visible;
+        SettingsViewPanel.Visibility = isSettings ? Visibility.Visible : Visibility.Collapsed;
+        MainScrollViewer?.ScrollToTop();
     }
 
     private async void PollTimer_Tick(object? sender, EventArgs e)
@@ -149,16 +174,16 @@ public partial class MainWindow : Window
             // 1. Emulator connection status indicator
             if (status.IsEmulatorConnected)
             {
-                StatusLedGlow.Fill = GreenLedBrush;
-                StatusLedDot.Fill = GreenLedBrush;
+                StatusLedGlow.Fill = StatusOnlineBrush;
+                StatusLedDot.Fill = StatusOnlineBrush;
                 ConnectionStatusTitle.Text = _loc["StatusConnected"];
                 ConnectionStatusDetail.Text = string.Join(", ", status.ConnectedClients);
                 PacketCounterText.Text = _loc.Format("StatusPacketsFormat", status.TotalPacketsSent);
             }
             else
             {
-                StatusLedGlow.Fill = RedLedBrush;
-                StatusLedDot.Fill = RedLedBrush;
+                StatusLedGlow.Fill = StatusOfflineBrush;
+                StatusLedDot.Fill = StatusOfflineBrush;
                 ConnectionStatusTitle.Text = _loc["StatusWaiting"];
                 ConnectionStatusDetail.Text = $"Eden / Yuzu / Cemu -> 127.0.0.1:{status.ServerPort}";
                 PacketCounterText.Text = status.TotalPacketsSent > 0
@@ -213,12 +238,12 @@ public partial class MainWindow : Window
             if (status.IsCalibrating)
             {
                 CalibrateButton.IsEnabled = false;
-                CalibrateButton.Content = _loc.Format("CalibratingFormat", status.CalibrationProgress);
+                CalibrateButtonText.Text = _loc.Format("CalibratingFormat", status.CalibrationProgress);
             }
             else
             {
                 CalibrateButton.IsEnabled = true;
-                CalibrateButton.Content = _loc["CalibrateButton"];
+                CalibrateButtonText.Text = _loc["CalibrateButton"];
             }
         }
         finally
@@ -260,7 +285,7 @@ public partial class MainWindow : Window
         if (!int.TryParse(PortTextBox.Text.Trim(), out int newPort) || newPort is < 1024 or > 65535)
         {
             PortStatusSubtitle.Text = _loc["PortInvalidError"];
-            PortStatusSubtitle.Foreground = RedLedBrush;
+            PortStatusSubtitle.Foreground = StatusOfflineBrush;
             return;
         }
 
@@ -271,12 +296,12 @@ public partial class MainWindow : Window
             if (success)
             {
                 PortStatusSubtitle.Text = _loc.Format("PortSavedFormat", newPort);
-                PortStatusSubtitle.Foreground = GreenLedBrush;
+                PortStatusSubtitle.Foreground = StatusOnlineBrush;
             }
             else
             {
                 PortStatusSubtitle.Text = status.Message;
-                PortStatusSubtitle.Foreground = RedLedBrush;
+                PortStatusSubtitle.Foreground = StatusOfflineBrush;
             }
             UpdateUiFromStatus(status);
         }
@@ -296,10 +321,23 @@ public partial class MainWindow : Window
         UpdateUiFromStatus(status);
     }
 
+    public async Task TriggerCalibrationFromControllerAsync()
+    {
+        if (!CalibrateButton.IsEnabled)
+            return;
+
+        await RunCalibrationUiFlowAsync();
+    }
+
     private async void CalibrateButton_Click(object sender, RoutedEventArgs e)
     {
+        await RunCalibrationUiFlowAsync();
+    }
+
+    private async Task RunCalibrationUiFlowAsync()
+    {
         CalibrateButton.IsEnabled = false;
-        CalibrateButton.Content = _loc.Format("CalibratingFormat", 0);
+        CalibrateButtonText.Text = _loc.Format("CalibratingFormat", 0);
 
         try
         {
@@ -315,7 +353,7 @@ public partial class MainWindow : Window
             if (!CalibrateButton.IsEnabled)
             {
                 CalibrateButton.IsEnabled = true;
-                CalibrateButton.Content = _loc["CalibrateButton"];
+                CalibrateButtonText.Text = _loc["CalibrateButton"];
             }
         }
     }
@@ -356,8 +394,14 @@ public partial class MainWindow : Window
         UpdateUiFromStatus(status);
     }
 
-    private void Header_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
+        if (e.ClickCount == 2)
+        {
+            ToggleMaximizeRestore();
+            return;
+        }
+
         if (e.ButtonState == MouseButtonState.Pressed)
         {
             DragMove();
@@ -367,12 +411,24 @@ public partial class MainWindow : Window
     private void PinButton_Click(object sender, RoutedEventArgs e)
     {
         Topmost = !Topmost;
-        PinButton.Foreground = Topmost ? GreenLedBrush : MutedBrush;
+        PinButton.Foreground = Topmost ? StatusOnlineBrush : TextSecondaryBrush;
     }
 
     private void MinimizeToTrayButton_Click(object sender, RoutedEventArgs e)
     {
         HideToTray();
+    }
+
+    private void MaximizeRestoreButton_Click(object sender, RoutedEventArgs e)
+    {
+        ToggleMaximizeRestore();
+    }
+
+    private void ToggleMaximizeRestore()
+    {
+        WindowState = WindowState == WindowState.Maximized
+            ? WindowState.Normal
+            : WindowState.Maximized;
     }
 
     private void CloseButton_Click(object sender, RoutedEventArgs e)
