@@ -28,7 +28,9 @@
 
     <!-- Status & Telemetry Readout Colors -->
     <Color x:Key="ColorStatusOnline">#00E676</Color>
+    <Color x:Key="ColorStatusOnlineDim">#1F00E676</Color>
     <Color x:Key="ColorStatusOffline">#FF3B30</Color>
+    <Color x:Key="ColorStatusOfflineDim">#24FF3B30</Color>
     <Color x:Key="ColorTelemetryReadout">#00F0FF</Color>
 
     <!-- Typography Colors -->
@@ -62,7 +64,9 @@
     <SolidColorBrush x:Key="BrushAccentDim" Color="{StaticResource ColorAccentDim}" />
 
     <SolidColorBrush x:Key="BrushStatusOnline" Color="{StaticResource ColorStatusOnline}" />
+    <SolidColorBrush x:Key="BrushStatusOnlineDim" Color="{StaticResource ColorStatusOnlineDim}" />
     <SolidColorBrush x:Key="BrushStatusOffline" Color="{StaticResource ColorStatusOffline}" />
+    <SolidColorBrush x:Key="BrushStatusOfflineDim" Color="{StaticResource ColorStatusOfflineDim}" />
     <SolidColorBrush x:Key="BrushTelemetryReadout" Color="{StaticResource ColorTelemetryReadout}" />
 
     <SolidColorBrush x:Key="BrushTextPrimary" Color="{StaticResource ColorTextPrimary}" />
@@ -84,6 +88,7 @@
 
     <!-- Vector Path Geometries (16x16 ViewBox) -->
     <Geometry x:Key="IconBrandEmblem">M 2,14 L 8,2 L 11,2 L 5,14 Z M 8,14 L 14,2 L 15.5,2 L 9.5,14 Z</Geometry>
+    <Geometry x:Key="IconSignalPulse">M 8,6.2 A 1.8,1.8 0 1 0 8,9.8 A 1.8,1.8 0 1 0 8,6.2 Z M 4.8,4.8 A 4.5,4.5 0 0 0 4.8,11.2 M 11.2,4.8 A 4.5,4.5 0 0 1 11.2,11.2 M 2.4,2.4 A 7.8,7.8 0 0 0 2.4,13.6 M 13.6,2.4 A 7.8,7.8 0 0 1 13.6,13.6</Geometry>
     <Geometry x:Key="IconDashboard">M 2,2 H 7 V 7 H 2 Z M 9,2 H 14 V 7 H 9 Z M 2,9 H 7 V 14 H 2 Z M 9,9 H 14 V 14 H 9 Z</Geometry>
     <Geometry x:Key="IconSettings">M 8,1 L 14,4.5 V 11.5 L 8,15 L 2,11.5 V 4.5 Z M 8,5.5 A 2.5,2.5 0 1 0 8,10.5 A 2.5,2.5 0 1 0 8,5.5 Z</Geometry>
     <Geometry x:Key="IconCrosshair">M 8,1 V 4 M 8,12 V 15 M 1,8 H 4 M 12,8 H 15 M 8,4 A 4,4 0 1 1 7.99,4 Z M 8,7 A 1,1 0 1 0 8,9 A 1,1 0 1 0 8,7 Z</Geometry>
