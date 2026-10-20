@@ -130,13 +130,13 @@
   "ToastSettingsResetTitle": "TÜM AYARLAR SIFIRLANDI",
   "ToastSettingsResetDesc": "UDP 26760 • Standard Landscape • Varsayılan tepsi ve bildirim ayarları",
   "TrayMenuShowWindow": "Pencereyi Göster",
-  "TrayMenuHideWindow": "Sistem Tepsisine Gizle",
-  "TrayMenuStreamActive": "● DSU Yayını: Aktif (Duraklat)",
-  "TrayMenuStreamPaused": "○ DSU Yayını: Duraklatıldı (Başlat)",
-  "TrayMenuCalibrate": "Sensörü Kalibre Et (1sn)",
-  "TrayMenuProfiles": "Profiller...",
-  "TrayMenuSettings": "Ayarlar...",
-  "TrayMenuExit": "Uygulamadan Çık",
+  "TrayMenuHideWindow": "Pencereyi Gizle",
+  "TrayMenuStream": "DSU Yayını",
+  "TrayBadgeOn": "AÇIK",
+  "TrayBadgeOff": "KAPALI",
+  "TrayMenuCalibrate": "Kalibre Et",
+  "TrayMenuSettings": "Ayarlar",
+  "TrayMenuExit": "Çıkış",
 
   "GamepadHint": "[D-PAD] Gezin   [A] Seç/Değiştir   [Y] Kalibre Et   [LB/RB] Sekme Değiştir"
 }

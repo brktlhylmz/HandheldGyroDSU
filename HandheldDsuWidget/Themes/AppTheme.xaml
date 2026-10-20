@@ -794,7 +794,7 @@
     <!-- ====================================================================== -->
     <Style x:Key="AppTraySeparatorStyle" TargetType="Separator">
         <Setter Property="Height" Value="1" />
-        <Setter Property="Margin" Value="8,4" />
+        <Setter Property="Margin" Value="6,3" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Separator">
@@ -806,31 +806,39 @@
 
     <Style x:Key="AppTrayMenuItemStyle" TargetType="MenuItem">
         <Setter Property="FontFamily" Value="{DynamicResource FontPrimary}" />
-        <Setter Property="FontSize" Value="11.5" />
+        <Setter Property="FontSize" Value="10.5" />
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="Foreground" Value="{DynamicResource BrushTextPrimary}" />
         <Setter Property="Background" Value="Transparent" />
-        <Setter Property="Padding" Value="12,7" />
+        <Setter Property="Padding" Value="8,5" />
         <Setter Property="Cursor" Value="Hand" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="MenuItem">
-                    <Border x:Name="ItemBorder"
-                            Background="{TemplateBinding Background}"
-                            CornerRadius="5"
-                            Margin="4,1"
-                            Padding="{TemplateBinding Padding}">
-                        <ContentPresenter ContentSource="Header"
-                                          VerticalAlignment="Center"
-                                          RecognizesAccessKey="True" />
-                    </Border>
+                    <Grid Margin="1">
+                        <Border x:Name="ItemBorder"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="Transparent"
+                                BorderThickness="1"
+                                CornerRadius="3"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter ContentSource="Header"
+                                              VerticalAlignment="Center"
+                                              RecognizesAccessKey="True" />
+                        </Border>
+                        <Border x:Name="HoverBar"
+                                Width="2"
+                                Height="12"
+                                CornerRadius="1"
+                                HorizontalAlignment="Left"
+                                VerticalAlignment="Center"
+                                Background="Transparent" />
+                    </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsHighlighted" Value="True">
                             <Setter TargetName="ItemBorder" Property="Background" Value="{DynamicResource BrushBgControlHover}" />
-                        </Trigger>
-                        <Trigger Property="IsEnabled" Value="False">
-                            <Setter Property="Foreground" Value="{DynamicResource BrushTextSecondary}" />
-                            <Setter Property="Cursor" Value="Arrow" />
+                            <Setter TargetName="ItemBorder" Property="BorderBrush" Value="{DynamicResource BrushBorderInput}" />
+                            <Setter TargetName="HoverBar" Property="Background" Value="{DynamicResource BrushAccentPrimary}" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -845,16 +853,22 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ContextMenu">
-                    <Border Background="#F8141821"
+                    <Border Background="{DynamicResource BrushBgCard}"
                             BorderBrush="{DynamicResource BrushBorderWindow}"
                             BorderThickness="1"
-                            CornerRadius="8"
-                            Padding="4,6"
-                            MinWidth="220">
+                            CornerRadius="4"
+                            MinWidth="156">
                         <Border.Effect>
-                            <DropShadowEffect BlurRadius="16" ShadowDepth="4" Direction="270" Color="#000000" Opacity="0.7" />
+                            <DropShadowEffect BlurRadius="12" ShadowDepth="3" Direction="270" Color="#000000" Opacity="0.75" />
                         </Border.Effect>
-                        <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Cycle" />
+                        <StackPanel>
+                            <Border Height="2"
+                                    CornerRadius="3,3,0,0"
+                                    Background="{DynamicResource BrushHeaderAccentStripe}" />
+                            <StackPanel IsItemsHost="True"
+                                        Margin="3"
+                                        KeyboardNavigation.DirectionalNavigation="Cycle" />
+                        </StackPanel>
                     </Border>
                 </ControlTemplate>
             </Setter.Value>
