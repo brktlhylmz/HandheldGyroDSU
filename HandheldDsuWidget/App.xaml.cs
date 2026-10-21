@@ -1,6 +1,8 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -12,13 +14,83 @@ public partial class App : Application
 {
     private const string SingleInstanceMutexName = @"Local\HandheldGyroDsu_SingleInstanceMutex";
     private const string ActivateWindowEventName = @"Local\HandheldGyroDsu_ActivateEvent";
+    private const int UOI_NAME = 2;
+
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+    private struct STARTUPINFOW
+    {
+        public int cb;
+        public string? lpReserved;
+        public string? lpDesktop;
+        public string? lpTitle;
+        public int dwX;
+        public int dwY;
+        public int dwXSize;
+        public int dwYSize;
+        public int dwXCountChars;
+        public int dwYCountChars;
+        public int dwFillAttribute;
+        public int dwFlags;
+        public short wShowWindow;
+        public short cbReserved2;
+        public IntPtr lpReserved2;
+        public IntPtr hStdInput;
+        public IntPtr hStdOutput;
+        public IntPtr hStdError;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct PROCESS_INFORMATION
+    {
+        public IntPtr hProcess;
+        public IntPtr hThread;
+        public int dwProcessId;
+        public int dwThreadId;
+    }
+
+    [DllImport("kernel32.dll")]
+    private static extern uint GetCurrentThreadId();
+
+    [DllImport("user32.dll")]
+    private static extern IntPtr GetThreadDesktop(uint dwThreadId);
+
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+    private static extern bool GetUserObjectInformationW(
+        IntPtr hObj,
+        int nIndex,
+        StringBuilder pvInfo,
+        int nLength,
+        out int lpnLengthNeeded);
+
+    [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+    private static extern bool CreateProcessW(
+        string? lpApplicationName,
+        StringBuilder lpCommandLine,
+        IntPtr lpProcessAttributes,
+        IntPtr lpThreadAttributes,
+        bool bInheritHandles,
+        uint dwCreationFlags,
+        IntPtr lpEnvironment,
+        string? lpCurrentDirectory,
+        ref STARTUPINFOW lpStartupInfo,
+        out PROCESS_INFORMATION lpProcessInformation);
+
+    [DllImport("kernel32.dll")]
+    private static extern bool CloseHandle(IntPtr hObject);
 
     private Mutex? _instanceMutex;
     private EventWaitHandle? _activateEvent;
+    private bool _ownsMutex;
 
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+
+        if (TryRelaunchOnInteractiveDefaultDesktop(e.Args))
+        {
+            Shutdown(0);
+            return;
+        }
 
         DispatcherUnhandledException += (_, args) =>
         {
@@ -37,6 +109,7 @@ public partial class App : Application
         try
         {
             _instanceMutex = new Mutex(true, SingleInstanceMutexName, out bool createdNew);
+            _ownsMutex = createdNew;
             _activateEvent = new EventWaitHandle(false, EventResetMode.AutoReset, ActivateWindowEventName);
 
             if (!createdNew)
@@ -95,12 +168,79 @@ public partial class App : Application
         }
     }
 
+    /// <summary>
+    /// If launched from an isolated non-interactive desktop (such as an automation sandbox desktop),
+    /// re-spawns the process onto the active user desktop (winsta0\default) so the WPF window is visible.
+    /// </summary>
+    private static bool TryRelaunchOnInteractiveDefaultDesktop(string[] args)
+    {
+        if (args.Any(a => string.Equals(a, "--default-desktop", StringComparison.OrdinalIgnoreCase)))
+            return false;
+
+        try
+        {
+            IntPtr hDesk = GetThreadDesktop(GetCurrentThreadId());
+            if (hDesk == IntPtr.Zero)
+                return false;
+
+            var sb = new StringBuilder(128);
+            if (!GetUserObjectInformationW(hDesk, UOI_NAME, sb, sb.Capacity * 2, out _))
+                return false;
+
+            string desktopName = sb.ToString();
+            if (string.IsNullOrWhiteSpace(desktopName) ||
+                string.Equals(desktopName, "Default", StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            string? exePath = Environment.ProcessPath;
+            if (string.IsNullOrWhiteSpace(exePath) || !File.Exists(exePath))
+                return false;
+
+            string joinedArgs = string.Join(" ", args.Select(a => $"\"{a}\""));
+            var cmdLine = new StringBuilder($"\"{exePath}\" --default-desktop {joinedArgs}".Trim());
+
+            var si = new STARTUPINFOW
+            {
+                cb = Marshal.SizeOf<STARTUPINFOW>(),
+                lpDesktop = @"winsta0\default"
+            };
+
+            if (CreateProcessW(
+                exePath,
+                cmdLine,
+                IntPtr.Zero,
+                IntPtr.Zero,
+                false,
+                0,
+                IntPtr.Zero,
+                AppContext.BaseDirectory,
+                ref si,
+                out PROCESS_INFORMATION pi))
+            {
+                if (pi.hThread != IntPtr.Zero) CloseHandle(pi.hThread);
+                if (pi.hProcess != IntPtr.Zero) CloseHandle(pi.hProcess);
+                return true;
+            }
+        }
+        catch
+        {
+            // Fall through and run in current desktop if relaunch fails
+        }
+
+        return false;
+    }
+
     protected override void OnExit(ExitEventArgs e)
     {
         try
         {
             _activateEvent?.Dispose();
-            _instanceMutex?.ReleaseMutex();
+            if (_ownsMutex)
+            {
+                _instanceMutex?.ReleaseMutex();
+            }
             _instanceMutex?.Dispose();
         }
         catch
