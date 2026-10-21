@@ -1,5 +1,6 @@
 using System;
 using System.Buffers.Binary;
+using System.Runtime.InteropServices;
 using HandheldDsuServer.Models;
 
 namespace HandheldDsuServer.Protocol;
@@ -17,6 +18,44 @@ public static class DsuProtocol
     public const uint MsgTypeVersionRequest        = 0x100000;
     public const uint MsgTypeControllerInfoRequest = 0x100001;
     public const uint MsgTypeControllerDataRequest = 0x100002;
+
+    // XInput 1.4 constants for optional full gamepad button/stick forwarding inside DSU 0x100002 packets
+    private const ushort XINPUT_GAMEPAD_DPAD_UP        = 0x0001;
+    private const ushort XINPUT_GAMEPAD_DPAD_DOWN      = 0x0002;
+    private const ushort XINPUT_GAMEPAD_DPAD_LEFT      = 0x0004;
+    private const ushort XINPUT_GAMEPAD_DPAD_RIGHT     = 0x0008;
+    private const ushort XINPUT_GAMEPAD_START          = 0x0010;
+    private const ushort XINPUT_GAMEPAD_BACK           = 0x0020;
+    private const ushort XINPUT_GAMEPAD_LEFT_THUMB     = 0x0040;
+    private const ushort XINPUT_GAMEPAD_RIGHT_THUMB    = 0x0080;
+    private const ushort XINPUT_GAMEPAD_LEFT_SHOULDER  = 0x0100;
+    private const ushort XINPUT_GAMEPAD_RIGHT_SHOULDER = 0x0200;
+    private const ushort XINPUT_GAMEPAD_A              = 0x1000;
+    private const ushort XINPUT_GAMEPAD_B              = 0x2000;
+    private const ushort XINPUT_GAMEPAD_X              = 0x4000;
+    private const ushort XINPUT_GAMEPAD_Y              = 0x8000;
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct XInputGamepad
+    {
+        public ushort wButtons;
+        public byte bLeftTrigger;
+        public byte bRightTrigger;
+        public short sThumbLX;
+        public short sThumbLY;
+        public short sThumbRX;
+        public short sThumbRY;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct XInputState
+    {
+        public uint dwPacketNumber;
+        public XInputGamepad Gamepad;
+    }
+
+    [DllImport("xinput1_4.dll", EntryPoint = "XInputGetState")]
+    private static extern uint XInputGetState(uint dwUserIndex, out XInputState pState);
 
     // Virtual MAC address for Slot 0
     private static readonly byte[] DefaultMacAddress = [0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0x01];
@@ -92,6 +131,7 @@ public static class DsuProtocol
 
     /// <summary>
     /// Builds a 0x100002 (Controller Data) motion broadcast packet (100 bytes).
+    /// When forwardGamepadInputs is enabled, also embeds live XInput buttons, triggers, D-Pad, and analog sticks.
     /// </summary>
     public static void BuildMotionDataPacket(
         Span<byte> packet,
@@ -99,7 +139,8 @@ public static class DsuProtocol
         uint packetNumber,
         in MotionData motion,
         byte slot = 0,
-        byte macSuffixOffset = 0)
+        byte macSuffixOffset = 0,
+        bool forwardGamepadInputs = false)
     {
         packet.Clear();
 
@@ -117,11 +158,16 @@ public static class DsuProtocol
         // [32..35] Packet Number (uint32 LE)
         BinaryPrimitives.WriteUInt32LittleEndian(packet.Slice(32, 4), packetNumber);
 
-        // [40..43] Left and Right Analog Sticks (Center = 128)
+        // [40..43] Left and Right Analog Sticks default to Center (128)
         packet[40] = 128;
         packet[41] = 128;
         packet[42] = 128;
         packet[43] = 128;
+
+        if (forwardGamepadInputs)
+        {
+            TryWriteXInputGamepadState(packet, slot);
+        }
 
         // [68..75] Motion Data Timestamp (uint64 LE, in microseconds)
         BinaryPrimitives.WriteUInt64LittleEndian(packet.Slice(68, 8), motion.TimestampUs);
@@ -138,6 +184,79 @@ public static class DsuProtocol
 
         // [0..15] Header and CRC32 calculation
         FinalizeServerHeader(packet, serverId);
+    }
+
+    private static void TryWriteXInputGamepadState(Span<byte> packet, byte slot)
+    {
+        if (!OperatingSystem.IsWindows())
+            return;
+
+        try
+        {
+            uint userIndex = Math.Min((uint)slot, 3u);
+            if (XInputGetState(userIndex, out XInputState state) != 0 &&
+                (userIndex == 0 || XInputGetState(0, out state) != 0))
+            {
+                return;
+            }
+
+            ushort btns = state.Gamepad.wButtons;
+            byte l2 = state.Gamepad.bLeftTrigger;
+            byte r2 = state.Gamepad.bRightTrigger;
+
+            byte states1 = 0;
+            if ((btns & XINPUT_GAMEPAD_BACK) != 0)        states1 |= 0x01; // Share
+            if ((btns & XINPUT_GAMEPAD_LEFT_THUMB) != 0)  states1 |= 0x02; // L3
+            if ((btns & XINPUT_GAMEPAD_RIGHT_THUMB) != 0) states1 |= 0x04; // R3
+            if ((btns & XINPUT_GAMEPAD_START) != 0)       states1 |= 0x08; // Options
+            if ((btns & XINPUT_GAMEPAD_DPAD_UP) != 0)     states1 |= 0x10; // D-Pad Up
+            if ((btns & XINPUT_GAMEPAD_DPAD_RIGHT) != 0)  states1 |= 0x20; // D-Pad Right
+            if ((btns & XINPUT_GAMEPAD_DPAD_DOWN) != 0)   states1 |= 0x40; // D-Pad Down
+            if ((btns & XINPUT_GAMEPAD_DPAD_LEFT) != 0)   states1 |= 0x80; // D-Pad Left
+
+            byte states2 = 0;
+            if (l2 > 30)                                      states2 |= 0x01; // L2 Digital
+            if (r2 > 30)                                      states2 |= 0x02; // R2 Digital
+            if ((btns & XINPUT_GAMEPAD_LEFT_SHOULDER) != 0)   states2 |= 0x04; // L1
+            if ((btns & XINPUT_GAMEPAD_RIGHT_SHOULDER) != 0)  states2 |= 0x08; // R1
+            if ((btns & XINPUT_GAMEPAD_Y) != 0)               states2 |= 0x10; // Triangle / Y
+            if ((btns & XINPUT_GAMEPAD_B) != 0)               states2 |= 0x20; // Circle / B
+            if ((btns & XINPUT_GAMEPAD_A) != 0)               states2 |= 0x40; // Cross / A
+            if ((btns & XINPUT_GAMEPAD_X) != 0)               states2 |= 0x80; // Square / X
+
+            packet[36] = states1;
+            packet[37] = states2;
+
+            // [40..43] Left & Right Analog Sticks (0..255, 128 center)
+            packet[40] = (byte)Math.Clamp((state.Gamepad.sThumbLX + 32768) >> 8, 0, 255);
+            packet[41] = (byte)Math.Clamp((state.Gamepad.sThumbLY + 32768) >> 8, 0, 255);
+            packet[42] = (byte)Math.Clamp((state.Gamepad.sThumbRX + 32768) >> 8, 0, 255);
+            packet[43] = (byte)Math.Clamp((state.Gamepad.sThumbRY + 32768) >> 8, 0, 255);
+
+            // [44..47] Analog D-Pad (Left, Down, Right, Up)
+            packet[44] = (btns & XINPUT_GAMEPAD_DPAD_LEFT) != 0 ? (byte)255 : (byte)0;
+            packet[45] = (btns & XINPUT_GAMEPAD_DPAD_DOWN) != 0 ? (byte)255 : (byte)0;
+            packet[46] = (btns & XINPUT_GAMEPAD_DPAD_RIGHT) != 0 ? (byte)255 : (byte)0;
+            packet[47] = (btns & XINPUT_GAMEPAD_DPAD_UP) != 0 ? (byte)255 : (byte)0;
+
+            // [48..51] Analog Face Buttons (Square/X, Cross/A, Circle/B, Triangle/Y)
+            packet[48] = (btns & XINPUT_GAMEPAD_X) != 0 ? (byte)255 : (byte)0;
+            packet[49] = (btns & XINPUT_GAMEPAD_A) != 0 ? (byte)255 : (byte)0;
+            packet[50] = (btns & XINPUT_GAMEPAD_B) != 0 ? (byte)255 : (byte)0;
+            packet[51] = (btns & XINPUT_GAMEPAD_Y) != 0 ? (byte)255 : (byte)0;
+
+            // [52..53] Analog Shoulders (R1, L1)
+            packet[52] = (btns & XINPUT_GAMEPAD_RIGHT_SHOULDER) != 0 ? (byte)255 : (byte)0;
+            packet[53] = (btns & XINPUT_GAMEPAD_LEFT_SHOULDER) != 0 ? (byte)255 : (byte)0;
+
+            // [54..55] Analog Triggers (R2, L2)
+            packet[54] = r2;
+            packet[55] = l2;
+        }
+        catch
+        {
+            // Ignore XInput DLL unavailability
+        }
     }
 
     private static void WriteSharedControllerInfo(Span<byte> infoSpan, byte slot, bool isConnected, byte macSuffix)

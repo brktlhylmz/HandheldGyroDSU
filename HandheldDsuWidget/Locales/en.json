@@ -27,6 +27,9 @@
   "StreamTitle": "Gyroscope DSU Stream",
   "StreamActiveDesc": "Active • Broadcasting motion data to emulator",
   "StreamPausedDesc": "Paused • DSU motion output is muted",
+  "ForwardGamepadTitle": "Forward Full Controller (Buttons + Sticks + Gyro)",
+  "ForwardGamepadActiveDesc": "Enabled • Sends XInput buttons, triggers, sticks, and gyro over DSUClient",
+  "ForwardGamepadDisabledDesc": "Motion-Only • Only sends gyro/accel (use when Xbox/SDL is your main gamepad)",
 
   "SectionProfileAxes": "PROFILE & AXIS ORIENTATION",
   "ProfileBadgeSystem": "SYSTEM PRESET",

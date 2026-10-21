@@ -218,6 +218,7 @@ public partial class MainWindow : Window
         return
         [
             GyroStreamToggle,
+            ForwardGamepadToggle,
             PitchOffsetToggle,
             InvertXToggle,
             InvertYToggle,

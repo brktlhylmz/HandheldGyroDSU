@@ -27,6 +27,9 @@
   "StreamTitle": "Jiroskop Veri Akışı (DSU)",
   "StreamActiveDesc": "Aktif • Emülatöre hareket verisi gönderiliyor",
   "StreamPausedDesc": "Duraklatıldı • DSU hareket verisi çıkışı kapalı",
+  "ForwardGamepadTitle": "Tam Kol Aktarımı (Tuşlar + Analog + Gyro)",
+  "ForwardGamepadActiveDesc": "Açık • XInput tuşları, tetikler, analoglar ve jiroskop tek DSUClient üzerinden iletilir",
+  "ForwardGamepadDisabledDesc": "Yalnızca Hareket • Sadece gyro/ivme gönderir (ana kol olarak Xbox/SDL seçiliyken kullanın)",
 
   "SectionProfileAxes": "PROFİL & EKSEN YÖNLERİ",
   "ProfileBadgeSystem": "SİSTEM PROFİLİ",

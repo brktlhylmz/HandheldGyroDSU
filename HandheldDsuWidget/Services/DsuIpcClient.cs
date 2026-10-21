@@ -45,6 +45,9 @@ public sealed class DsuStatusDto
     [JsonPropertyName("isStreamingEnabled")]
     public bool IsStreamingEnabled { get; set; } = true;
 
+    [JsonPropertyName("forwardGamepadInputs")]
+    public bool ForwardGamepadInputs { get; set; }
+
     [JsonPropertyName("startWithWindows")]
     public bool StartWithWindows { get; set; }
 
@@ -171,6 +174,7 @@ public sealed class DsuIpcClient : IDisposable
                 (byte)_embeddedSettings.ActiveSlot,
                 _embeddedSettings.SecondaryUdpPort);
             _embeddedUdpServer.ToggleStreaming(_embeddedSettings.IsStreamingEnabled);
+            _embeddedUdpServer.ForwardGamepadInputs = _embeddedSettings.ForwardGamepadInputs;
             if (_embeddedSettings.IsSecondaryClusterActive)
             {
                 _embeddedUdpServer.SetSecondaryClusterActive(true, _embeddedSettings.SecondaryUdpPort);
@@ -217,6 +221,7 @@ public sealed class DsuIpcClient : IDisposable
             SecondaryPort = _embeddedUdpServer.SecondaryPort,
             IpcPort = IpcHttpServer.DefaultIpcPort,
             IsStreamingEnabled = _embeddedUdpServer.IsStreamingEnabled,
+            ForwardGamepadInputs = _embeddedUdpServer.ForwardGamepadInputs,
             StartWithWindows = StartupManager.IsStartupEnabled(),
             CloseToTray = _embeddedSettings?.CloseToTray ?? false,
             GameBarOverlayEnabled = _embeddedSettings?.GameBarOverlayEnabled ?? true,
@@ -558,6 +563,7 @@ public sealed class DsuIpcClient : IDisposable
         bool? hudNotificationsEnabled = null,
         bool? syntheticWaveEnabled = null,
         bool? rebindSensors = null,
+        bool? forwardGamepadInputs = null,
         CancellationToken cancellationToken = default)
     {
         if (!_usingEmbeddedEngine)
@@ -568,7 +574,8 @@ public sealed class DsuIpcClient : IDisposable
                 gameBarOverlayEnabled,
                 hudNotificationsEnabled,
                 syntheticWaveEnabled,
-                rebindSensors
+                rebindSensors,
+                forwardGamepadInputs
             });
             DsuStatusDto? remote = await PostJsonAsync("/preferences", payload, cancellationToken);
             if (remote is not null)
@@ -577,7 +584,13 @@ public sealed class DsuIpcClient : IDisposable
             EnsureEmbeddedEngineStarted();
         }
 
-        _embeddedIpcServer?.SetPreferences(closeToTray, gameBarOverlayEnabled, hudNotificationsEnabled, syntheticWaveEnabled, rebindSensors);
+        _embeddedIpcServer?.SetPreferences(
+            closeToTray,
+            gameBarOverlayEnabled,
+            hudNotificationsEnabled,
+            syntheticWaveEnabled,
+            rebindSensors,
+            forwardGamepadInputs);
         return BuildEmbeddedStatusDto();
     }
 
