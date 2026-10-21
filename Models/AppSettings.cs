@@ -18,6 +18,7 @@ public sealed class AppSettings
     public string ActiveProfileName { get; set; } = "Standard Landscape";
     public bool AutoSwitchProfiles { get; set; } = true;
     public bool IsStreamingEnabled { get; set; } = true;
+    public bool ForwardGamepadInputs { get; set; }
     public bool StartWithWindows { get; set; }
     public bool CloseToTray { get; set; }
     public bool GameBarOverlayEnabled { get; set; } = true;

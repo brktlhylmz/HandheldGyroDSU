@@ -40,6 +40,7 @@ public sealed class DsuUdpServer : IDisposable
     private uint _packetNumber;
     private long _totalPacketsSent;
     private volatile bool _isStreamingEnabled = true;
+    private volatile bool _forwardGamepadInputs;
 
     public int Port => _port;
     public byte ActiveSlot => _activeSlot;
@@ -49,6 +50,11 @@ public sealed class DsuUdpServer : IDisposable
     public uint ServerId => _serverId;
     public long TotalPacketsSent => Interlocked.Read(ref _totalPacketsSent);
     public bool IsStreamingEnabled => _isStreamingEnabled;
+    public bool ForwardGamepadInputs
+    {
+        get => _forwardGamepadInputs;
+        set => _forwardGamepadInputs = value;
+    }
 
     public DsuUdpServer(SensorService sensorService, int port = DefaultPort, byte activeSlot = 0, int secondaryPort = 26762)
     {
@@ -524,7 +530,7 @@ public sealed class DsuUdpServer : IDisposable
             byte[] immediatePacket = new byte[100];
             MotionData motion = _sensorService.GetProcessedMotionData();
             uint currentPacketNum = Interlocked.Increment(ref _packetNumber);
-            DsuProtocol.BuildMotionDataPacket(immediatePacket, _serverId, currentPacketNum, in motion, activeSlot, macOffset);
+            DsuProtocol.BuildMotionDataPacket(immediatePacket, _serverId, currentPacketNum, in motion, activeSlot, macOffset, _forwardGamepadInputs);
             await udpClient.SendAsync(immediatePacket, clientEndPoint, cancellationToken);
             Interlocked.Increment(ref _totalPacketsSent);
         }
@@ -558,7 +564,7 @@ public sealed class DsuUdpServer : IDisposable
                     IReadOnlyList<IPEndPoint> activeClients = GetActiveClients();
                     if (activeClients.Count > 0)
                     {
-                        DsuProtocol.BuildMotionDataPacket(packetBuffer, _serverId, currentPacketNum, in motion, _activeSlot, 0);
+                        DsuProtocol.BuildMotionDataPacket(packetBuffer, _serverId, currentPacketNum, in motion, _activeSlot, 0, _forwardGamepadInputs);
                         foreach (IPEndPoint client in activeClients)
                         {
                             await currentClient.SendAsync(packetBuffer, client, cancellationToken);
@@ -571,7 +577,7 @@ public sealed class DsuUdpServer : IDisposable
                 if (_isSecondaryClusterActive && secondaryClient is not null && !_secondarySubscribedClients.IsEmpty)
                 {
                     DateTime now = DateTime.UtcNow;
-                    DsuProtocol.BuildMotionDataPacket(packetBuffer, _serverId, currentPacketNum, in motion, slot: 0, macSuffixOffset: 4);
+                    DsuProtocol.BuildMotionDataPacket(packetBuffer, _serverId, currentPacketNum, in motion, slot: 0, macSuffixOffset: 4, _forwardGamepadInputs);
                     foreach (var kvp in _secondarySubscribedClients)
                     {
                         if (now - kvp.Value <= ClientSubscriptionTimeout)

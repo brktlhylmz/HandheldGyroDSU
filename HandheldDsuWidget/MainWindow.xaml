@@ -440,33 +440,64 @@
                             </StackPanel>
                         </Border>
 
-                        <!-- Card 2: DSU Motion Stream Toggle -->
+                        <!-- Card 2: DSU Motion Stream & Full Gamepad Forwarding Toggles -->
                         <Border Style="{DynamicResource AppCardStyle}" Margin="0,0,0,10">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
 
-                                <StackPanel VerticalAlignment="Center" Margin="0,0,12,0">
-                                    <TextBlock Text="{Binding [StreamTitle], Source={x:Static services:LocalizationService.Instance}}"
-                                               Foreground="{DynamicResource BrushTextPrimary}"
-                                               FontWeight="SemiBold"
-                                               FontSize="12" />
-                                    <TextBlock x:Name="GyroToggleSubtitle"
-                                               Text="{Binding [StreamActiveDesc], Source={x:Static services:LocalizationService.Instance}}"
-                                               Foreground="{DynamicResource BrushTextSecondary}"
-                                               FontSize="10.5"
-                                               Margin="0,2,0,0" />
-                                </StackPanel>
+                                    <StackPanel VerticalAlignment="Center" Margin="0,0,12,0">
+                                        <TextBlock Text="{Binding [StreamTitle], Source={x:Static services:LocalizationService.Instance}}"
+                                                   Foreground="{DynamicResource BrushTextPrimary}"
+                                                   FontWeight="SemiBold"
+                                                   FontSize="12" />
+                                        <TextBlock x:Name="GyroToggleSubtitle"
+                                                   Text="{Binding [StreamActiveDesc], Source={x:Static services:LocalizationService.Instance}}"
+                                                   Foreground="{DynamicResource BrushTextSecondary}"
+                                                   FontSize="10.5"
+                                                   Margin="0,2,0,0" />
+                                    </StackPanel>
 
-                                <CheckBox x:Name="GyroStreamToggle"
-                                          Grid.Column="1"
-                                          Style="{DynamicResource AppToggleSwitchStyle}"
-                                          IsChecked="True"
-                                          VerticalAlignment="Center"
-                                          Click="GyroStreamToggle_Click" />
-                            </Grid>
+                                    <CheckBox x:Name="GyroStreamToggle"
+                                              Grid.Column="1"
+                                              Style="{DynamicResource AppToggleSwitchStyle}"
+                                              IsChecked="True"
+                                              VerticalAlignment="Center"
+                                              Click="GyroStreamToggle_Click" />
+                                </Grid>
+
+                                <Border Height="1" Background="{DynamicResource BrushBorderSubtle}" Margin="0,9" />
+
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <StackPanel VerticalAlignment="Center" Margin="0,0,12,0">
+                                        <TextBlock Text="{Binding [ForwardGamepadTitle], Source={x:Static services:LocalizationService.Instance}}"
+                                                   Foreground="{DynamicResource BrushTextPrimary}"
+                                                   FontWeight="SemiBold"
+                                                   FontSize="12" />
+                                        <TextBlock x:Name="ForwardGamepadSubtitle"
+                                                   Text="{Binding [ForwardGamepadDisabledDesc], Source={x:Static services:LocalizationService.Instance}}"
+                                                   Foreground="{DynamicResource BrushTextSecondary}"
+                                                   FontSize="10.5"
+                                                   TextWrapping="Wrap"
+                                                   Margin="0,2,0,0" />
+                                    </StackPanel>
+
+                                    <CheckBox x:Name="ForwardGamepadToggle"
+                                              Grid.Column="1"
+                                              Style="{DynamicResource AppToggleSwitchStyle}"
+                                              IsChecked="False"
+                                              VerticalAlignment="Center"
+                                              Click="ForwardGamepadToggle_Click" />
+                                </Grid>
+                            </StackPanel>
                         </Border>
 
                         <!-- Card 3: Axis Orientation & Hold Angle Switches -->

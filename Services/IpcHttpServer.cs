@@ -57,7 +57,8 @@ public sealed class IpcHttpServer : IDisposable
         bool? gameBarOverlayEnabled = null,
         bool? hudNotificationsEnabled = null,
         bool? syntheticWaveEnabled = null,
-        bool? rebindSensors = null)
+        bool? rebindSensors = null,
+        bool? forwardGamepadInputs = null)
     {
         if (closeToTray.HasValue)
             _settings.CloseToTray = closeToTray.Value;
@@ -69,6 +70,11 @@ public sealed class IpcHttpServer : IDisposable
             _sensorService.IsSyntheticWaveEnabled = syntheticWaveEnabled.Value;
         if (rebindSensors == true)
             _sensorService.RequestSensorRebind();
+        if (forwardGamepadInputs.HasValue)
+        {
+            _udpServer.ForwardGamepadInputs = forwardGamepadInputs.Value;
+            _settings.ForwardGamepadInputs = forwardGamepadInputs.Value;
+        }
         SaveCurrentSettings();
     }
 
@@ -79,10 +85,12 @@ public sealed class IpcHttpServer : IDisposable
         _udpServer.SetSecondaryClusterActive(false, 26762);
         _udpServer.SetActiveSlot(0);
         _udpServer.ToggleStreaming(true);
+        _udpServer.ForwardGamepadInputs = false;
         _sensorService.ResetAxisSettings();
         StartupManager.SetStartup(false);
 
         _settings.ActiveProfileName = "Standard Landscape";
+        _settings.ForwardGamepadInputs = false;
         _settings.CloseToTray = false;
         _settings.GameBarOverlayEnabled = true;
         _settings.HudNotificationsEnabled = true;
@@ -108,6 +116,7 @@ public sealed class IpcHttpServer : IDisposable
         _settings.RestAccY = _sensorService.RestAccY;
         _settings.RestAccZ = _sensorService.RestAccZ;
         _settings.IsStreamingEnabled = _udpServer.IsStreamingEnabled;
+        _settings.ForwardGamepadInputs = _udpServer.ForwardGamepadInputs;
         _settings.StartWithWindows = StartupManager.IsStartupEnabled();
         _settings.BiasX = bias.BiasX;
         _settings.BiasY = bias.BiasY;
@@ -391,7 +400,8 @@ public sealed class IpcHttpServer : IDisposable
                     bool? hudNotif = ExtractBooleanParameter(query, body, "hudNotificationsEnabled");
                     bool? synthWave = ExtractBooleanParameter(query, body, "syntheticWaveEnabled");
                     bool? rebind = ExtractBooleanParameter(query, body, "rebindSensors");
-                    SetPreferences(closeTray, gameBar, hudNotif, synthWave, rebind);
+                    bool? forwardPad = ExtractBooleanParameter(query, body, "forwardGamepadInputs");
+                    SetPreferences(closeTray, gameBar, hudNotif, synthWave, rebind, forwardPad);
                     string json = BuildStatusJson("Preferences updated");
                     await WriteHttpResponseAsync(stream, 200, "OK", json, cancellationToken);
                 }
@@ -449,6 +459,7 @@ public sealed class IpcHttpServer : IDisposable
             secondaryPort = _udpServer.SecondaryPort,
             ipcPort = _port,
             isStreamingEnabled = _udpServer.IsStreamingEnabled,
+            forwardGamepadInputs = _udpServer.ForwardGamepadInputs,
             startWithWindows = StartupManager.IsStartupEnabled(),
             closeToTray = _settings.CloseToTray,
             gameBarOverlayEnabled = _settings.GameBarOverlayEnabled,

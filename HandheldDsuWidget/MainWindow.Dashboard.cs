@@ -134,11 +134,16 @@ public partial class MainWindow
                     : _loc["StatusReadyBadge"];
             }
 
-            // 2. DSU stream and Start with Windows switches
+            // 2. DSU stream, Full Gamepad Forwarding, and Start with Windows switches
             GyroStreamToggle.IsChecked = status.IsStreamingEnabled;
             GyroToggleSubtitle.Text = status.IsStreamingEnabled
                 ? _loc["StreamActiveDesc"]
                 : _loc["StreamPausedDesc"];
+
+            ForwardGamepadToggle.IsChecked = status.ForwardGamepadInputs;
+            ForwardGamepadSubtitle.Text = status.ForwardGamepadInputs
+                ? _loc["ForwardGamepadActiveDesc"]
+                : _loc["ForwardGamepadDisabledDesc"];
 
             StartupToggle.IsChecked = status.StartWithWindows;
             StartupToggleSubtitle.Text = status.StartWithWindows
@@ -304,6 +309,16 @@ public partial class MainWindow
 
         bool targetState = GyroStreamToggle.IsChecked == true;
         DsuStatusDto status = await _ipcClient.ToggleStreamingAsync(targetState);
+        UpdateUiFromStatus(status);
+    }
+
+    private async void ForwardGamepadToggle_Click(object sender, RoutedEventArgs e)
+    {
+        if (_suppressUiEvents || !IsLoaded)
+            return;
+
+        bool targetState = ForwardGamepadToggle.IsChecked == true;
+        DsuStatusDto status = await _ipcClient.UpdatePreferencesAsync(forwardGamepadInputs: targetState);
         UpdateUiFromStatus(status);
     }
 

@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Text.RegularExpressions;
 using System.Windows.Threading;
 using Windows.Gaming.Input;
 using HandheldDsuServer.Models;
@@ -56,6 +58,7 @@ public sealed class ControllerAndAppWatcherService : IDisposable
 
     public void Start()
     {
+        EnsureDolphinDsuConfigured();
         ScanControllers(basePort: 26760);
         _isInitialScan = false;
         _watcherTimer.Start();
@@ -438,6 +441,11 @@ public sealed class ControllerAndAppWatcherService : IDisposable
             if (string.Equals(procName, _lastDetectedEmulatorProcess, StringComparison.OrdinalIgnoreCase))
                 return;
 
+            if (procName.Contains("dolphin", StringComparison.OrdinalIgnoreCase))
+            {
+                EnsureDolphinDsuConfigured();
+            }
+
             var matchedRule = _config.EmulatorRules.FirstOrDefault(r =>
                 r.IsEnabled && procName.Contains(r.ProcessName, StringComparison.OrdinalIgnoreCase));
 
@@ -484,6 +492,117 @@ public sealed class ControllerAndAppWatcherService : IDisposable
             (0x045E, _) => "Xbox / XInput Controller",
             _ => $"Gamepad ({vid:X4}:{pid:X4})"
         };
+    }
+
+    /// <summary>
+    /// Automatically ensures Dolphin Emulator's DSUClient.ini has a non-empty description
+    /// (preventing Dolphin's DeviceQualifier::FromString empty-name EOF bug) and prefixes
+    /// unprefixed IMUAccelerometer / IMUGyroscope bindings in WiimoteNew.ini with DSUClient/0/&lt;description&gt;:
+    /// when an XInput/WGInput/SDL gamepad is selected as the primary device.
+    /// </summary>
+    public static void EnsureDolphinDsuConfigured(int dsuPort = 26760)
+    {
+        try
+        {
+            var configDirs = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+            string docs = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+
+            string[] candidates =
+            [
+                Path.Combine(appData, "Dolphin Emulator", "Config"),
+                Path.Combine(appData, "emudeck", "Emulators", "Dolphin-x64", "User", "Config"),
+                Path.Combine(docs, "Dolphin Emulator", "Config")
+            ];
+
+            foreach (string candidate in candidates)
+            {
+                if (Directory.Exists(candidate))
+                    configDirs.Add(candidate);
+            }
+
+            try
+            {
+                foreach (Process p in Process.GetProcessesByName("Dolphin"))
+                {
+                    using (p)
+                    {
+                        string? exeDir = Path.GetDirectoryName(p.MainModule?.FileName);
+                        if (!string.IsNullOrEmpty(exeDir))
+                        {
+                            string portableCfg = Path.Combine(exeDir, "User", "Config");
+                            if (Directory.Exists(portableCfg))
+                                configDirs.Add(portableCfg);
+                        }
+                    }
+                }
+            }
+            catch
+            {
+                // Ignore process enumeration access errors
+            }
+
+            foreach (string configDir in configDirs)
+            {
+                string dsuIniPath = Path.Combine(configDir, "DSUClient.ini");
+                string dsuDescription = "HandheldGyroDSU";
+
+                if (File.Exists(dsuIniPath))
+                {
+                    string dsuText = File.ReadAllText(dsuIniPath);
+                    bool dsuChanged = false;
+
+                    // Fix empty description ":127.0.0.1:26760" which triggers Dolphin's DeviceQualifier::FromString bug
+                    if (Regex.IsMatch(dsuText, @"(?m)^Entries\s*=\s*:127\.0\.0\.1:"))
+                    {
+                        dsuText = Regex.Replace(
+                            dsuText,
+                            @"(?m)^(Entries\s*=\s*):127\.0\.0\.1:",
+                            $"${{1}}{dsuDescription}:127.0.0.1:");
+                        dsuChanged = true;
+                    }
+
+                    Match descMatch = Regex.Match(dsuText, @"(?m)^Entries\s*=\s*([^:;\r\n]+):127\.0\.0\.1:");
+                    if (descMatch.Success && !string.IsNullOrWhiteSpace(descMatch.Groups[1].Value))
+                    {
+                        dsuDescription = descMatch.Groups[1].Value.Trim();
+                    }
+
+                    if (dsuChanged)
+                    {
+                        File.WriteAllText(dsuIniPath, dsuText);
+                    }
+                }
+                else
+                {
+                    File.WriteAllText(
+                        dsuIniPath,
+                        $"[General]{Environment.NewLine}Enabled = True{Environment.NewLine}Entries = {dsuDescription}:127.0.0.1:{dsuPort};{Environment.NewLine}");
+                }
+
+                string wiimoteIniPath = Path.Combine(configDir, "WiimoteNew.ini");
+                if (File.Exists(wiimoteIniPath))
+                {
+                    string wiimoteText = File.ReadAllText(wiimoteIniPath);
+                    string prefix = $"DSUClient/0/{dsuDescription}:";
+
+                    // Replace unprefixed `Accel ...` or `Gyro ...` bindings with `DSUClient/0/<description>:Accel ...`
+                    string updatedWiimote = Regex.Replace(
+                        wiimoteText,
+                        @"(?m)^(\s*IMU(?:Accelerometer|Gyroscope)/[^=\r\n]+=\s*)`((?:Accel|Gyro)\s+[^`]+)`",
+                        $"${{1}}`{prefix}${{2}}`");
+
+                    if (!string.Equals(wiimoteText, updatedWiimote, StringComparison.Ordinal))
+                    {
+                        File.WriteAllText(wiimoteIniPath, updatedWiimote);
+                    }
+                }
+            }
+        }
+        catch
+        {
+            // Ignore file I/O contention if emulator is actively writing INI files
+        }
     }
 
     public void Dispose()
