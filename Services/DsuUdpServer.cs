@@ -523,9 +523,15 @@ public sealed class DsuUdpServer : IDisposable
                 return;
         }
 
-        clientRegistry[clientEndPoint] = DateTime.UtcNow;
+        DateTime now = DateTime.UtcNow;
+        bool isNewOrStaleSubscription = !clientRegistry.TryGetValue(clientEndPoint, out DateTime lastSeen) ||
+                                        (now - lastSeen).TotalMilliseconds > 250;
+        clientRegistry[clientEndPoint] = now;
 
-        if (_isStreamingEnabled)
+        // Send an immediate packet only when a client first subscribes (or re-subscribes after >250ms).
+        // Cemu's DSUControllerProvider sends a new 0x100002 request immediately upon receiving every 0x100002 response;
+        // echoing synchronously on every request would cause an unthrottled ping-pong flood.
+        if (_isStreamingEnabled && isNewOrStaleSubscription)
         {
             byte[] immediatePacket = new byte[100];
             MotionData motion = _sensorService.GetProcessedMotionData();
@@ -561,14 +567,18 @@ public sealed class DsuUdpServer : IDisposable
                 UdpClient? currentClient = _udpClient;
                 if (currentClient is not null && !_subscribedClients.IsEmpty)
                 {
-                    IReadOnlyList<IPEndPoint> activeClients = GetActiveClients();
-                    if (activeClients.Count > 0)
+                    DateTime now = DateTime.UtcNow;
+                    DsuProtocol.BuildMotionDataPacket(packetBuffer, _serverId, currentPacketNum, in motion, _activeSlot, 0, _forwardGamepadInputs);
+                    foreach (var kvp in _subscribedClients)
                     {
-                        DsuProtocol.BuildMotionDataPacket(packetBuffer, _serverId, currentPacketNum, in motion, _activeSlot, 0, _forwardGamepadInputs);
-                        foreach (IPEndPoint client in activeClients)
+                        if (now - kvp.Value <= ClientSubscriptionTimeout)
                         {
-                            await currentClient.SendAsync(packetBuffer, client, cancellationToken);
+                            await currentClient.SendAsync(packetBuffer, kvp.Key, cancellationToken);
                             Interlocked.Increment(ref _totalPacketsSent);
+                        }
+                        else
+                        {
+                            _subscribedClients.TryRemove(kvp.Key, out _);
                         }
                     }
                 }
