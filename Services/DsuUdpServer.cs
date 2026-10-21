@@ -34,6 +34,8 @@ public sealed class DsuUdpServer : IDisposable
     private volatile bool _isSecondaryClusterActive;
     private readonly ConcurrentDictionary<IPEndPoint, DateTime> _subscribedClients = new();
     private readonly ConcurrentDictionary<IPEndPoint, DateTime> _secondarySubscribedClients = new();
+    private readonly ConcurrentDictionary<IPEndPoint, DateTime> _infoClients = new();
+    private readonly ConcurrentDictionary<IPEndPoint, byte> _versionRequestedEndpoints = new();
 
     private uint _packetNumber;
     private long _totalPacketsSent;
@@ -225,6 +227,8 @@ public sealed class DsuUdpServer : IDisposable
             _port = newPort;
             _udpClient = newClient;
             _subscribedClients.Clear();
+            _infoClients.Clear();
+            _versionRequestedEndpoints.Clear();
 
             try
             {
@@ -255,7 +259,7 @@ public sealed class DsuUdpServer : IDisposable
     }
 
     /// <summary>
-    /// Returns the list of currently subscribed emulator client endpoints (IP:Port).
+    /// Returns the list of currently subscribed or actively polling emulator client endpoints (IP:Port).
     /// </summary>
     public IReadOnlyList<IPEndPoint> GetActiveClients()
     {
@@ -271,6 +275,21 @@ public sealed class DsuUdpServer : IDisposable
             else
             {
                 _subscribedClients.TryRemove(kvp.Key, out _);
+            }
+        }
+
+        foreach (var kvp in _infoClients)
+        {
+            if (now - kvp.Value <= ClientSubscriptionTimeout)
+            {
+                if (!active.Contains(kvp.Key))
+                {
+                    active.Add(kvp.Key);
+                }
+            }
+            else
+            {
+                _infoClients.TryRemove(kvp.Key, out _);
             }
         }
 
@@ -426,8 +445,11 @@ public sealed class DsuUdpServer : IDisposable
         IPEndPoint clientEndPoint,
         CancellationToken cancellationToken)
     {
+        _versionRequestedEndpoints[clientEndPoint] = 1;
+        _infoClients[clientEndPoint] = DateTime.UtcNow;
         byte[] response = DsuProtocol.BuildVersionResponse(_serverId);
         await udpClient.SendAsync(response, clientEndPoint, cancellationToken);
+        Interlocked.Increment(ref _totalPacketsSent);
     }
 
     private async Task HandleControllerInfoRequestAsync(
@@ -438,27 +460,36 @@ public sealed class DsuUdpServer : IDisposable
         byte macOffset,
         CancellationToken cancellationToken)
     {
+        _infoClients[clientEndPoint] = DateTime.UtcNow;
+
         if (requestBuffer.Length < 24)
         {
             byte[] fallback = DsuProtocol.BuildControllerInfoResponse(_serverId, activeSlot, isSlotConnected: true, macSuffixOffset: macOffset);
             await udpClient.SendAsync(fallback, clientEndPoint, cancellationToken);
+            Interlocked.Increment(ref _totalPacketsSent);
             return;
         }
 
         int numPorts = BinaryPrimitives.ReadInt32LittleEndian(requestBuffer.AsSpan(20, 4));
-        numPorts = Math.Clamp(numPorts, 1, 8);
+        numPorts = Math.Clamp(numPorts, 1, 4);
 
         for (int i = 0; i < numPorts; i++)
         {
             byte requestedSlot = (24 + i < requestBuffer.Length) ? requestBuffer[24 + i] : (byte)i;
+            if (requestedSlot >= 4)
+                continue;
+
             bool isConnected = requestedSlot == activeSlot;
             byte[] response = DsuProtocol.BuildControllerInfoResponse(_serverId, requestedSlot, isConnected, macOffset);
             await udpClient.SendAsync(response, clientEndPoint, cancellationToken);
+            Interlocked.Increment(ref _totalPacketsSent);
         }
 
-        // Cemu DSUControllerProvider (kMaxClients = 8) waits for all slots 0..7 in wait_update();
-        // responding for slots 4..7 prevents Cemu's dropdown from blocking for 3000 ms.
-        if (numPorts == 4)
+        // Cemu DSUControllerProvider (kMaxClients = 8) always sends 0x100000 (VersionRequest) on the same socket
+        // before 0x100001 and waits for slots 0..7 in wait_update().
+        // IMPORTANT: Never send slots 4..7 to Dolphin, because Dolphin's DualShockUDPClient stores PortInfo in
+        // std::array<PortInfo, 4> m_port_info without bounds-checking pad_id, so pad_id >= 4 overwrites server.m_socket!
+        if (numPorts == 4 && _versionRequestedEndpoints.ContainsKey(clientEndPoint))
         {
             for (byte extraSlot = 4; extraSlot < 8; extraSlot++)
             {
