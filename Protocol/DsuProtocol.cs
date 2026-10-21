@@ -194,11 +194,41 @@ public static class DsuProtocol
         try
         {
             uint userIndex = Math.Min((uint)slot, 3u);
-            if (XInputGetState(userIndex, out XInputState state) != 0 &&
-                (userIndex == 0 || XInputGetState(0, out state) != 0))
+            XInputState state = default;
+            bool foundState = false;
+
+            if (XInputGetState(userIndex, out XInputState primaryState) == 0)
             {
-                return;
+                state = primaryState;
+                foundState = true;
             }
+
+            // If slot 0 is requested (or disconnected/idle because of a virtual pad at index 0),
+            // scan XInput indices 0..3 for the first controller with active input or connection.
+            if (userIndex == 0 && (!foundState || IsGamepadIdle(in state.Gamepad)))
+            {
+                for (uint i = 0; i < 4; i++)
+                {
+                    if (XInputGetState(i, out XInputState candidate) == 0)
+                    {
+                        if (!foundState)
+                        {
+                            state = candidate;
+                            foundState = true;
+                        }
+
+                        if (!IsGamepadIdle(in candidate.Gamepad))
+                        {
+                            state = candidate;
+                            foundState = true;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (!foundState)
+                return;
 
             ushort btns = state.Gamepad.wButtons;
             byte l2 = state.Gamepad.bLeftTrigger;
@@ -257,6 +287,18 @@ public static class DsuProtocol
         {
             // Ignore XInput DLL unavailability
         }
+    }
+
+    private static bool IsGamepadIdle(in XInputGamepad pad)
+    {
+        const int stickDeadzone = 4000;
+        return pad.wButtons == 0 &&
+               pad.bLeftTrigger <= 10 &&
+               pad.bRightTrigger <= 10 &&
+               Math.Abs((int)pad.sThumbLX) < stickDeadzone &&
+               Math.Abs((int)pad.sThumbLY) < stickDeadzone &&
+               Math.Abs((int)pad.sThumbRX) < stickDeadzone &&
+               Math.Abs((int)pad.sThumbRY) < stickDeadzone;
     }
 
     private static void WriteSharedControllerInfo(Span<byte> infoSpan, byte slot, bool isConnected, byte macSuffix)
