@@ -21,9 +21,20 @@ public static class StartupManager
 
         try
         {
-            using RegistryKey? key = Registry.CurrentUser.OpenSubKey(RunKeyPath, writable: false);
-            object? val = key?.GetValue(AppValueName);
-            return val is string s && !string.IsNullOrWhiteSpace(s);
+            using RegistryKey? key = Registry.CurrentUser.OpenSubKey(RunKeyPath, writable: true);
+            if (key?.GetValue(AppValueName) is string s && !string.IsNullOrWhiteSpace(s))
+            {
+                string preferredExe = ResolvePreferredExecutablePath();
+                string expectedCommand = $"\"{preferredExe}\" --minimized";
+                if (!string.Equals(s, expectedCommand, StringComparison.OrdinalIgnoreCase) &&
+                    File.Exists(preferredExe))
+                {
+                    // Auto-heal stale startup registry path (e.g. after executable rename or folder move)
+                    key.SetValue(AppValueName, expectedCommand, RegistryValueKind.String);
+                }
+                return true;
+            }
+            return false;
         }
         catch
         {

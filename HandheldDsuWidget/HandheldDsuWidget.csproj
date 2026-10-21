@@ -38,4 +38,10 @@
     </None>
   </ItemGroup>
 
+  <Target Name="SyncAppxManifest" AfterTargets="Build">
+    <Copy SourceFiles="$(OutputPath)Package.appxmanifest"
+          DestinationFiles="$(OutputPath)AppxManifest.xml"
+          Condition="Exists('$(OutputPath)Package.appxmanifest')" />
+  </Target>
+
 </Project>
