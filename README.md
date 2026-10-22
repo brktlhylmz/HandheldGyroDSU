@@ -21,11 +21,12 @@ It bridges internal Windows WinRT Inertial Measurement Units (`Gyrometer` + `Acc
 
 Every commit pushed to `master` is automatically built and published to [GitHub Releases](https://github.com/brktlhylmz/HandheldGyroDSU/releases). The links below always point to the newest verified build:
 
-| Package | Format | Description | Direct Download |
-| :--- | :--- | :--- | :--- |
-| **`HandheldGyroDSU-win-x64.zip`** | **Portable `.ZIP` Archive** *(Recommended)* | Full transparent folder structure (`HandheldGyroDSU.exe`, `Locales/*.json`, `README.md`, `LICENSE`, `install.ps1`). Avoids browser single-`.exe` download warnings. | **[⬇️ Download `.ZIP`](https://github.com/brktlhylmz/HandheldGyroDSU/releases/latest/download/HandheldGyroDSU-win-x64.zip)** |
-| **`HandheldGyroDSU.exe`** | **Standalone Single-File `.EXE`** | All-in-one self-contained executable (includes embedded `.NET` runtime and locales — zero extraction required). | **[⬇️ Download `.EXE`](https://github.com/brktlhylmz/HandheldGyroDSU/releases/latest/download/HandheldGyroDSU.exe)** |
-| **`SHA256SUMS.txt`** | **SHA-256 Checksums** | Cryptographic SHA-256 hashes for verifying the downloaded `.zip` and `.exe` files. | **[🔒 View `SHA256SUMS.txt`](https://github.com/brktlhylmz/HandheldGyroDSU/releases/latest/download/SHA256SUMS.txt)** |
+| Package | Size | Format | Description | Direct Download |
+| :--- | :---: | :--- | :--- | :--- |
+| **`HandheldGyroDSU-win-x64.zip`** | **~500 KB** | **Portable `.ZIP` Archive** *(Recommended)* | Full transparent folder structure (`HandheldGyroDSU.exe`, `Locales/*.json`, `README.md`, `LICENSE`, `install.ps1`). Requires [.NET 10 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/10.0). | **[⬇️ Download `.ZIP`](https://github.com/brktlhylmz/HandheldGyroDSU/releases/latest/download/HandheldGyroDSU-win-x64.zip)** |
+| **`HandheldGyroDSU.exe`** | **~500 KB** | **Lightweight Single-File `.EXE`** | Compact single-file executable (bundles app, server & locales into 1 file; uses system [.NET 10 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/10.0)). | **[⬇️ Download Lightweight `.EXE`](https://github.com/brktlhylmz/HandheldGyroDSU/releases/latest/download/HandheldGyroDSU.exe)** |
+| **`HandheldGyroDSU-Standalone.exe`** | **~68 MB** | **Self-Contained Single-File `.EXE`** | Includes the entire Microsoft `.NET 10` & WPF runtime embedded inside the executable — runs on any Windows 10/11 PC with zero prerequisites. | **[⬇️ Download Standalone `.EXE`](https://github.com/brktlhylmz/HandheldGyroDSU/releases/latest/download/HandheldGyroDSU-Standalone.exe)** |
+| **`SHA256SUMS.txt`** | **1 KB** | **SHA-256 Checksums** | Cryptographic SHA-256 hashes for verifying the downloaded `.zip` and `.exe` files. | **[🔒 View `SHA256SUMS.txt`](https://github.com/brktlhylmz/HandheldGyroDSU/releases/latest/download/SHA256SUMS.txt)** |
 
 ---
 

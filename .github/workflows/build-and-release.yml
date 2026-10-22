@@ -34,12 +34,12 @@ jobs:
       - name: Run Automated Cemuhook DSU v1001 & IPC Self-Test
         run: dotnet run --project .\HandheldDsuServer.csproj -c Release --no-build -- --self-test
 
-      - name: Package Portable ZIP & Standalone Single-File EXE
+      - name: Package Portable ZIP, Lightweight EXE & Self-Contained Standalone EXE
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Path "publish" -Force | Out-Null
 
-          # 1. Portable ZIP Archive (with visible folder structure, Locales, README, LICENSE, install.ps1)
+          # 1. Portable ZIP Archive (~500 KB - transparent folder structure, Locales, README, LICENSE, install.ps1)
           $zipStageDir = "publish/portable/HandheldGyroDSU"
           New-Item -ItemType Directory -Path $zipStageDir -Force | Out-Null
 
@@ -55,9 +55,23 @@ jobs:
 
           Compress-Archive -Path "$zipStageDir\*" -DestinationPath "publish/HandheldGyroDSU-win-x64.zip" -Force
 
-          # 2. Standalone Single-File Executable (self-contained, zero extraction needed)
-          $singleStageDir = "publish/single"
-          New-Item -ItemType Directory -Path $singleStageDir -Force | Out-Null
+          # 2. Lightweight Single-File Executable (~500 KB - framework-dependent single .exe)
+          $lightStageDir = "publish/lightweight"
+          New-Item -ItemType Directory -Path $lightStageDir -Force | Out-Null
+
+          dotnet publish .\HandheldDsuWidget\HandheldDsuWidget.csproj `
+            -c Release `
+            -r win-x64 `
+            --self-contained false `
+            -p:PublishSingleFile=true `
+            -p:DebugType=embedded `
+            -o $lightStageDir
+
+          Copy-Item "$lightStageDir\HandheldGyroDSU.exe" -Destination "publish/HandheldGyroDSU.exe" -Force
+
+          # 3. Self-Contained Standalone Single-File Executable (~68 MB - includes full .NET 10 + WPF runtime)
+          $standaloneStageDir = "publish/standalone"
+          New-Item -ItemType Directory -Path $standaloneStageDir -Force | Out-Null
 
           dotnet publish .\HandheldDsuWidget\HandheldDsuWidget.csproj `
             -c Release `
@@ -67,25 +81,28 @@ jobs:
             -p:IncludeNativeLibrariesForSelfExtract=true `
             -p:EnableCompressionInSingleFile=true `
             -p:DebugType=embedded `
-            -o $singleStageDir
+            -o $standaloneStageDir
 
-          Copy-Item "$singleStageDir\HandheldGyroDSU.exe" -Destination "publish/HandheldGyroDSU.exe" -Force
+          Copy-Item "$standaloneStageDir\HandheldGyroDSU.exe" -Destination "publish/HandheldGyroDSU-Standalone.exe" -Force
 
-          # 3. Generate SHA256SUMS.txt for transparency and integrity verification
+          # 4. Generate SHA256SUMS.txt for transparency and integrity verification
           $zipHash = (Get-FileHash "publish/HandheldGyroDSU-win-x64.zip" -Algorithm SHA256).Hash.ToLowerInvariant()
-          $exeHash = (Get-FileHash "publish/HandheldGyroDSU.exe" -Algorithm SHA256).Hash.ToLowerInvariant()
+          $lightHash = (Get-FileHash "publish/HandheldGyroDSU.exe" -Algorithm SHA256).Hash.ToLowerInvariant()
+          $standaloneHash = (Get-FileHash "publish/HandheldGyroDSU-Standalone.exe" -Algorithm SHA256).Hash.ToLowerInvariant()
           @(
             "$zipHash  HandheldGyroDSU-win-x64.zip",
-            "$exeHash  HandheldGyroDSU.exe"
+            "$lightHash  HandheldGyroDSU.exe",
+            "$standaloneHash  HandheldGyroDSU-Standalone.exe"
           ) | Set-Content -Path "publish/SHA256SUMS.txt" -Encoding UTF8
 
-      - name: Upload Build Artifacts (ZIP + Standalone EXE + SHA256SUMS)
+      - name: Upload Build Artifacts (ZIP + Lightweight EXE + Standalone EXE + SHA256SUMS)
         uses: actions/upload-artifact@v4
         with:
           name: HandheldGyroDSU-win-x64-packages
           path: |
             publish/HandheldGyroDSU-win-x64.zip
             publish/HandheldGyroDSU.exe
+            publish/HandheldGyroDSU-Standalone.exe
             publish/SHA256SUMS.txt
 
       - name: Publish Automatic Release on Push to Master
@@ -99,4 +116,5 @@ jobs:
           files: |
             publish/HandheldGyroDSU-win-x64.zip
             publish/HandheldGyroDSU.exe
+            publish/HandheldGyroDSU-Standalone.exe
             publish/SHA256SUMS.txt
