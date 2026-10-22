@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using System.Windows.Threading;
 using Windows.Gaming.Input;
 using HandheldDsuServer.Models;
@@ -58,10 +59,22 @@ public sealed class ControllerAndAppWatcherService : IDisposable
 
     public void Start()
     {
-        EnsureDolphinDsuConfigured();
+        _ = Task.Run(() => EnsureDolphinDsuConfigured());
         ScanControllers(basePort: 26760);
         _isInitialScan = false;
         _watcherTimer.Start();
+    }
+
+    public IReadOnlyList<KnownControllerConfig> GetControllersSnapshot()
+    {
+        lock (_syncLock)
+        {
+            return _config.Controllers
+                .OrderByDescending(c => c.IsConnected)
+                .ThenBy(c => c.AssignedPlayerIndex)
+                .ThenByDescending(c => c.LastSeenUtc)
+                .ToList();
+        }
     }
 
     public void SaveConfig()
@@ -441,17 +454,21 @@ public sealed class ControllerAndAppWatcherService : IDisposable
             if (string.Equals(procName, _lastDetectedEmulatorProcess, StringComparison.OrdinalIgnoreCase))
                 return;
 
+            _lastDetectedEmulatorProcess = procName;
+
             if (procName.Contains("dolphin", StringComparison.OrdinalIgnoreCase))
             {
-                EnsureDolphinDsuConfigured();
+                _ = Task.Run(() => EnsureDolphinDsuConfigured());
             }
+
+            if (!_config.AutoSwitchByEmulator)
+                return;
 
             var matchedRule = _config.EmulatorRules.FirstOrDefault(r =>
                 r.IsEnabled && procName.Contains(r.ProcessName, StringComparison.OrdinalIgnoreCase));
 
             if (matchedRule is not null)
             {
-                _lastDetectedEmulatorProcess = procName;
                 int connectedCount = _config.Controllers.Count(c => c.IsConnected);
                 var loc = LocalizationService.Instance;
                 AutomationNotification?.Invoke(

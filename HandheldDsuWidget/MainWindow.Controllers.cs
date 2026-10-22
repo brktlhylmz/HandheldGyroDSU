@@ -83,22 +83,31 @@ public partial class MainWindow
         ShowToastNotification(_loc["ToastEmulatorRuleAddedTitle"], $"{cleanProc}.exe → {activeProfile}");
     }
 
+    private bool _isRenderingControllersUi;
+
     private void RenderControllersAndRulesUi()
     {
-        if (ControllersListPanel is null || EmulatorRulesListPanel is null)
+        if (_isRenderingControllersUi || ControllersListPanel is null || EmulatorRulesListPanel is null)
             return;
 
-        int basePort = _lastStatus?.ServerPort ?? 26760;
-        int secondaryPort = _lastStatus?.SecondaryPort ?? 26762;
-        IReadOnlyList<KnownControllerConfig> controllers = _automationWatcher.ScanControllers(basePort, secondaryPort);
-
-        int connectedCount = controllers.Count(c => c.IsConnected);
-        if (connectedCount > 4 && _lastStatus?.IsSecondaryClusterActive == false)
+        _isRenderingControllersUi = true;
+        try
         {
-            _ipcClient.SetSecondaryClusterActive(true);
-        }
+            IReadOnlyList<KnownControllerConfig> controllers = _automationWatcher.GetControllersSnapshot();
+            if (controllers.Count == 0)
+            {
+                int basePort = _lastStatus?.ServerPort ?? 26760;
+                int secondaryPort = _lastStatus?.SecondaryPort ?? 26762;
+                controllers = _automationWatcher.ScanControllers(basePort, secondaryPort);
+            }
 
-        ControllersListPanel.Children.Clear();
+            int connectedCount = controllers.Count(c => c.IsConnected);
+            if (connectedCount > 4 && _lastStatus?.IsSecondaryClusterActive == false)
+            {
+                _ipcClient.SetSecondaryClusterActive(true);
+            }
+
+            ControllersListPanel.Children.Clear();
 
         foreach (KnownControllerConfig ctrl in controllers)
         {
@@ -357,6 +366,11 @@ public partial class MainWindow
 
             ruleBorder.Child = rowGrid;
             EmulatorRulesListPanel.Children.Add(ruleBorder);
+        }
+        }
+        finally
+        {
+            _isRenderingControllersUi = false;
         }
     }
 }
