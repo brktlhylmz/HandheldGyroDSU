@@ -181,6 +181,7 @@ public partial class MainWindow : Window
                     CloseToTrayToggle,
                     GameBarOverlayToggle,
                     HudNotificationsToggle,
+                    TabletopCalibrationGuardToggle,
                     OpenDataFolderButton,
                     ResetAllSettingsButton,
                     DevSimControllerComboBox,

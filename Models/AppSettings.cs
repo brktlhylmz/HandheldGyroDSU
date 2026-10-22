@@ -23,6 +23,7 @@ public sealed class AppSettings
     public bool CloseToTray { get; set; }
     public bool GameBarOverlayEnabled { get; set; } = true;
     public bool HudNotificationsEnabled { get; set; } = true;
+    public bool TabletopCalibrationGuard { get; set; } = true;
     public bool InvertX { get; set; } = false;
     public bool InvertY { get; set; } = true;
     public bool InvertZ { get; set; } = true;
@@ -77,6 +78,13 @@ public sealed class AppSettings
                     if (loaded.Sensitivity <= 0.05f)
                         loaded.Sensitivity = 1.0f;
                     loaded.Deadzone = Math.Clamp(loaded.Deadzone, 0f, 5f);
+                    if (loaded.TabletopCalibrationGuard &&
+                        (MathF.Abs(loaded.BiasX) > 1.8f || MathF.Abs(loaded.BiasY) > 1.8f || MathF.Abs(loaded.BiasZ) > 1.8f))
+                    {
+                        loaded.BiasX = Math.Clamp(loaded.BiasX, -0.5f, 0.5f);
+                        loaded.BiasY = Math.Clamp(loaded.BiasY, -0.5f, 0.5f);
+                        loaded.BiasZ = Math.Clamp(loaded.BiasZ, -0.5f, 0.5f);
+                    }
                     return loaded;
                 }
             }

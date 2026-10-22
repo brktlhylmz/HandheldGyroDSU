@@ -58,7 +58,8 @@ public sealed class IpcHttpServer : IDisposable
         bool? hudNotificationsEnabled = null,
         bool? syntheticWaveEnabled = null,
         bool? rebindSensors = null,
-        bool? forwardGamepadInputs = null)
+        bool? forwardGamepadInputs = null,
+        bool? tabletopCalibrationGuard = null)
     {
         if (closeToTray.HasValue)
             _settings.CloseToTray = closeToTray.Value;
@@ -74,6 +75,11 @@ public sealed class IpcHttpServer : IDisposable
         {
             _udpServer.ForwardGamepadInputs = forwardGamepadInputs.Value;
             _settings.ForwardGamepadInputs = forwardGamepadInputs.Value;
+        }
+        if (tabletopCalibrationGuard.HasValue)
+        {
+            _sensorService.TabletopCalibrationGuard = tabletopCalibrationGuard.Value;
+            _settings.TabletopCalibrationGuard = tabletopCalibrationGuard.Value;
         }
         SaveCurrentSettings();
     }
@@ -94,6 +100,8 @@ public sealed class IpcHttpServer : IDisposable
         _settings.CloseToTray = false;
         _settings.GameBarOverlayEnabled = true;
         _settings.HudNotificationsEnabled = true;
+        _settings.TabletopCalibrationGuard = true;
+        _sensorService.TabletopCalibrationGuard = true;
         SaveCurrentSettings();
     }
 
@@ -110,6 +118,7 @@ public sealed class IpcHttpServer : IDisposable
         _settings.InvertZ = profile.InvertZ;
         _settings.SwapAxes = profile.SwapAxes;
         _settings.UsePitchOffset = _sensorService.UsePitchOffset;
+        _settings.TabletopCalibrationGuard = _sensorService.TabletopCalibrationGuard;
         _settings.Sensitivity = _sensorService.Sensitivity;
         _settings.Deadzone = _sensorService.Deadzone;
         _settings.RestAccX = _sensorService.RestAccX;
@@ -408,7 +417,8 @@ public sealed class IpcHttpServer : IDisposable
                     bool? synthWave = ExtractBooleanParameter(query, body, "syntheticWaveEnabled");
                     bool? rebind = ExtractBooleanParameter(query, body, "rebindSensors");
                     bool? forwardPad = ExtractBooleanParameter(query, body, "forwardGamepadInputs");
-                    SetPreferences(closeTray, gameBar, hudNotif, synthWave, rebind, forwardPad);
+                    bool? calibGuard = ExtractBooleanParameter(query, body, "tabletopCalibrationGuard");
+                    SetPreferences(closeTray, gameBar, hudNotif, synthWave, rebind, forwardPad, calibGuard);
                     string json = BuildStatusJson("Preferences updated");
                     await WriteHttpResponseAsync(stream, 200, "OK", json, cancellationToken);
                 }
@@ -471,6 +481,7 @@ public sealed class IpcHttpServer : IDisposable
             closeToTray = _settings.CloseToTray,
             gameBarOverlayEnabled = _settings.GameBarOverlayEnabled,
             hudNotificationsEnabled = _settings.HudNotificationsEnabled,
+            tabletopCalibrationGuard = _sensorService.TabletopCalibrationGuard,
             isSyntheticWaveEnabled = _sensorService.IsSyntheticWaveEnabled,
             isEmulatorConnected = clients.Count > 0,
             connectedClients = clients.Select(c => c.ToString()).ToArray(),

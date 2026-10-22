@@ -177,6 +177,16 @@ public partial class MainWindow
         UpdateUiFromStatus(status);
     }
 
+    private async void TabletopCalibrationGuardToggle_Click(object sender, RoutedEventArgs e)
+    {
+        if (_suppressUiEvents)
+            return;
+
+        DsuStatusDto status = await _ipcClient.UpdatePreferencesAsync(
+            tabletopCalibrationGuard: TabletopCalibrationGuardToggle.IsChecked == true);
+        UpdateUiFromStatus(status);
+    }
+
     private void OpenDataFolderButton_Click(object sender, RoutedEventArgs e)
     {
         try

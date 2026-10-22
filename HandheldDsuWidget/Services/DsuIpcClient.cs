@@ -60,6 +60,9 @@ public sealed class DsuStatusDto
     [JsonPropertyName("hudNotificationsEnabled")]
     public bool HudNotificationsEnabled { get; set; } = true;
 
+    [JsonPropertyName("tabletopCalibrationGuard")]
+    public bool TabletopCalibrationGuard { get; set; } = true;
+
     [JsonPropertyName("isSyntheticWaveEnabled")]
     public bool IsSyntheticWaveEnabled { get; set; }
 
@@ -226,6 +229,7 @@ public sealed class DsuIpcClient : IDisposable
             CloseToTray = _embeddedSettings?.CloseToTray ?? false,
             GameBarOverlayEnabled = _embeddedSettings?.GameBarOverlayEnabled ?? true,
             HudNotificationsEnabled = _embeddedSettings?.HudNotificationsEnabled ?? true,
+            TabletopCalibrationGuard = _embeddedSensor.TabletopCalibrationGuard,
             IsSyntheticWaveEnabled = _embeddedSensor.IsSyntheticWaveEnabled,
             IsEmulatorConnected = clients.Count > 0,
             ConnectedClients = clients.Select(c => c.ToString()).ToArray(),
@@ -580,6 +584,7 @@ public sealed class DsuIpcClient : IDisposable
         bool? syntheticWaveEnabled = null,
         bool? rebindSensors = null,
         bool? forwardGamepadInputs = null,
+        bool? tabletopCalibrationGuard = null,
         CancellationToken cancellationToken = default)
     {
         if (!_usingEmbeddedEngine)
@@ -591,7 +596,8 @@ public sealed class DsuIpcClient : IDisposable
                 hudNotificationsEnabled,
                 syntheticWaveEnabled,
                 rebindSensors,
-                forwardGamepadInputs
+                forwardGamepadInputs,
+                tabletopCalibrationGuard
             });
             DsuStatusDto? remote = await PostJsonAsync("/preferences", payload, cancellationToken);
             if (remote is not null)
@@ -606,7 +612,8 @@ public sealed class DsuIpcClient : IDisposable
             hudNotificationsEnabled,
             syntheticWaveEnabled,
             rebindSensors,
-            forwardGamepadInputs);
+            forwardGamepadInputs,
+            tabletopCalibrationGuard);
         return BuildEmbeddedStatusDto();
     }
 

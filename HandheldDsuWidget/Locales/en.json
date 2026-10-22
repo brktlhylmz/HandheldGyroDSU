@@ -133,6 +133,8 @@
   "GameBarOverlayDesc": "Pops up as an overlay when Win + G is pressed and auto-hides when returning to the game",
   "HudNotificationsTitle": "In-Game HUD Overlay Notifications",
   "HudNotificationsDesc": "Shows click-through top-right notifications when controllers or profiles switch",
+  "TabletopCalibGuardTitle": "Stationary (Tabletop) Calibration Guard",
+  "TabletopCalibGuardDesc": "Requires the device to rest still on a flat surface during calibration so hand movement never corrupts zero-rate bias",
   "SectionDataMaintenance": "DATA & MAINTENANCE",
   "DataMaintenanceDesc": "Access configuration files (%LocalAppData%\\HandheldDsu) or restore factory defaults",
   "BtnOpenDataFolder": "OPEN CONFIG FOLDER",
