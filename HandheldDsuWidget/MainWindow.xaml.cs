@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
@@ -13,6 +15,21 @@ namespace HandheldDsuWidget;
 
 public partial class MainWindow : Window
 {
+    private static readonly IntPtr HwndTopmost = new(-1);
+    private static readonly IntPtr HwndNoTopmost = new(-2);
+    private const uint SwpNoSize = 0x0001;
+    private const uint SwpNoMove = 0x0002;
+    private const uint SwpNoActivate = 0x0010;
+
+    [DllImport("user32.dll", SetLastError = true)]
+    private static extern bool SetWindowPos(
+        IntPtr hWnd,
+        IntPtr hWndInsertAfter,
+        int X,
+        int Y,
+        int cx,
+        int cy,
+        uint uFlags);
     private readonly DsuIpcClient _ipcClient = new();
     private readonly GameBarWidgetAdapter _gameBarAdapter = new();
     private readonly SystemTrayService _trayService = new();
@@ -353,11 +370,32 @@ public partial class MainWindow : Window
         }
     }
 
+    public void ApplyWindowTopmost(bool isTopmost)
+    {
+        Topmost = isTopmost;
+        IntPtr hwnd = new WindowInteropHelper(this).Handle;
+        if (hwnd != IntPtr.Zero)
+        {
+            SetWindowPos(
+                hwnd,
+                isTopmost ? HwndTopmost : HwndNoTopmost,
+                0,
+                0,
+                0,
+                0,
+                SwpNoMove | SwpNoSize | SwpNoActivate);
+        }
+    }
+
     private void PinButton_Click(object sender, RoutedEventArgs e)
     {
         _isPinnedByUser = !_isPinnedByUser;
-        Topmost = _isPinnedByUser;
-        PinButton.Foreground = _isPinnedByUser ? StatusOnlineBrush : TextSecondaryBrush;
+        ApplyWindowTopmost(_isPinnedByUser);
+        PinButton.Background = _isPinnedByUser ? StatusOnlineDimBrush : Brushes.Transparent;
+        PinButtonIcon.Fill = _isPinnedByUser ? StatusOnlineBrush : TextSecondaryBrush;
+        ShowToastNotification(
+            _isPinnedByUser ? _loc["ToastPinEnabledTitle"] : _loc["ToastPinDisabledTitle"],
+            _isPinnedByUser ? _loc["ToastPinEnabledDesc"] : _loc["ToastPinDisabledDesc"]);
     }
 
     private void MinimizeToTrayButton_Click(object sender, RoutedEventArgs e)
