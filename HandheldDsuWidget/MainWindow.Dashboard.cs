@@ -159,6 +159,7 @@ public partial class MainWindow
             CloseToTrayToggle.IsChecked = status.CloseToTray;
             GameBarOverlayToggle.IsChecked = status.GameBarOverlayEnabled;
             HudNotificationsToggle.IsChecked = status.HudNotificationsEnabled;
+            TabletopCalibrationGuardToggle.IsChecked = status.TabletopCalibrationGuard;
             DevSyntheticWaveToggle.IsChecked = status.IsSyntheticWaveEnabled;
             DevLoopbackClientToggle.IsChecked = _loopbackTester.IsRunning;
             _loopbackTester.UpdateTargetPorts(status.ServerPort, status.SecondaryPort, status.IsSecondaryClusterActive);

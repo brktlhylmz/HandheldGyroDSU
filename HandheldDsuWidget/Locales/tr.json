@@ -133,6 +133,8 @@
   "GameBarOverlayDesc": "Win + G basıldığında ekranın üstünde açılır, oyuna döndüğünüzde otomatik gizlenir",
   "HudNotificationsTitle": "Oyun İçi HUD Bildirimleri",
   "HudNotificationsDesc": "Tam ekran oyunlarda kol veya profil değiştiğinde ekranın üstünde bildirim gösterir",
+  "TabletopCalibGuardTitle": "Sabit Zemin (Masaüstü) Kalibrasyon Koruması",
+  "TabletopCalibGuardDesc": "Kalibrasyonun masada sabit dururken yapılmasını esas alır; cihaz hareket ettirilirse hatalı sapma (Bias) kaydını engeller",
   "SectionDataMaintenance": "VERİ & SIFIRLAMA",
   "DataMaintenanceDesc": "Yapılandırma dosyalarına (%LocalAppData%\\HandheldDsu) erişin veya tüm ayarları sıfırlayın",
   "BtnOpenDataFolder": "AYAR KLASÖRÜNÜ AÇ",

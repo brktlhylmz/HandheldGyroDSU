@@ -44,6 +44,7 @@ public sealed class SensorService : IDisposable
     private float _restAccY;
     private float _restAccZ = -1.0f;
     private volatile bool _usePitchOffset = true;
+    private volatile bool _tabletopCalibrationGuard = true;
     private volatile bool _syntheticWaveEnabled;
     private float _sensitivity = 1.0f;
     private float _deadzone;
@@ -72,7 +73,14 @@ public sealed class SensorService : IDisposable
             _restAccY = _rawAccY;
             _restAccZ = _rawAccZ;
 
-            if (MathF.Abs(_rawGyroX) < 12f && MathF.Abs(_rawGyroY) < 12f && MathF.Abs(_rawGyroZ) < 12f)
+            if (_tabletopCalibrationGuard)
+            {
+                if (MathF.Abs(_rawGyroX) < 1.5f && MathF.Abs(_rawGyroY) < 1.5f && MathF.Abs(_rawGyroZ) < 1.5f)
+                {
+                    _gyroBias = new GyroBias(_rawGyroX, _rawGyroY, _rawGyroZ);
+                }
+            }
+            else if (MathF.Abs(_rawGyroX) < 12f && MathF.Abs(_rawGyroY) < 12f && MathF.Abs(_rawGyroZ) < 12f)
             {
                 _gyroBias = new GyroBias(_rawGyroX, _rawGyroY, _rawGyroZ);
             }
@@ -83,6 +91,11 @@ public sealed class SensorService : IDisposable
     public int CalibrationProgressPercent => _calibrationProgressPercent;
     public GyroBias CurrentBias => _gyroBias;
     public bool UsePitchOffset => _usePitchOffset;
+    public bool TabletopCalibrationGuard
+    {
+        get => _tabletopCalibrationGuard;
+        set => _tabletopCalibrationGuard = value;
+    }
     public bool IsSyntheticWaveEnabled
     {
         get => _syntheticWaveEnabled;
@@ -116,6 +129,7 @@ public sealed class SensorService : IDisposable
             _activeProfile.InvertZ = settings.InvertZ;
             _activeProfile.SwapAxes = settings.SwapAxes;
             _usePitchOffset = settings.UsePitchOffset;
+            _tabletopCalibrationGuard = settings.TabletopCalibrationGuard;
             _sensitivity = settings.Sensitivity > 0.05f ? Math.Clamp(settings.Sensitivity, 0.2f, 3.0f) : 1.0f;
             _deadzone = Math.Clamp(settings.Deadzone, 0f, 5.0f);
 
@@ -422,6 +436,10 @@ public sealed class SensorService : IDisposable
             double sumX = 0;
             double sumY = 0;
             double sumZ = 0;
+            double stationarySumX = 0;
+            double stationarySumY = 0;
+            double stationarySumZ = 0;
+            int stationaryCount = 0;
             double sumAccX = 0;
             double sumAccY = 0;
             double sumAccZ = 0;
@@ -436,6 +454,15 @@ public sealed class SensorService : IDisposable
                     sumX += _rawGyroX;
                     sumY += _rawGyroY;
                     sumZ += _rawGyroZ;
+                    if (MathF.Abs(_rawGyroX) <= 1.8f &&
+                        MathF.Abs(_rawGyroY) <= 1.8f &&
+                        MathF.Abs(_rawGyroZ) <= 1.8f)
+                    {
+                        stationarySumX += _rawGyroX;
+                        stationarySumY += _rawGyroY;
+                        stationarySumZ += _rawGyroZ;
+                        stationaryCount++;
+                    }
                     sumAccX += _rawAccX;
                     sumAccY += _rawAccY;
                     sumAccZ += _rawAccZ;
@@ -449,11 +476,33 @@ public sealed class SensorService : IDisposable
 
             if (sampleCount > 0)
             {
-                _gyroBias = new GyroBias(
-                    BiasX: (float)(sumX / sampleCount),
-                    BiasY: (float)(sumY / sampleCount),
-                    BiasZ: (float)(sumZ / sampleCount)
-                );
+                if (_tabletopCalibrationGuard)
+                {
+                    if (stationaryCount > 0)
+                    {
+                        _gyroBias = new GyroBias(
+                            BiasX: Math.Clamp((float)(stationarySumX / stationaryCount), -1.5f, 1.5f),
+                            BiasY: Math.Clamp((float)(stationarySumY / stationaryCount), -1.5f, 1.5f),
+                            BiasZ: Math.Clamp((float)(stationarySumZ / stationaryCount), -1.5f, 1.5f)
+                        );
+                    }
+                    else
+                    {
+                        _gyroBias = new GyroBias(
+                            BiasX: Math.Clamp(_gyroBias.BiasX, -1.0f, 1.0f),
+                            BiasY: Math.Clamp(_gyroBias.BiasY, -1.0f, 1.0f),
+                            BiasZ: Math.Clamp(_gyroBias.BiasZ, -1.0f, 1.0f)
+                        );
+                    }
+                }
+                else
+                {
+                    _gyroBias = new GyroBias(
+                        BiasX: (float)(sumX / sampleCount),
+                        BiasY: (float)(sumY / sampleCount),
+                        BiasZ: (float)(sumZ / sampleCount)
+                    );
+                }
 
                 lock (_lock)
                 {
