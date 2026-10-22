@@ -14,7 +14,7 @@ public partial class MainWindow
         _gameBarAdapter.ResetOverlaySession();
         if (!_isPinnedByUser)
         {
-            Topmost = false;
+            ApplyWindowTopmost(false);
         }
         Hide();
     }
@@ -26,7 +26,7 @@ public partial class MainWindow
         {
             WindowState = WindowState.Normal;
         }
-        Topmost = _isPinnedByUser;
+        ApplyWindowTopmost(_isPinnedByUser);
         if (_lastStatus is not null)
         {
             UpdateUiFromStatus(_lastStatus);
@@ -37,12 +37,12 @@ public partial class MainWindow
 
     private void ShowForGameBarOverlay()
     {
-        Topmost = true;
         Show();
         if (WindowState == WindowState.Minimized)
         {
             WindowState = WindowState.Normal;
         }
+        ApplyWindowTopmost(true);
         if (_lastStatus is not null)
         {
             UpdateUiFromStatus(_lastStatus);
@@ -52,7 +52,7 @@ public partial class MainWindow
 
     private void HideFromGameBarOverlay()
     {
-        Topmost = _isPinnedByUser;
+        ApplyWindowTopmost(_isPinnedByUser);
         if (!_isPinnedByUser)
         {
             HideToTray();
