@@ -82,12 +82,13 @@ public sealed class DeviceProfile
         }
 
         // Cemuhook DSU standard coordinate mapping:
+        // AccY resting gravity is -1.0G (so Dolphin's Accel Up = -AccY * 9.81 = +9.81 m/s^2)
         // Pitch = rotation around X-axis
         // Yaw   = rotation around Z-axis
         // Roll  = rotation around Y-axis
         return new MotionData(
             AccX: ax,
-            AccY: az,
+            AccY: -az,
             AccZ: ay,
             GyroPitch: gx,
             GyroYaw: gz,
