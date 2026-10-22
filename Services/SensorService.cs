@@ -551,6 +551,9 @@ public sealed class SensorService : IDisposable
         calGy = ApplyDeadzoneAndSensitivity(calGy, deadzone, sensitivity);
         calGz = ApplyDeadzoneAndSensitivity(calGz, deadzone, sensitivity);
 
+        // Scale lateral tilt (AccX) by sensitivity so steering wheel / tilt games respond to comfortable wrist angles
+        rawAx = Math.Clamp(rawAx * sensitivity, -1.5f, 1.5f);
+
         return profile.Transform(rawAx, rawAy, rawAz, calGx, calGy, calGz, timestampUs);
     }
 

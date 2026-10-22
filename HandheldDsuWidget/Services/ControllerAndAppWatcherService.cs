@@ -667,10 +667,14 @@ public sealed class ControllerAndAppWatcherService : IDisposable
                     updatedWiimote = Regex.Replace(updatedWiimote, @"(?m)^(\s*IRPassthrough/Enabled\s*=\s*)True", "${1}False");
                     updatedWiimote = Regex.Replace(updatedWiimote, @"(?m)^(\s*IMUIR/Enabled\s*=\s*)False", "${1}True");
 
-                    // If Wiimote1 was bound to Keyboard/Mouse clicks (`Click 0`), upgrade WiimoteNew.ini to the Xbox + DSU profile
+                    // If Wiimote1 was bound to Keyboard/Mouse clicks (`Click 0`) or missing Extension in Sideways mode, upgrade WiimoteNew.ini
                     if (updatedWiimote.Contains("Buttons/A = `Click 0`", StringComparison.OrdinalIgnoreCase))
                     {
                         updatedWiimote = BuildDolphinWiimoteNewIni(prefix);
+                    }
+                    else if (updatedWiimote.Contains("Options/Sideways Wiimote = True", StringComparison.OrdinalIgnoreCase))
+                    {
+                        updatedWiimote = BuildDolphinWiimoteNewIni(prefix, sideways: true);
                     }
 
                     if (!string.Equals(wiimoteText, updatedWiimote, StringComparison.Ordinal))
@@ -708,9 +712,9 @@ public sealed class ControllerAndAppWatcherService : IDisposable
         File.WriteAllText(xboxGcProfilePath, BuildDolphinGcPadProfileSection("Profile"));
     }
 
-    private static string BuildDolphinWiimoteNewIni(string dsuPrefix)
+    private static string BuildDolphinWiimoteNewIni(string dsuPrefix, bool sideways = false)
     {
-        return BuildDolphinWiimoteProfileSection("Wiimote1", dsuPrefix, sideways: false) +
+        return BuildDolphinWiimoteProfileSection("Wiimote1", dsuPrefix, sideways: sideways) +
                Environment.NewLine +
                "[Wiimote2]" + Environment.NewLine +
                "Source = 0" + Environment.NewLine +
@@ -725,15 +729,25 @@ public sealed class ControllerAndAppWatcherService : IDisposable
     private static string BuildDolphinWiimoteProfileSection(string sectionName, string dsuPrefix, bool sideways)
     {
         string extensionLine = sideways ? "Extension = None" : "Extension = Nunchuk";
-        string sidewaysLine = sideways ? "Options/Sideways Wiimote = True" : "Options/Sideways Wiimote = False";
+        string sidewaysLine = sideways
+            ? $"Options/Sideways Wiimote = True{Environment.NewLine}Options/Upright Wiimote = True"
+            : $"Options/Sideways Wiimote = False{Environment.NewLine}Options/Upright Wiimote = False";
+
+        string btnA = sideways ? "`Button Y`" : "`Button A`";
+        string btnB = sideways ? "`Button B`|`Trigger R`|`Shoulder R`" : "`Button B`";
+        string btn1 = sideways ? "`Button X`|`Trigger L`" : "`Button X`";
+        string btn2 = sideways ? "`Button A`|`Button Y`" : "`Button Y`";
+
+        string accelLeft = sideways ? $"`{dsuPrefix}Accel Left` * 1.8" : $"`{dsuPrefix}Accel Left`";
+        string accelRight = sideways ? $"`{dsuPrefix}Accel Right` * 1.8" : $"`{dsuPrefix}Accel Right`";
 
         return $"""
             [{sectionName}]
             Device = XInput/0/Gamepad
-            Buttons/A = `Button A`
-            Buttons/B = `Button B`
-            Buttons/1 = `Button X`
-            Buttons/2 = `Button Y`
+            Buttons/A = {btnA}
+            Buttons/B = {btnB}
+            Buttons/1 = {btn1}
+            Buttons/2 = {btn2}
             Buttons/- = Back
             Buttons/+ = Start
             Buttons/Home = Guide
@@ -754,8 +768,8 @@ public sealed class ControllerAndAppWatcherService : IDisposable
             Shake/Z = `Shoulder L`
             IMUAccelerometer/Up = `{dsuPrefix}Accel Up`
             IMUAccelerometer/Down = `{dsuPrefix}Accel Down`
-            IMUAccelerometer/Left = `{dsuPrefix}Accel Left`
-            IMUAccelerometer/Right = `{dsuPrefix}Accel Right`
+            IMUAccelerometer/Left = {accelLeft}
+            IMUAccelerometer/Right = {accelRight}
             IMUAccelerometer/Forward = `{dsuPrefix}Accel Forward`
             IMUAccelerometer/Backward = `{dsuPrefix}Accel Backward`
             IMUGyroscope/Pitch Up = `{dsuPrefix}Gyro Pitch Up`
