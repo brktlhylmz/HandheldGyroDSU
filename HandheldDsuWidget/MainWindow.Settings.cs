@@ -20,8 +20,13 @@ public partial class MainWindow
 
         if (LanguageComboBox.SelectedValue is string langCode)
         {
-            _loc.SetLanguage(langCode);
+            if (_lastStatus is not null)
+            {
+                _lastStatus.Language = langCode;
+            }
+
             DsuStatusDto status = await _ipcClient.SetLanguageAsync(langCode);
+            _loc.SetLanguage(langCode);
             UpdateUiFromStatus(status);
         }
     }
