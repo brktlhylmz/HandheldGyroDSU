@@ -10,13 +10,16 @@
 
 **HandheldGyroDSU** is a zero-configuration **250 Hz Cemuhook DSU (`v1001`) motion server** and **Xbox Game Bar (`Win + G`) companion overlay** built for Windows handheld gaming PCs (**ASUS ROG Ally / Ally X**, **Lenovo Legion Go**, **MSI Claw**, **Ayaneo**, **GPD**) and external controllers (**Sony DualSense**, **DualShock 4**, **Nintendo Switch Pro**, **Xbox / XInput**, **8BitDo**, **GameSir**).
 
-It bridges internal Windows WinRT Inertial Measurement Units (`Gyrometer` + `Accelerometer`) and connected gamepads directly to **Dolphin**, **Cemu**, **Eden**, **Yuzu**, **Sudachi**, **Ryujinx**, **Azahar / Citra**, and **RPCS3** with sub-4ms latency—available as both a **lightweight Portable `.zip` archive** and a **Self-Contained Single-File `.exe`**.
+It bridges internal Windows WinRT Inertial Measurement Units (`Gyrometer` + `Accelerometer`) and connected gamepads directly to **Dolphin**, **Cemu**, **Eden**, **Yuzu**, **Sudachi**, and **Ryujinx** with sub-4ms latency—available as both a **lightweight Portable `.zip` archive** and a **Self-Contained Single-File `.exe`**.
+
+> [!NOTE]
+> **Active Development & Continuous Release (`master`):** This repository uses a rolling release workflow. Every push to the `master` branch automatically runs the Cemuhook DSU `v1001` protocol self-test suite on GitHub Actions and publishes a fresh **`v1.0.<build>`** release with updated `.zip` and `.exe` binaries.
 
 ---
 
-## 📥 Downloads (Portable `.ZIP` or Standalone `.EXE`)
+## 📥 Downloads (Auto-Published from `master`)
 
-Choose whichever package format you prefer from the latest release:
+Every commit pushed to `master` is automatically built and published to [GitHub Releases](https://github.com/brktlhylmz/HandheldGyroDSU/releases). The links below always point to the newest verified build:
 
 | Package | Format | Description | Direct Download |
 | :--- | :--- | :--- | :--- |
