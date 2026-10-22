@@ -1,24 +1,28 @@
 # HandheldGyroDSU
 
 [![Build & DSU Self-Test](https://github.com/brktlhylmz/HandheldGyroDSU/actions/workflows/build-and-release.yml/badge.svg)](https://github.com/brktlhylmz/HandheldGyroDSU/actions/workflows/build-and-release.yml)
-[![Download Standalone .EXE](https://img.shields.io/badge/Download-HandheldGyroDSU.exe-00E676?logo=windows&logoColor=white)](https://github.com/brktlhylmz/HandheldGyroDSU/releases/latest/download/HandheldGyroDSU.exe)
+[![Download Portable .ZIP](https://img.shields.io/badge/Download-Portable%20.ZIP-00B0FF?logo=windows&logoColor=white)](https://github.com/brktlhylmz/HandheldGyroDSU/releases/latest/download/HandheldGyroDSU-win-x64.zip)
+[![Download Standalone .EXE](https://img.shields.io/badge/Download-Standalone%20.EXE-00E676?logo=windows&logoColor=white)](https://github.com/brktlhylmz/HandheldGyroDSU/releases/latest/download/HandheldGyroDSU.exe)
 [![Latest Release](https://img.shields.io/github/v/release/brktlhylmz/HandheldGyroDSU?color=2979FF&label=Release)](https://github.com/brktlhylmz/HandheldGyroDSU/releases)
 [![.NET 10](https://img.shields.io/badge/.NET-10.0%20Windows-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
 [![Protocol](https://img.shields.io/badge/Protocol-Cemuhook%20DSU%20v1001-00B0FF)](https://v1993.github.io/cemuhook-protocol/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**HandheldGyroDSU** is a zero-configuration, standalone **250 Hz Cemuhook DSU (`v1001`) motion server** and **Xbox Game Bar (`Win + G`) companion overlay** built for Windows handheld gaming PCs (**ASUS ROG Ally / Ally X**, **Lenovo Legion Go**, **MSI Claw**, **Ayaneo**, **GPD**) and external controllers (**Sony DualSense**, **DualShock 4**, **Nintendo Switch Pro**, **Xbox / XInput**, **8BitDo**, **GameSir**).
+**HandheldGyroDSU** is a zero-configuration **250 Hz Cemuhook DSU (`v1001`) motion server** and **Xbox Game Bar (`Win + G`) companion overlay** built for Windows handheld gaming PCs (**ASUS ROG Ally / Ally X**, **Lenovo Legion Go**, **MSI Claw**, **Ayaneo**, **GPD**) and external controllers (**Sony DualSense**, **DualShock 4**, **Nintendo Switch Pro**, **Xbox / XInput**, **8BitDo**, **GameSir**).
 
-It bridges internal Windows WinRT Inertial Measurement Units (`Gyrometer` + `Accelerometer`) and connected gamepads directly to **Dolphin**, **Cemu**, **Eden**, **Yuzu**, **Sudachi**, **Ryujinx**, **Azahar / Citra**, and **RPCS3** with sub-4ms latency—shipped as a **single portable `.exe`** with zero external runtime dependencies.
+It bridges internal Windows WinRT Inertial Measurement Units (`Gyrometer` + `Accelerometer`) and connected gamepads directly to **Dolphin**, **Cemu**, **Eden**, **Yuzu**, **Sudachi**, **Ryujinx**, **Azahar / Citra**, and **RPCS3** with sub-4ms latency—available as both a **lightweight Portable `.zip` archive** and a **Self-Contained Single-File `.exe`**.
 
 ---
 
-## 📥 Direct Download (No Installation Required)
+## 📥 Downloads (Portable `.ZIP` or Standalone `.EXE`)
 
-| Package | Architecture | Description | Direct Link |
+Choose whichever package format you prefer from the latest release:
+
+| Package | Format | Description | Direct Download |
 | :--- | :--- | :--- | :--- |
-| **`HandheldGyroDSU.exe`** | Windows 10 / 11 (`x64`) | **Standalone Single-File Executable** (Self-contained — no `.NET` install or `.zip` extraction needed) | **[⬇️ Download `HandheldGyroDSU.exe`](https://github.com/brktlhylmz/HandheldGyroDSU/releases/latest/download/HandheldGyroDSU.exe)** |
-| **All Releases & Changelogs** | Windows 10 / 11 (`x64`) | Version history, release notes, and CI build artifacts | **[📦 View GitHub Releases](https://github.com/brktlhylmz/HandheldGyroDSU/releases)** |
+| **`HandheldGyroDSU-win-x64.zip`** | **Portable `.ZIP` Archive** *(Recommended)* | Full transparent folder structure (`HandheldGyroDSU.exe`, `Locales/*.json`, `README.md`, `LICENSE`, `install.ps1`). Avoids browser single-`.exe` download warnings. | **[⬇️ Download `.ZIP`](https://github.com/brktlhylmz/HandheldGyroDSU/releases/latest/download/HandheldGyroDSU-win-x64.zip)** |
+| **`HandheldGyroDSU.exe`** | **Standalone Single-File `.EXE`** | All-in-one self-contained executable (includes embedded `.NET` runtime and locales — zero extraction required). | **[⬇️ Download `.EXE`](https://github.com/brktlhylmz/HandheldGyroDSU/releases/latest/download/HandheldGyroDSU.exe)** |
+| **`SHA256SUMS.txt`** | **SHA-256 Checksums** | Cryptographic SHA-256 hashes for verifying the downloaded `.zip` and `.exe` files. | **[🔒 View `SHA256SUMS.txt`](https://github.com/brktlhylmz/HandheldGyroDSU/releases/latest/download/SHA256SUMS.txt)** |
 
 ---
 
