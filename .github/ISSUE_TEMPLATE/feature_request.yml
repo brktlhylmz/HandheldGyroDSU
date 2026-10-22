@@ -1,0 +1,26 @@
+name: Feature Request / Hardware Support
+description: Suggest a new feature, emulator profile preset, or controller VID:PID signature.
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: dropdown
+    id: category
+    attributes:
+      label: Request Category
+      options:
+        - New Handheld / Controller Hardware Support (VID:PID)
+        - Emulator Auto-Config Preset
+        - Gyro / Sensor Filtering Enhancement
+        - UI / Overlay / Game Bar Improvement
+        - New Language Translation (Locales/*.json)
+    validations:
+      required: true
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Feature Description
+      description: Describe the feature or hardware device you would like to see supported.
+      placeholder: "For controller requests, please include the USB/Bluetooth Vendor ID and Product ID (e.g., VID_054C&PID_0CE6) if known."
+    validations:
+      required: true

@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text.Json;
 
 namespace HandheldDsuWidget.Services;
@@ -11,8 +12,8 @@ namespace HandheldDsuWidget.Services;
 public sealed record LanguageOption(string Code, string DisplayName);
 
 /// <summary>
-/// Dynamic JSON/ARB-style localization provider that loads language files from Locales/*.json.
-/// Dropping a new <locale>.json file into the Locales directory automatically makes it available in the UI.
+/// Dynamic JSON/ARB-style localization provider that loads embedded Locales/*.json resources
+/// (for standalone single-file .exe execution) and merges any external Locales/*.json files from disk.
 /// </summary>
 public sealed class LocalizationService : INotifyPropertyChanged
 {
@@ -38,6 +39,10 @@ public sealed class LocalizationService : INotifyPropertyChanged
         _locales.Clear();
         _availableLanguages.Clear();
 
+        // 1. Load embedded locale JSON resources (works when running as a standalone single-file .exe)
+        LoadEmbeddedLocales();
+
+        // 2. Load/override from external Locales/*.json directory if present on disk
         string? localesDir = ResolveLocalesDirectory();
         if (localesDir is not null && Directory.Exists(localesDir))
         {
@@ -50,6 +55,34 @@ public sealed class LocalizationService : INotifyPropertyChanged
         if (!_locales.ContainsKey(_currentLanguage) && _locales.Count > 0)
         {
             _currentLanguage = _locales.ContainsKey("en") ? "en" : _locales.Keys.First();
+        }
+    }
+
+    private void LoadEmbeddedLocales()
+    {
+        try
+        {
+            Assembly asm = typeof(LocalizationService).Assembly;
+            foreach (string resName in asm.GetManifestResourceNames()
+                         .Where(n => n.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+                         .OrderBy(n => n, StringComparer.OrdinalIgnoreCase))
+            {
+                using Stream? stream = asm.GetManifestResourceStream(resName);
+                if (stream is null)
+                    continue;
+
+                using StreamReader reader = new(stream);
+                string json = reader.ReadToEnd();
+                // Extract fallback code from resource name (e.g., "HandheldDsuWidget.Locales.en.json" -> "en")
+                string withoutExt = resName[..^5];
+                int lastDot = withoutExt.LastIndexOf('.');
+                string fallbackCode = lastDot >= 0 ? withoutExt[(lastDot + 1)..] : withoutExt;
+                TryLoadLocaleJson(json, fallbackCode);
+            }
+        }
+        catch
+        {
+            // Ignore embedded resource enumeration failures
         }
     }
 
@@ -82,6 +115,19 @@ public sealed class LocalizationService : INotifyPropertyChanged
         try
         {
             string json = File.ReadAllText(filePath);
+            string fallbackCode = Path.GetFileNameWithoutExtension(filePath);
+            TryLoadLocaleJson(json, fallbackCode);
+        }
+        catch
+        {
+            // Ignore malformed locale JSON files
+        }
+    }
+
+    private void TryLoadLocaleJson(string json, string fallbackCode)
+    {
+        try
+        {
             using JsonDocument doc = JsonDocument.Parse(json);
             if (doc.RootElement.ValueKind != JsonValueKind.Object)
                 return;
@@ -97,18 +143,27 @@ public sealed class LocalizationService : INotifyPropertyChanged
 
             string code = dict.TryGetValue("@@locale", out string? metaLocale) && !string.IsNullOrWhiteSpace(metaLocale)
                 ? metaLocale.Trim().ToLowerInvariant()
-                : Path.GetFileNameWithoutExtension(filePath).ToLowerInvariant();
+                : fallbackCode.ToLowerInvariant();
 
             string displayName = dict.TryGetValue("@@languageName", out string? metaName) && !string.IsNullOrWhiteSpace(metaName)
                 ? metaName.Trim()
                 : code.ToUpperInvariant();
 
             _locales[code] = dict;
-            _availableLanguages.Add(new LanguageOption(code, displayName));
+
+            int existingIdx = _availableLanguages.FindIndex(l => string.Equals(l.Code, code, StringComparison.OrdinalIgnoreCase));
+            if (existingIdx >= 0)
+            {
+                _availableLanguages[existingIdx] = new LanguageOption(code, displayName);
+            }
+            else
+            {
+                _availableLanguages.Add(new LanguageOption(code, displayName));
+            }
         }
         catch
         {
-            // Ignore malformed locale JSON files
+            // Ignore malformed locale JSON content
         }
     }
 
