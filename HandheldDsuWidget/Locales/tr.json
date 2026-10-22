@@ -183,6 +183,10 @@
   "ControllerRenameSaveBtn": "KAYDET",
   "ControllerInputActiveBadge": "● TUŞ ALGILANDI",
   "ToastControllerRenamedTitle": "KONTROLCÜ İSMİ GÜNCELLENDİ",
+  "ToastPinEnabledTitle": "📌 HER ZAMAN ÜSTTE AKTİF",
+  "ToastPinEnabledDesc": "Pencere diğer uygulama ve pencerelerin üstüne sabitlendi",
+  "ToastPinDisabledTitle": "📌 HER ZAMAN ÜSTTE KAPATILDI",
+  "ToastPinDisabledDesc": "Pencere normal masaüstü sıralamasına döndü",
 
   "GamepadHint": "[D-PAD] Gezin   [A] Seç/Değiştir   [Y] Kalibre Et   [LB/RB] Sekme Değiştir"
 }
