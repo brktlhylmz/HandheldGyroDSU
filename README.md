@@ -49,18 +49,17 @@ Choose whichever package format you prefer from the latest release:
 
 ---
 
-## 🧪 Tested Platforms, Emulators & Games Compatibility
+## 🧪 Emulator Compatibility & Current Testing Status
 
-### Tested Emulators & Games
-
-| Emulator | System | Status | Tested Games & Motion Features | Setup Mode |
+| Emulator | System | Status | Tested Games | Setup Mode |
 | :--- | :--- | :---: | :--- | :--- |
-| **Dolphin** (`dolphin.exe`) | Wii / GameCube | ✅ **Verified** | *Mario Kart Wii* (Wii Wheel Sideways tilt steering), *Super Mario Galaxy 1 & 2* (IMUIR Pointer + Shake), *Zelda: Skyward Sword* (MotionPlus) | **Automatic** (Selecting `dolphin.exe` writes `DSUClient.ini`, `WiimoteNew.ini` & `GCPadNew.ini`) |
-| **Cemu** (`cemu.exe`) | Wii U | ✅ **Verified** | *The Legend of Zelda: Breath of the Wild* (Bow gyro aiming & apparatus shrines), *Splatoon*, *Mario Kart 8* | `DSUController` (`127.0.0.1:26760`) |
-| **Eden / Yuzu / Sudachi / Citron** | Nintendo Switch | ✅ **Verified** | *Zelda: Tears of the Kingdom*, *Breath of the Wild*, *Super Mario Odyssey*, *Splatoon 3*, 8-Player Local Multiplayer | `CemuhookUDP` (`127.0.0.1:26760` + `26762` for Pads 5–8) |
-| **Ryujinx** (`ryujinx.exe`) | Nintendo Switch | ✅ **Verified** | *Zelda: Tears of the Kingdom*, *Mario Kart 8 Deluxe*, *Metroid Prime Remastered* | Native CemuHook Motion (`127.0.0.1:26760`, Slot `0..3`) |
-| **Azahar / Lime3DS / Citra** | Nintendo 3DS | ✅ **Verified** | *Zelda: Ocarina of Time 3D*, *Majora's Mask 3D*, *Mario Kart 7* | CemuhookUDP Motion Backend (`127.0.0.1:26760`) |
-| **RPCS3** (`rpcs3.exe`) | PlayStation 3 | ✅ **Compatible** | SIXAXIS / DualShock 3 tilt & gyro motion games (*Heavy Rain*, *Flower*, *Ratchet & Clank*) | DSU Pad Handler (`127.0.0.1:26760`) |
+| **Eden** (`eden.exe`) | Nintendo Switch | ✅ **Tested** | *Splatoon 2* | `CemuhookUDP` (`127.0.0.1:26760` + `26762` for Pads 5–8) |
+| **Cemu** (`cemu.exe`) | Wii U | ✅ **Tested** | *Splatoon* | `DSUController` (`127.0.0.1:26760`) |
+| **Dolphin** (`dolphin.exe`) | Wii / GameCube | ✅ **Tested** | *Mario Kart Wii* (Wii Wheel Sideways tilt steering & IR Pointer) | **Automatic** (Selecting `dolphin.exe` writes `DSUClient.ini`, `WiimoteNew.ini` & `GCPadNew.ini`) |
+| **Yuzu / Sudachi / Citron** | Nintendo Switch | ⚪ *Untested (Protocol Compatible)* | *Community testing welcome* | `CemuhookUDP` (`127.0.0.1:26760`) |
+| **Ryujinx** (`ryujinx.exe`) | Nintendo Switch | ⚪ *Untested (Protocol Compatible)* | *Community testing welcome* | Native CemuHook Motion (`127.0.0.1:26760`, Slot `0..3`) |
+
+> 💬 **Tested another game, emulator, or handheld?** Open an issue or pull request to help expand the verified compatibility table!
 
 ### Supported Hardware & Operating Systems
 
