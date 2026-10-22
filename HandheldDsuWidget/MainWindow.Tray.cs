@@ -16,18 +16,17 @@ public partial class MainWindow
         {
             Topmost = false;
         }
-        ShowInTaskbar = false;
         Hide();
     }
 
     public void ShowFromTray()
     {
-        ShowInTaskbar = true;
         Show();
         if (WindowState == WindowState.Minimized)
         {
             WindowState = WindowState.Normal;
         }
+        Topmost = _isPinnedByUser;
         if (_lastStatus is not null)
         {
             UpdateUiFromStatus(_lastStatus);
@@ -39,7 +38,6 @@ public partial class MainWindow
     private void ShowForGameBarOverlay()
     {
         Topmost = true;
-        ShowInTaskbar = true;
         Show();
         if (WindowState == WindowState.Minimized)
         {
@@ -63,7 +61,7 @@ public partial class MainWindow
 
     private void ToggleWindowVisibility()
     {
-        if (IsVisible)
+        if (IsVisible && WindowState != WindowState.Minimized)
         {
             HideToTray();
         }

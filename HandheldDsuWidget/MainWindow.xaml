@@ -12,7 +12,7 @@
         ResizeMode="CanResize"
         Background="{DynamicResource BrushBgWindow}"
         FontFamily="{DynamicResource FontPrimary}"
-        Topmost="True"
+        Topmost="False"
         WindowStartupLocation="CenterScreen">
 
     <shell:WindowChrome.WindowChrome>
@@ -114,7 +114,7 @@
                     <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center">
                         <Button x:Name="PinButton"
                                 Style="{DynamicResource AppWindowButtonStyle}"
-                                Foreground="{DynamicResource BrushStatusOnline}"
+                                Foreground="{DynamicResource BrushTextSecondary}"
                                 ToolTip="{Binding [PinTooltip], Source={x:Static services:LocalizationService.Instance}}"
                                 Click="PinButton_Click">
                             <Path Data="{DynamicResource IconPin}"

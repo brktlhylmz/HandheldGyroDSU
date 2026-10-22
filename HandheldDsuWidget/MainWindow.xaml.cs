@@ -362,7 +362,7 @@ public partial class MainWindow : Window
 
     private void MinimizeToTrayButton_Click(object sender, RoutedEventArgs e)
     {
-        HideToTray();
+        WindowState = WindowState.Minimized;
     }
 
     private void MaximizeRestoreButton_Click(object sender, RoutedEventArgs e)
