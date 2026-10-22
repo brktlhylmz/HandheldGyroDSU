@@ -38,18 +38,31 @@ public partial class MainWindow : Window
     private double _radarY;
     private double _radarRoll;
 
-    private Brush StatusOnlineBrush => (Brush)FindResource("BrushStatusOnline");
-    private Brush StatusOnlineDimBrush => (Brush)FindResource("BrushStatusOnlineDim");
-    private Brush StatusOfflineBrush => (Brush)FindResource("BrushStatusOffline");
-    private Brush StatusOfflineDimBrush => (Brush)FindResource("BrushStatusOfflineDim");
-    private Brush TextPrimaryBrush => (Brush)FindResource("BrushTextPrimary");
-    private Brush TextSecondaryBrush => (Brush)FindResource("BrushTextSecondary");
-    private Brush TextMutedBrush => (Brush)FindResource("BrushTextMuted");
-    private Brush TextOnAccentBrush => (Brush)FindResource("BrushTextOnAccent");
-    private Brush AccentPrimaryBrush => (Brush)FindResource("BrushAccentPrimary");
-    private Brush AccentDimBrush => (Brush)FindResource("BrushAccentDim");
-    private Brush BgSubPanelBrush => (Brush)FindResource("BrushBgSubPanel");
-    private Brush BorderInputBrush => (Brush)FindResource("BrushBorderInput");
+    private Brush? _statusOnlineBrush;
+    private Brush? _statusOnlineDimBrush;
+    private Brush? _statusOfflineBrush;
+    private Brush? _statusOfflineDimBrush;
+    private Brush? _textPrimaryBrush;
+    private Brush? _textSecondaryBrush;
+    private Brush? _textMutedBrush;
+    private Brush? _textOnAccentBrush;
+    private Brush? _accentPrimaryBrush;
+    private Brush? _accentDimBrush;
+    private Brush? _bgSubPanelBrush;
+    private Brush? _borderInputBrush;
+
+    private Brush StatusOnlineBrush => _statusOnlineBrush ??= (Brush)FindResource("BrushStatusOnline");
+    private Brush StatusOnlineDimBrush => _statusOnlineDimBrush ??= (Brush)FindResource("BrushStatusOnlineDim");
+    private Brush StatusOfflineBrush => _statusOfflineBrush ??= (Brush)FindResource("BrushStatusOffline");
+    private Brush StatusOfflineDimBrush => _statusOfflineDimBrush ??= (Brush)FindResource("BrushStatusOfflineDim");
+    private Brush TextPrimaryBrush => _textPrimaryBrush ??= (Brush)FindResource("BrushTextPrimary");
+    private Brush TextSecondaryBrush => _textSecondaryBrush ??= (Brush)FindResource("BrushTextSecondary");
+    private Brush TextMutedBrush => _textMutedBrush ??= (Brush)FindResource("BrushTextMuted");
+    private Brush TextOnAccentBrush => _textOnAccentBrush ??= (Brush)FindResource("BrushTextOnAccent");
+    private Brush AccentPrimaryBrush => _accentPrimaryBrush ??= (Brush)FindResource("BrushAccentPrimary");
+    private Brush AccentDimBrush => _accentDimBrush ??= (Brush)FindResource("BrushAccentDim");
+    private Brush BgSubPanelBrush => _bgSubPanelBrush ??= (Brush)FindResource("BrushBgSubPanel");
+    private Brush BorderInputBrush => _borderInputBrush ??= (Brush)FindResource("BrushBorderInput");
 
     public MainWindow() : this(startMinimized: false)
     {

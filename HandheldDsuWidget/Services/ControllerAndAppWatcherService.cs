@@ -139,6 +139,21 @@ public sealed class ControllerAndAppWatcherService : IDisposable
         ControllersChanged?.Invoke(this, EventArgs.Empty);
     }
 
+    public void RenameController(string hardwareId, string? customName)
+    {
+        lock (_syncLock)
+        {
+            var ctrl = _config.Controllers.FirstOrDefault(c =>
+                string.Equals(c.HardwareId, hardwareId, StringComparison.OrdinalIgnoreCase));
+            if (ctrl is not null)
+            {
+                ctrl.CustomName = (customName ?? string.Empty).Trim();
+                _config.Save();
+            }
+        }
+        ControllersChanged?.Invoke(this, EventArgs.Empty);
+    }
+
     public void SimulateVirtualControllerPreset(string presetKey, int basePort = 26760, int secondaryPort = 26762)
     {
         lock (_syncLock)
@@ -268,6 +283,7 @@ public sealed class ControllerAndAppWatcherService : IDisposable
     {
         List<(string Title, string Subtitle, string? ProfileToApply, int ConnectedCount)> pendingNotifications = [];
         bool changed = false;
+        bool inputActiveChanged = false;
         List<KnownControllerConfig> orderedSnapshot;
 
         lock (_syncLock)
@@ -296,9 +312,14 @@ public sealed class ControllerAndAppWatcherService : IDisposable
 
                 var currentConnectedHwIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
+                var prevActiveSet = new HashSet<string>(
+                    _config.Controllers.Where(c => c.IsInputActive).Select(c => c.HardwareId),
+                    StringComparer.OrdinalIgnoreCase);
+
                 foreach (var c in _config.Controllers)
                 {
                     c.IsConnected = false;
+                    c.IsInputActive = false;
                 }
 
                 // Ensure built-in handheld sensor entry always exists as primary fallback if no external pads are found
@@ -328,11 +349,16 @@ public sealed class ControllerAndAppWatcherService : IDisposable
                     {
                         uniqueKey = $"{hwId}#{suffix++}";
                     }
+                    int instanceNumber = suffix - 1;
 
                     var known = _config.Controllers.FirstOrDefault(c =>
                         string.Equals(c.HardwareId, uniqueKey, StringComparison.OrdinalIgnoreCase));
 
                     string friendlyName = ResolveFriendlyControllerName(vid, pid, rawDisplayName);
+                    if (instanceNumber > 1 && !friendlyName.EndsWith($"#{instanceNumber}", StringComparison.Ordinal))
+                    {
+                        friendlyName = $"{friendlyName} #{instanceNumber}";
+                    }
 
                     if (known is null)
                     {
@@ -352,6 +378,11 @@ public sealed class ControllerAndAppWatcherService : IDisposable
                     }
 
                     known.IsConnected = true;
+                    known.IsInputActive = IsRawControllerActive(raw);
+                    if (known.IsInputActive != prevActiveSet.Contains(uniqueKey))
+                    {
+                        inputActiveChanged = true;
+                    }
                     known.LastSeenUtc = DateTime.UtcNow;
                     known.AssignedPlayerIndex = playerIndex;
                     known.AssignedUdpPort = playerIndex < 4 ? basePort : secondaryPort;
@@ -365,7 +396,7 @@ public sealed class ControllerAndAppWatcherService : IDisposable
 
                         var loc = LocalizationService.Instance;
                         pendingNotifications.Add((
-                            loc.Format("ToastControllerConnectedTitleFormat", known.DisplayName),
+                            loc.Format("ToastControllerConnectedTitleFormat", known.EffectiveName),
                             loc.Format("ToastControllerConnectedSubFormat", playerIndex + 1, known.AssignedUdpPort, known.AssignedDsuSlot, known.AssignedProfileName),
                             profileToApply,
                             rawSnapshot.Count + _simulatedControllers.Count
@@ -409,7 +440,7 @@ public sealed class ControllerAndAppWatcherService : IDisposable
 
                         var loc = LocalizationService.Instance;
                         pendingNotifications.Add((
-                            loc.Format("ToastControllerConnectedTitleFormat", known.DisplayName),
+                            loc.Format("ToastControllerConnectedTitleFormat", known.EffectiveName),
                             loc.Format("ToastControllerConnectedSubFormat", playerIndex + 1, known.AssignedUdpPort, known.AssignedDsuSlot, known.AssignedProfileName),
                             profileToApply,
                             rawSnapshot.Count + _simulatedControllers.Count
@@ -472,7 +503,7 @@ public sealed class ControllerAndAppWatcherService : IDisposable
             }
         }
 
-        if (changed)
+        if (changed || inputActiveChanged)
         {
             ControllersChanged?.Invoke(this, EventArgs.Empty);
         }
@@ -1054,11 +1085,44 @@ public sealed class ControllerAndAppWatcherService : IDisposable
                 _lastHotkeyTriggerUtc = now;
                 RecenterHotkeyTriggered?.Invoke(
                     this,
-                    (matchedController.DisplayName, matchedController.RecenterHotkeyDisplay));
+                    (matchedController.EffectiveName, matchedController.RecenterHotkeyDisplay));
             }
         }
 
         _wasHotkeyDown = anyMatched;
+    }
+
+    private static bool IsRawControllerActive(RawGameController raw)
+    {
+        try
+        {
+            int btnCount = raw.ButtonCount;
+            int swCount = raw.SwitchCount;
+            int axCount = raw.AxisCount;
+
+            bool[] buttons = btnCount > 0 ? new bool[btnCount] : [];
+            GameControllerSwitchPosition[] switches = swCount > 0 ? new GameControllerSwitchPosition[swCount] : [];
+            double[] axes = axCount > 0 ? new double[axCount] : [];
+
+            raw.GetCurrentReading(buttons, switches, axes);
+
+            for (int i = 0; i < buttons.Length; i++)
+            {
+                if (buttons[i])
+                    return true;
+            }
+
+            for (int i = 0; i < switches.Length; i++)
+            {
+                if (switches[i] != GameControllerSwitchPosition.Center)
+                    return true;
+            }
+        }
+        catch
+        {
+            // Ignore transient reading errors
+        }
+        return false;
     }
 
     private static ushort GetMergedXInputButtons()

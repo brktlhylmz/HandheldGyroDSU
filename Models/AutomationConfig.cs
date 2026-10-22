@@ -17,6 +17,12 @@ public sealed class KnownControllerConfig
     [JsonPropertyName("displayName")]
     public string DisplayName { get; set; } = string.Empty;
 
+    [JsonPropertyName("customName")]
+    public string CustomName { get; set; } = string.Empty;
+
+    [JsonIgnore]
+    public string EffectiveName => !string.IsNullOrWhiteSpace(CustomName) ? CustomName : DisplayName;
+
     [JsonPropertyName("assignedProfileName")]
     public string AssignedProfileName { get; set; } = "Standard Landscape";
 
@@ -34,6 +40,9 @@ public sealed class KnownControllerConfig
 
     [JsonIgnore]
     public bool IsConnected { get; set; }
+
+    [JsonIgnore]
+    public bool IsInputActive { get; set; }
 
     [JsonIgnore]
     public int AssignedPlayerIndex { get; set; }

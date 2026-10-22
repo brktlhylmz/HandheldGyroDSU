@@ -129,10 +129,14 @@ public partial class MainWindow
     }
 
     private bool _isRenderingControllersUi;
+    private string? _renamingHardwareId;
 
     private void RenderControllersAndRulesUi()
     {
         if (_isRenderingControllersUi || ControllersListPanel is null || EmulatorRulesListPanel is null)
+            return;
+
+        if (!string.IsNullOrWhiteSpace(_renamingHardwareId) && Keyboard.FocusedElement is TextBox)
             return;
 
         _isRenderingControllersUi = true;
@@ -162,13 +166,15 @@ public partial class MainWindow
                 Padding = new Thickness(11, 9, 11, 9),
                 Margin = new Thickness(0, 0, 0, 7),
                 Background = BgSubPanelBrush,
-                BorderBrush = ctrl.IsConnected ? StatusOnlineBrush : BorderInputBrush,
-                BorderThickness = new Thickness(1)
+                BorderBrush = ctrl.IsInputActive
+                    ? AccentPrimaryBrush
+                    : (ctrl.IsConnected ? StatusOnlineBrush : BorderInputBrush),
+                BorderThickness = new Thickness(ctrl.IsInputActive ? 1.6 : 1.0)
             };
 
             var rootStack = new StackPanel();
 
-            // Row 1: Controller Name + Online/Offline Badge + Forget Button (if offline)
+            // Row 1: Controller Name + Online/Offline Badge + Rename ('✎') + Forget Button (if offline)
             var topGrid = new Grid();
             topGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             topGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
@@ -176,7 +182,7 @@ public partial class MainWindow
             var titleStack = new StackPanel();
             var nameText = new TextBlock
             {
-                Text = ctrl.DisplayName,
+                Text = ctrl.EffectiveName,
                 FontSize = 11.5,
                 FontWeight = FontWeights.Bold,
                 Foreground = TextPrimaryBrush,
@@ -184,30 +190,71 @@ public partial class MainWindow
             };
             titleStack.Children.Add(nameText);
 
+            string statusText = ctrl.IsConnected
+                ? _loc.Format("ControllerBadgeConnectedFormat", ctrl.AssignedPlayerIndex + 1, ctrl.AssignedUdpPort)
+                : _loc["ControllerBadgeOffline"];
+            if (ctrl.IsInputActive)
+            {
+                statusText = $"{statusText}   •   {_loc["ControllerInputActiveBadge"]}";
+            }
+
             var statusBadgeText = new TextBlock
             {
-                Text = ctrl.IsConnected
-                    ? _loc.Format("ControllerBadgeConnectedFormat", ctrl.AssignedPlayerIndex + 1, ctrl.AssignedUdpPort)
-                    : _loc["ControllerBadgeOffline"],
+                Text = statusText,
                 FontSize = 9.5,
                 FontWeight = FontWeights.Bold,
-                Foreground = ctrl.IsConnected ? StatusOnlineBrush : TextMutedBrush,
+                Foreground = ctrl.IsInputActive
+                    ? AccentPrimaryBrush
+                    : (ctrl.IsConnected ? StatusOnlineBrush : TextMutedBrush),
                 Margin = new Thickness(0, 2, 0, 0)
             };
             titleStack.Children.Add(statusBadgeText);
 
+            string subtitleHw = !string.IsNullOrWhiteSpace(ctrl.CustomName)
+                ? $"{ctrl.DisplayName}  •  {ctrl.HardwareId}"
+                : ctrl.HardwareId;
+
             var hwIdText = new TextBlock
             {
-                Text = ctrl.HardwareId,
+                Text = subtitleHw,
                 FontSize = 8.5,
                 FontFamily = new FontFamily("Consolas"),
                 Foreground = TextMutedBrush,
-                Margin = new Thickness(0, 1, 0, 0)
+                Margin = new Thickness(0, 1, 0, 0),
+                TextTrimming = TextTrimming.CharacterEllipsis
             };
             titleStack.Children.Add(hwIdText);
 
             Grid.SetColumn(titleStack, 0);
             topGrid.Children.Add(titleStack);
+
+            var actionButtonsPanel = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                VerticalAlignment = VerticalAlignment.Top
+            };
+
+            string hwKey = ctrl.HardwareId;
+            var renameBtn = new Button
+            {
+                Content = "✎",
+                Style = (Style)FindResource("AppGhostButtonStyle"),
+                Width = 24,
+                Height = 24,
+                Padding = new Thickness(0),
+                FontSize = 10.5,
+                Margin = new Thickness(4, 0, 0, 0),
+                ToolTip = _loc["ControllerRenameTooltip"]
+            };
+            renameBtn.Click += (_, _) =>
+            {
+                _renamingHardwareId = string.Equals(_renamingHardwareId, hwKey, StringComparison.OrdinalIgnoreCase)
+                    ? null
+                    : hwKey;
+                Keyboard.ClearFocus();
+                RenderControllersAndRulesUi();
+            };
+            actionButtonsPanel.Children.Add(renameBtn);
 
             if (!ctrl.IsConnected)
             {
@@ -219,16 +266,105 @@ public partial class MainWindow
                     Height = 24,
                     Padding = new Thickness(0),
                     FontSize = 10,
-                    VerticalAlignment = VerticalAlignment.Top,
+                    Margin = new Thickness(4, 0, 0, 0),
                     ToolTip = _loc["ControllerForgetTooltip"]
                 };
-                string hwKey = ctrl.HardwareId;
                 forgetBtn.Click += (_, _) => _automationWatcher.ForgetController(hwKey);
-                Grid.SetColumn(forgetBtn, 1);
-                topGrid.Children.Add(forgetBtn);
+                actionButtonsPanel.Children.Add(forgetBtn);
             }
 
+            Grid.SetColumn(actionButtonsPanel, 1);
+            topGrid.Children.Add(actionButtonsPanel);
+
             rootStack.Children.Add(topGrid);
+
+            // Optional Inline Rename Editor Row
+            if (string.Equals(_renamingHardwareId, hwKey, StringComparison.OrdinalIgnoreCase))
+            {
+                var renameGrid = new Grid { Margin = new Thickness(0, 7, 0, 2) };
+                renameGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                renameGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+                renameGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+                var renameBox = new TextBox
+                {
+                    Style = (Style)FindResource("AppTextBoxStyle"),
+                    Text = !string.IsNullOrWhiteSpace(ctrl.CustomName) ? ctrl.CustomName : ctrl.DisplayName,
+                    Height = 26,
+                    FontSize = 10.5,
+                    VerticalContentAlignment = VerticalAlignment.Center,
+                    Padding = new Thickness(7, 0, 7, 0),
+                    ToolTip = _loc["ControllerRenamePlaceholder"]
+                };
+
+                void CommitRename()
+                {
+                    string entered = renameBox.Text.Trim();
+                    if (string.Equals(entered, ctrl.DisplayName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        entered = string.Empty;
+                    }
+                    _renamingHardwareId = null;
+                    Keyboard.ClearFocus();
+                    _automationWatcher.RenameController(hwKey, entered);
+                    ShowToastNotification(
+                        _loc["ToastControllerRenamedTitle"],
+                        $"🎮 {(string.IsNullOrWhiteSpace(entered) ? ctrl.DisplayName : entered)} ({hwKey})");
+                }
+
+                renameBox.KeyDown += (_, e) =>
+                {
+                    if (e.Key == Key.Enter)
+                    {
+                        e.Handled = true;
+                        CommitRename();
+                    }
+                    else if (e.Key == Key.Escape)
+                    {
+                        e.Handled = true;
+                        _renamingHardwareId = null;
+                        Keyboard.ClearFocus();
+                        RenderControllersAndRulesUi();
+                    }
+                };
+
+                Grid.SetColumn(renameBox, 0);
+                renameGrid.Children.Add(renameBox);
+
+                var saveNameBtn = new Button
+                {
+                    Content = _loc["ControllerRenameSaveBtn"],
+                    Style = (Style)FindResource("AppAccentButtonStyle"),
+                    Height = 26,
+                    Padding = new Thickness(10, 0, 10, 0),
+                    Margin = new Thickness(5, 0, 0, 0),
+                    FontSize = 9.5
+                };
+                saveNameBtn.Click += (_, _) => CommitRename();
+                Grid.SetColumn(saveNameBtn, 1);
+                renameGrid.Children.Add(saveNameBtn);
+
+                var cancelNameBtn = new Button
+                {
+                    Content = "✕",
+                    Style = (Style)FindResource("AppGhostButtonStyle"),
+                    Width = 26,
+                    Height = 26,
+                    Padding = new Thickness(0),
+                    Margin = new Thickness(4, 0, 0, 0),
+                    FontSize = 10
+                };
+                cancelNameBtn.Click += (_, _) =>
+                {
+                    _renamingHardwareId = null;
+                    Keyboard.ClearFocus();
+                    RenderControllersAndRulesUi();
+                };
+                Grid.SetColumn(cancelNameBtn, 2);
+                renameGrid.Children.Add(cancelNameBtn);
+
+                rootStack.Children.Add(renameGrid);
+            }
 
             // Row 2: Assigned Profile Selector
             var bottomGrid = new Grid { Margin = new Thickness(0, 7, 0, 0) };
@@ -268,13 +404,13 @@ public partial class MainWindow
                         DsuStatusDto status = await _ipcClient.ApplyProfileAsync(selectedProf.Name);
                         UpdateUiFromStatus(status);
                         ShowToastNotification(
-                            $"🎮 {ctrl.DisplayName}",
+                            $"🎮 {ctrl.EffectiveName}",
                             _loc.Format("ToastControllerProfileAppliedFormat", selectedProf.Name));
                     }
                     else
                     {
                         ShowToastNotification(
-                            $"🎮 {ctrl.DisplayName}",
+                            $"🎮 {ctrl.EffectiveName}",
                             _loc.Format("ToastControllerProfileSavedFormat", selectedProf.Name));
                     }
                 }
