@@ -178,6 +178,11 @@
   "ControllerHotkeyClearTooltip": "Atanan merkezleme kısayolunu temizle",
   "ToastRecenterSuccessTitle": "🎯 MERKEZ VE TUTUŞ AÇISI SIFIRLANDI",
   "ToastRecenterSuccessSubFormat": "{0} ({1}) • 0° Tutuş Açısı Güncellendi",
+  "ControllerRenameTooltip": "Kontrolcüye özel isim ver",
+  "ControllerRenamePlaceholder": "Özel isim girin (varsayılan donanım adı için boş bırakın)",
+  "ControllerRenameSaveBtn": "KAYDET",
+  "ControllerInputActiveBadge": "● TUŞ ALGILANDI",
+  "ToastControllerRenamedTitle": "KONTROLCÜ İSMİ GÜNCELLENDİ",
 
   "GamepadHint": "[D-PAD] Gezin   [A] Seç/Değiştir   [Y] Kalibre Et   [LB/RB] Sekme Değiştir"
 }

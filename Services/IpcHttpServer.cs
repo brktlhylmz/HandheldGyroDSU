@@ -24,6 +24,7 @@ public sealed class IpcHttpServer : IDisposable
     private readonly AppSettings _settings;
     private readonly int _port;
     private TcpListener? _listener;
+    private bool _cachedStartWithWindows;
 
     public int Port => _port;
 
@@ -37,6 +38,7 @@ public sealed class IpcHttpServer : IDisposable
         _udpServer = udpServer;
         _settings = settings ?? AppSettings.Load();
         _port = port;
+        _cachedStartWithWindows = StartupManager.IsStartupEnabled();
     }
 
     public string CurrentLanguage => _settings.Language;
@@ -94,6 +96,7 @@ public sealed class IpcHttpServer : IDisposable
         _udpServer.ForwardGamepadInputs = false;
         _sensorService.ResetAxisSettings();
         StartupManager.SetStartup(false);
+        _cachedStartWithWindows = false;
 
         _settings.ActiveProfileName = "Standard Landscape";
         _settings.ForwardGamepadInputs = false;
@@ -126,7 +129,8 @@ public sealed class IpcHttpServer : IDisposable
         _settings.RestAccZ = _sensorService.RestAccZ;
         _settings.IsStreamingEnabled = _udpServer.IsStreamingEnabled;
         _settings.ForwardGamepadInputs = _udpServer.ForwardGamepadInputs;
-        _settings.StartWithWindows = StartupManager.IsStartupEnabled();
+        _cachedStartWithWindows = StartupManager.IsStartupEnabled();
+        _settings.StartWithWindows = _cachedStartWithWindows;
         _settings.BiasX = bias.BiasX;
         _settings.BiasY = bias.BiasY;
         _settings.BiasZ = bias.BiasZ;
@@ -477,7 +481,7 @@ public sealed class IpcHttpServer : IDisposable
             ipcPort = _port,
             isStreamingEnabled = _udpServer.IsStreamingEnabled,
             forwardGamepadInputs = _udpServer.ForwardGamepadInputs,
-            startWithWindows = StartupManager.IsStartupEnabled(),
+            startWithWindows = _cachedStartWithWindows,
             closeToTray = _settings.CloseToTray,
             gameBarOverlayEnabled = _settings.GameBarOverlayEnabled,
             hudNotificationsEnabled = _settings.HudNotificationsEnabled,

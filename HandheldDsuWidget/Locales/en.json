@@ -178,6 +178,11 @@
   "ControllerHotkeyClearTooltip": "Clear assigned recenter hotkey",
   "ToastRecenterSuccessTitle": "🎯 CENTER & HOLD ANGLE RESET",
   "ToastRecenterSuccessSubFormat": "{0} ({1}) • 0° Pitch Reference Updated",
+  "ControllerRenameTooltip": "Rename controller (set custom alias)",
+  "ControllerRenamePlaceholder": "Enter custom name (leave empty to restore default hardware name)",
+  "ControllerRenameSaveBtn": "SAVE",
+  "ControllerInputActiveBadge": "● BUTTON PRESSED",
+  "ToastControllerRenamedTitle": "CONTROLLER RENAMED",
 
   "GamepadHint": "[D-PAD] Navigate   [A] Toggle/Select   [Y] Calibrate   [LB/RB] Switch Tab"
 }

@@ -167,6 +167,7 @@ public sealed class DsuIpcClient : IDisposable
 
             _embeddedCts = new CancellationTokenSource();
             _embeddedSettings = AppSettings.Load();
+            _embeddedSettings.StartWithWindows = StartupManager.IsStartupEnabled();
 
             _embeddedSensor = new SensorService(DeviceProfile.CreateDefault(), _embeddedSettings);
             _embeddedSensor.Initialize();
@@ -225,7 +226,7 @@ public sealed class DsuIpcClient : IDisposable
             IpcPort = IpcHttpServer.DefaultIpcPort,
             IsStreamingEnabled = _embeddedUdpServer.IsStreamingEnabled,
             ForwardGamepadInputs = _embeddedUdpServer.ForwardGamepadInputs,
-            StartWithWindows = StartupManager.IsStartupEnabled(),
+            StartWithWindows = _embeddedSettings?.StartWithWindows ?? false,
             CloseToTray = _embeddedSettings?.CloseToTray ?? false,
             GameBarOverlayEnabled = _embeddedSettings?.GameBarOverlayEnabled ?? true,
             HudNotificationsEnabled = _embeddedSettings?.HudNotificationsEnabled ?? true,
