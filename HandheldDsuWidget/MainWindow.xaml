@@ -951,45 +951,28 @@
                                     <!-- Dynamic List of Emulator Rules -->
                                     <StackPanel x:Name="EmulatorRulesListPanel" />
 
-                                    <!-- Add Custom Process (.exe) Row -->
-                                    <Grid Margin="0,8,0,0">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="8" />
-                                            <ColumnDefinition Width="Auto" />
-                                        </Grid.ColumnDefinitions>
-
-                                        <TextBox x:Name="CustomExeTextBox"
-                                                 Grid.Column="0"
-                                                 Style="{DynamicResource AppTextBoxStyle}"
-                                                 FontFamily="{DynamicResource FontPrimary}"
-                                                 Foreground="{DynamicResource BrushTextPrimary}"
-                                                 FontWeight="Normal"
-                                                 FontSize="11"
-                                                 HorizontalContentAlignment="Left"
-                                                 Tag="{Binding [CustomExePlaceholder], Source={x:Static services:LocalizationService.Instance}}"
-                                                 Height="28"
-                                                 KeyDown="CustomExeTextBox_KeyDown" />
-
-                                        <Button x:Name="AddCustomExeRuleButton"
-                                                Grid.Column="2"
-                                                Style="{DynamicResource AppSecondaryButtonStyle}"
-                                                Height="28"
-                                                Padding="10,0"
-                                                Click="AddCustomExeRuleButton_Click">
-                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                                <Path Data="{DynamicResource IconPlus}"
-                                                      Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
-                                                      StrokeThickness="1.6"
-                                                      StrokeStartLineCap="Round"
-                                                      StrokeEndLineCap="Round"
-                                                      Width="9" Height="9" Stretch="Uniform" Margin="0,0,5,0" />
-                                                <TextBlock Text="{Binding [BtnAddRule], Source={x:Static services:LocalizationService.Instance}}"
-                                                           FontSize="10.5"
-                                                           VerticalAlignment="Center" />
-                                            </StackPanel>
-                                        </Button>
-                                    </Grid>
+                                    <!-- Browse & Select Emulator / Game (.exe) Button -->
+                                    <Button x:Name="AddCustomExeRuleButton"
+                                            Margin="0,8,0,0"
+                                            Style="{DynamicResource AppSecondaryButtonStyle}"
+                                            Height="32"
+                                            HorizontalAlignment="Stretch"
+                                            HorizontalContentAlignment="Center"
+                                            Click="AddCustomExeRuleButton_Click">
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                            <Path Data="{DynamicResource IconFolder}"
+                                                  Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                                  StrokeThickness="1.5"
+                                                  StrokeStartLineCap="Round"
+                                                  StrokeEndLineCap="Round"
+                                                  StrokeLineJoin="Round"
+                                                  Width="12" Height="12" Stretch="Uniform" Margin="0,0,7,0" />
+                                            <TextBlock Text="{Binding [BtnAddRule], Source={x:Static services:LocalizationService.Instance}}"
+                                                       FontSize="10.5"
+                                                       FontWeight="Bold"
+                                                       VerticalAlignment="Center" />
+                                        </StackPanel>
+                                    </Button>
                                 </StackPanel>
                             </Border>
                         </StackPanel>

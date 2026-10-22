@@ -144,6 +144,8 @@ public partial class MainWindow : Window
             return
             [
                 AutoControllerSwitchToggle,
+                AutoEmulatorSwitchToggle,
+                AddCustomExeRuleButton,
                 CalibrateButton
             ];
         }
@@ -158,9 +160,6 @@ public partial class MainWindow : Window
                 SaveProfileButton,
                 ImportProfileButton,
                 ExportProfileButton,
-                AutoEmulatorSwitchToggle,
-                CustomExeTextBox,
-                AddCustomExeRuleButton,
                 CalibrateButton
             ];
         }
