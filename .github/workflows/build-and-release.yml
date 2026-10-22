@@ -35,29 +35,32 @@ jobs:
       - name: Run Automated Cemuhook DSU v1001 & IPC Self-Test
         run: dotnet run --project .\HandheldDsuServer.csproj -c Release --no-build -- --self-test
 
-      - name: Package Portable Release ZIP
+      - name: Publish Standalone Single-File Executable (HandheldGyroDSU.exe)
         shell: pwsh
         run: |
-          $version = if ("${{ github.ref_name }}" -like "v*") { "${{ github.ref_name }}" } else { "v1.0.0-ci" }
-          $stageDir = "publish/HandheldGyroDSU-$version-win-x64"
-          New-Item -ItemType Directory -Path $stageDir -Force | Out-Null
+          $outDir = "publish/single"
+          New-Item -ItemType Directory -Path $outDir -Force | Out-Null
 
-          dotnet publish .\HandheldDsuWidget\HandheldDsuWidget.csproj -c Release -r win-x64 --self-contained false -o $stageDir
-          Copy-Item .\README.md -Destination $stageDir -Force
-          Copy-Item .\LICENSE -Destination $stageDir -Force
-          Copy-Item .\install.ps1 -Destination $stageDir -Force
+          dotnet publish .\HandheldDsuWidget\HandheldDsuWidget.csproj `
+            -c Release `
+            -r win-x64 `
+            --self-contained true `
+            -p:PublishSingleFile=true `
+            -p:IncludeNativeLibrariesForSelfExtract=true `
+            -p:EnableCompressionInSingleFile=true `
+            -p:DebugType=embedded `
+            -o $outDir
 
-          Compress-Archive -Path "$stageDir\*" -DestinationPath "publish/HandheldGyroDSU-$version-win-x64.zip" -Force
-
-      - name: Upload Build Artifact
+      - name: Upload Standalone Executable Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: HandheldGyroDSU-win-x64
-          path: publish/*.zip
+          name: HandheldGyroDSU-win-x64-exe
+          path: publish/single/HandheldGyroDSU.exe
 
       - name: Publish GitHub Release on Tag
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
-          files: publish/*.zip
+          files: |
+            publish/single/HandheldGyroDSU.exe
           generate_release_notes: true

@@ -33,9 +33,9 @@
     <None Update="Assets\**\*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Locales\*.json">
+    <EmbeddedResource Include="Locales\*.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+    </EmbeddedResource>
   </ItemGroup>
 
   <Target Name="SyncAppxManifest" AfterTargets="Build">

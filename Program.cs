@@ -39,7 +39,10 @@ public static class Program
         // Run automated self-test suite if '--self-test' is passed
         if (args.Length > 0 && string.Equals(args[0], "--self-test", StringComparison.OrdinalIgnoreCase))
         {
-            return await RunSelfTestAsync(udpServer, ipcServer, sensorService, cts);
+            using var testUdpServer = new DsuUdpServer(sensorService, 26770, 0, 26772);
+            testUdpServer.ToggleStreaming(true);
+            using var testIpcServer = new IpcHttpServer(sensorService, testUdpServer, settings, 26771);
+            return await RunSelfTestAsync(testUdpServer, testIpcServer, sensorService, cts);
         }
 
         Task serverTask = udpServer.RunAsync(cts.Token);
@@ -125,12 +128,23 @@ public static class Program
         _ = await toggleResp.Content.ReadAsStringAsync(cts.Token);
         Console.WriteLine($"[TEST] POST /toggle succeeded: IsStreamingEnabled={udpServer.IsStreamingEnabled}");
 
+        var recenterResp = await http.PostAsync("/recenter", new StringContent("{}", Encoding.UTF8, "application/json"), cts.Token);
+        _ = await recenterResp.Content.ReadAsStringAsync(cts.Token);
+        Console.WriteLine("[TEST] POST /recenter succeeded.");
+
         var calResp = await http.PostAsync("/calibrate", new StringContent("{}", Encoding.UTF8, "application/json"), cts.Token);
         _ = await calResp.Content.ReadAsStringAsync(cts.Token);
         Console.WriteLine("[TEST] POST /calibrate succeeded.");
 
         cts.Cancel();
-        await Task.WhenAll(serverTask, ipcTask);
+        try
+        {
+            await Task.WhenAll(serverTask, ipcTask);
+        }
+        catch (OperationCanceledException)
+        {
+            // Normal shutdown after self-test completion
+        }
         Console.WriteLine("[TEST] All Cemuhook DSU and local IPC self-tests passed!");
         return 0;
     }

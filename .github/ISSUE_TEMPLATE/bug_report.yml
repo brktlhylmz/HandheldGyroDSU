@@ -1,0 +1,78 @@
+name: Bug Report
+description: Report an issue with sensor readings, controller detection, DSU protocol, or emulator integration.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug! Please fill out the details below so we can reproduce and fix it quickly.
+
+  - type: dropdown
+    id: device
+    attributes:
+      label: Handheld / PC Device
+      description: Which handheld or Windows PC are you running HandheldGyroDSU on?
+      options:
+        - ASUS ROG Ally / ROG Ally X
+        - Lenovo Legion Go / Legion Go S
+        - MSI Claw
+        - Ayaneo (2S / Kun / Flip / Air)
+        - GPD (Win 4 / Win Mini / Win Max 2)
+        - OneXPlayer
+        - Desktop / Laptop Windows PC
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: controller
+    attributes:
+      label: Controller / Motion Source
+      description: Which controller or IMU sensor is active?
+      options:
+        - Built-in Handheld IMU + Built-in XInput Gamepad
+        - Xbox Wireless Controller (XInput)
+        - Sony DualSense / DualSense Edge
+        - Sony DualShock 4 (DS4)
+        - Nintendo Switch Pro Controller / Joy-Con
+        - 8BitDo Controller
+        - GameSir / Flydigi Controller
+        - Other USB/Bluetooth Controller
+    validations:
+      required: true
+
+  - type: dropdown
+    id: emulator
+    attributes:
+      label: Target Emulator
+      description: Which emulator were you using when the issue occurred?
+      options:
+        - Dolphin (Wii / GameCube)
+        - Cemu (Wii U)
+        - Eden / Yuzu / Sudachi / Citron (Switch)
+        - Ryujinx (Switch)
+        - Citra / Lime3DS / Azahar (3DS)
+        - RPCS3 (PS3)
+        - Standalone App UI (No Emulator)
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: A clear and concise description of the bug and how to reproduce it.
+      placeholder: |
+        1. Open HandheldGyroDSU...
+        2. Launch emulator...
+        3. Observe behavior...
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Crash Log / Diagnostic Output (Optional)
+      description: If applicable, paste any relevant entries from `%LocalAppData%\HandheldDsu\crash.log`.
+      render: text
