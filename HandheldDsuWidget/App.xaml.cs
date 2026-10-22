@@ -159,7 +159,6 @@ public partial class App : Application
             {
                 // Start minimized without flashing the normal window frame on the desktop
                 window.ShowActivated = false;
-                window.ShowInTaskbar = false;
                 window.WindowState = WindowState.Minimized;
                 window.Show();
                 window.HideToTray();
@@ -168,7 +167,6 @@ public partial class App : Application
             {
                 window.Show();
                 window.Activate();
-                window.Topmost = true;
                 window.Focus();
             }
         }
