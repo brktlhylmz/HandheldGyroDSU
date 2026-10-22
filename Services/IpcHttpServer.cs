@@ -228,6 +228,13 @@ public sealed class IpcHttpServer : IDisposable
                     string json = BuildStatusJson("Calibration started (1s)");
                     await WriteHttpResponseAsync(stream, 200, "OK", json, cancellationToken);
                 }
+                else if (method == "POST" && path == "/recenter")
+                {
+                    _sensorService.RecenterImmediate();
+                    SaveCurrentSettings();
+                    string json = BuildStatusJson("Instant recenter applied");
+                    await WriteHttpResponseAsync(stream, 200, "OK", json, cancellationToken);
+                }
                 else if (method == "POST" && path == "/toggle")
                 {
                     bool? requestedState = ExtractBooleanParameter(query, body, "enabled");

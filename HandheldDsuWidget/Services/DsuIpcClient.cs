@@ -295,6 +295,22 @@ public sealed class DsuIpcClient : IDisposable
         return BuildEmbeddedStatusDto("Calibration started");
     }
 
+    public async Task<DsuStatusDto> RecenterImmediateAsync(CancellationToken cancellationToken = default)
+    {
+        if (!_usingEmbeddedEngine)
+        {
+            DsuStatusDto? remote = await PostJsonAsync("/recenter", "{}", cancellationToken);
+            if (remote is not null)
+                return remote;
+
+            EnsureEmbeddedEngineStarted();
+        }
+
+        _embeddedSensor!.RecenterImmediate();
+        _embeddedIpcServer?.SaveCurrentSettings();
+        return BuildEmbeddedStatusDto("Instant recenter applied");
+    }
+
     public async Task<DsuStatusDto> ToggleStreamingAsync(bool? enabled = null, CancellationToken cancellationToken = default)
     {
         if (!_usingEmbeddedEngine)

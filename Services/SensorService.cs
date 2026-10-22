@@ -60,6 +60,25 @@ public sealed class SensorService : IDisposable
 
     public void RequestSensorRebind() => _rebindRequested = true;
 
+    /// <summary>
+    /// Immediately sets the current holding attitude as the new 0-degree resting reference
+    /// and updates drift bias if the device is reasonably steady, with zero waiting delay.
+    /// </summary>
+    public void RecenterImmediate()
+    {
+        lock (_lock)
+        {
+            _restAccX = _rawAccX;
+            _restAccY = _rawAccY;
+            _restAccZ = _rawAccZ;
+
+            if (MathF.Abs(_rawGyroX) < 12f && MathF.Abs(_rawGyroY) < 12f && MathF.Abs(_rawGyroZ) < 12f)
+            {
+                _gyroBias = new GyroBias(_rawGyroX, _rawGyroY, _rawGyroZ);
+            }
+        }
+    }
+
     public bool IsCalibrating => _isCalibrating;
     public int CalibrationProgressPercent => _calibrationProgressPercent;
     public GyroBias CurrentBias => _gyroBias;

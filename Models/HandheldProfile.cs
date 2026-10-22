@@ -44,4 +44,10 @@ public sealed class HandheldProfile
 
     [JsonPropertyName("linkedProcess")]
     public string? LinkedProcess { get; set; }
+
+    [JsonPropertyName("recenterHotkey")]
+    public string? RecenterHotkey { get; set; }
+
+    [JsonPropertyName("recenterHotkeyDisplay")]
+    public string? RecenterHotkeyDisplay { get; set; }
 }

@@ -67,6 +67,7 @@ public partial class MainWindow : Window
 
         _automationWatcher.ControllersChanged += (_, _) => RenderControllersAndRulesUi();
         _automationWatcher.AutomationNotification += OnAutomationNotification;
+        _automationWatcher.RecenterHotkeyTriggered += OnRecenterHotkeyTriggered;
 
         _gameBarAdapter.OverlayShowRequested += (_, _) => ShowForGameBarOverlay();
         _gameBarAdapter.OverlayHideRequested += (_, _) => HideFromGameBarOverlay();

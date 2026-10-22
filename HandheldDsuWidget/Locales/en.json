@@ -170,5 +170,12 @@
   "ToastDevHudSampleTitle": "🎮 HUD OVERLAY TEST ACTIVE",
   "ToastDevHudSampleDesc": "Click-through WS_EX_TRANSPARENT overlay verified • 250 Hz DSU Ready",
 
+  "ControllerHotkeyLabel": "Recenter Hotkey:",
+  "ControllerHotkeyBindBtn": "🎯 Bind Button / Combo...",
+  "ControllerHotkeyListening": "● Listening... Press Button(s)",
+  "ControllerHotkeyClearTooltip": "Clear assigned recenter hotkey",
+  "ToastRecenterSuccessTitle": "🎯 CENTER & HOLD ANGLE RESET",
+  "ToastRecenterSuccessSubFormat": "{0} ({1}) • 0° Pitch Reference Updated",
+
   "GamepadHint": "[D-PAD] Navigate   [A] Toggle/Select   [Y] Calibrate   [LB/RB] Switch Tab"
 }
