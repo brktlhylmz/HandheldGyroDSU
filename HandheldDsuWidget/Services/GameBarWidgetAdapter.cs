@@ -123,7 +123,11 @@ namespace HandheldDsuWidget.Services
         /// Polls Win + G shortcut and Xbox Game Bar foreground state to automatically pop up
         /// and auto-dismiss the companion overlay alongside Xbox Game Bar.
         /// </summary>
-        public void PollGameBarCompanionState(bool isEnabled, bool isOurWindowActive, bool isPinnedByUser)
+        public void PollGameBarCompanionState(
+            bool isEnabled,
+            bool isWindowVisible,
+            bool isOurWindowActive,
+            bool isPinnedByUser)
         {
             if (!isEnabled)
             {
@@ -147,7 +151,7 @@ namespace HandheldDsuWidget.Services
 
             if (justPressedWinG)
             {
-                if (!_isOverlaySessionActive)
+                if (!isWindowVisible && !_isOverlaySessionActive)
                 {
                     _isOverlaySessionActive = true;
                     _overlayOpenedUtc = now;
@@ -155,7 +159,7 @@ namespace HandheldDsuWidget.Services
                     return;
                 }
 
-                if ((now - _overlayOpenedUtc).TotalMilliseconds > 500)
+                if (_isOverlaySessionActive && (now - _overlayOpenedUtc).TotalMilliseconds > 500)
                 {
                     _isOverlaySessionActive = false;
                     if (!isPinnedByUser)
@@ -166,7 +170,7 @@ namespace HandheldDsuWidget.Services
                 }
             }
 
-            if (gameBarJustAppeared && !_isOverlaySessionActive)
+            if (gameBarJustAppeared && !isWindowVisible && !_isOverlaySessionActive)
             {
                 _isOverlaySessionActive = true;
                 _overlayOpenedUtc = now;

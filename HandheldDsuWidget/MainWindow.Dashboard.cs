@@ -12,12 +12,14 @@ public partial class MainWindow
 {
     private async void PollTimer_Tick(object? sender, EventArgs e)
     {
+        bool isWindowHiddenOrMinimized = !IsVisible || WindowState == WindowState.Minimized;
+
         _gameBarAdapter.PollGameBarCompanionState(
             isEnabled: _lastStatus?.GameBarOverlayEnabled ?? true,
+            isWindowVisible: !isWindowHiddenOrMinimized,
             isOurWindowActive: IsVisible && (IsActive || IsMouseOver),
             isPinnedByUser: _isPinnedByUser);
 
-        bool isWindowHiddenOrMinimized = !IsVisible || WindowState == WindowState.Minimized;
         if (isWindowHiddenOrMinimized)
         {
             // Battery/CPU optimization: when hidden in the system tray, skip 22 FPS WPF visual updates
@@ -47,6 +49,10 @@ public partial class MainWindow
             {
                 UpdateUiFromStatus(status);
             }
+        }
+        catch
+        {
+            // Ignore transient status polling errors
         }
         finally
         {

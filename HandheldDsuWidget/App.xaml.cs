@@ -6,6 +6,8 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Interop;
+using System.Windows.Media;
 using HandheldDsuServer.Models;
 
 namespace HandheldDsuWidget;
@@ -92,18 +94,29 @@ public partial class App : Application
             return;
         }
 
+        // Use software rendering for the lightweight utility UI to prevent third-party game overlays
+        // (Steam gameoverlayrenderer64.dll, AMD Adrenalin, Armoury Crate) from hooking a D3D9 swapchain
+        // and causing 0xc0000005 access violations when switching between emulators.
+        RenderOptions.ProcessRenderMode = RenderMode.SoftwareOnly;
+
         DispatcherUnhandledException += (_, args) =>
         {
-            try
+            LogCrashException("DispatcherUnhandledException", args.Exception);
+            args.Handled = true;
+        };
+
+        AppDomain.CurrentDomain.UnhandledException += (_, args) =>
+        {
+            if (args.ExceptionObject is Exception ex)
             {
-                File.WriteAllText(
-                    Path.Combine(AppContext.BaseDirectory, "widget_error.log"),
-                    args.Exception.ToString());
+                LogCrashException("AppDomainUnhandledException", ex);
             }
-            catch
-            {
-                // Ignore logging failures
-            }
+        };
+
+        TaskScheduler.UnobservedTaskException += (_, args) =>
+        {
+            LogCrashException("UnobservedTaskException", args.Exception);
+            args.SetObserved();
         };
 
         try
@@ -161,10 +174,24 @@ public partial class App : Application
         }
         catch (Exception ex)
         {
-            File.WriteAllText(
-                Path.Combine(AppContext.BaseDirectory, "widget_error.log"),
-                ex.ToString());
+            LogCrashException("OnStartup", ex);
             Shutdown(1);
+        }
+    }
+
+    private static void LogCrashException(string source, Exception ex)
+    {
+        try
+        {
+            string logDir = AppSettings.DataDirectoryPath;
+            Directory.CreateDirectory(logDir);
+            string logPath = Path.Combine(logDir, "crash.log");
+            string entry = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] [{source}]{Environment.NewLine}{ex}{Environment.NewLine}{Environment.NewLine}";
+            File.AppendAllText(logPath, entry);
+        }
+        catch
+        {
+            // Ignore logging failures
         }
     }
 
