@@ -426,6 +426,13 @@ public sealed class IpcHttpServer : IDisposable
                     string json = BuildStatusJson("Preferences updated");
                     await WriteHttpResponseAsync(stream, 200, "OK", json, cancellationToken);
                 }
+                else if (method == "POST" && path == "/language")
+                {
+                    string? lang = ExtractStringParameter(query, body, "language", "lang");
+                    string updatedLang = SetLanguage(lang);
+                    string json = BuildStatusJson($"Language set to {updatedLang}");
+                    await WriteHttpResponseAsync(stream, 200, "OK", json, cancellationToken);
+                }
                 else if (method == "POST" && path == "/reset")
                 {
                     ResetToFactoryDefaults();

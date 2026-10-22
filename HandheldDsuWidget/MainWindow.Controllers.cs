@@ -334,7 +334,7 @@ public partial class MainWindow
                 var saveNameBtn = new Button
                 {
                     Content = _loc["ControllerRenameSaveBtn"],
-                    Style = (Style)FindResource("AppAccentButtonStyle"),
+                    Style = (Style)FindResource("AppPrimaryButtonStyle"),
                     Height = 26,
                     Padding = new Thickness(10, 0, 10, 0),
                     Margin = new Thickness(5, 0, 0, 0),
@@ -452,7 +452,7 @@ public partial class MainWindow
             var bindHotkeyBtn = new Button
             {
                 Content = hotkeyBtnText,
-                Style = (Style)FindResource(isRecordingThis ? "AppAccentButtonStyle" : "AppSecondaryButtonStyle"),
+                Style = (Style)FindResource(isRecordingThis ? "AppPrimaryButtonStyle" : "AppSecondaryButtonStyle"),
                 Height = 26,
                 FontSize = 10,
                 HorizontalContentAlignment = HorizontalAlignment.Center
