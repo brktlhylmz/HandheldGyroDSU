@@ -164,7 +164,7 @@ public partial class MainWindow
             Grid.SetColumn(titleStack, 0);
             topGrid.Children.Add(titleStack);
 
-            if (!ctrl.IsConnected && !string.Equals(ctrl.HardwareId, "BUILTIN_HANDHELD_IMU", StringComparison.OrdinalIgnoreCase))
+            if (!ctrl.IsConnected)
             {
                 var forgetBtn = new Button
                 {
