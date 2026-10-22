@@ -607,11 +607,13 @@ public sealed class ControllerAndAppWatcherService : IDisposable
                         $"[General]{Environment.NewLine}Enabled = True{Environment.NewLine}Entries = {dsuDescription}:127.0.0.1:{dsuPort};{Environment.NewLine}");
                 }
 
+                string prefix = $"DSUClient/0/{dsuDescription}:";
+                EnsureDolphinControllerProfilesExist(configDir, prefix);
+
                 string wiimoteIniPath = Path.Combine(configDir, "WiimoteNew.ini");
                 if (File.Exists(wiimoteIniPath))
                 {
                     string wiimoteText = File.ReadAllText(wiimoteIniPath);
-                    string prefix = $"DSUClient/0/{dsuDescription}:";
 
                     // Replace unprefixed `Accel ...` or `Gyro ...` bindings with `DSUClient/0/<description>:Accel ...`
                     string updatedWiimote = Regex.Replace(
@@ -619,10 +621,24 @@ public sealed class ControllerAndAppWatcherService : IDisposable
                         @"(?m)^(\s*IMU(?:Accelerometer|Gyroscope)/[^=\r\n]+=\s*)`((?:Accel|Gyro)\s+[^`]+)`",
                         $"${{1}}`{prefix}${{2}}`");
 
+                    // Ensure IRPassthrough is disabled and IMUIR (gyro pointer) is enabled
+                    updatedWiimote = Regex.Replace(updatedWiimote, @"(?m)^(\s*IRPassthrough/Enabled\s*=\s*)True", "${1}False");
+                    updatedWiimote = Regex.Replace(updatedWiimote, @"(?m)^(\s*IMUIR/Enabled\s*=\s*)False", "${1}True");
+
+                    // If Wiimote1 was bound to Keyboard/Mouse clicks (`Click 0`), upgrade WiimoteNew.ini to the Xbox + DSU profile
+                    if (updatedWiimote.Contains("Buttons/A = `Click 0`", StringComparison.OrdinalIgnoreCase))
+                    {
+                        updatedWiimote = BuildDolphinWiimoteNewIni(prefix);
+                    }
+
                     if (!string.Equals(wiimoteText, updatedWiimote, StringComparison.Ordinal))
                     {
                         File.WriteAllText(wiimoteIniPath, updatedWiimote);
                     }
+                }
+                else
+                {
+                    File.WriteAllText(wiimoteIniPath, BuildDolphinWiimoteNewIni(prefix));
                 }
             }
         }
@@ -630,6 +646,155 @@ public sealed class ControllerAndAppWatcherService : IDisposable
         {
             // Ignore file I/O contention if emulator is actively writing INI files
         }
+    }
+
+    private static void EnsureDolphinControllerProfilesExist(string configDir, string dsuPrefix)
+    {
+        string wiimoteProfilesDir = Path.Combine(configDir, "Profiles", "Wiimote");
+        Directory.CreateDirectory(wiimoteProfilesDir);
+
+        string xboxWiimoteProfilePath = Path.Combine(wiimoteProfilesDir, "HandheldGyroDSU_Xbox.ini");
+        File.WriteAllText(xboxWiimoteProfilePath, BuildDolphinWiimoteProfileSection("Profile", dsuPrefix, sideways: false));
+
+        string sidewaysWiimoteProfilePath = Path.Combine(wiimoteProfilesDir, "HandheldGyroDSU_Sideways.ini");
+        File.WriteAllText(sidewaysWiimoteProfilePath, BuildDolphinWiimoteProfileSection("Profile", dsuPrefix, sideways: true));
+
+        string gcProfilesDir = Path.Combine(configDir, "Profiles", "GCPad");
+        Directory.CreateDirectory(gcProfilesDir);
+
+        string xboxGcProfilePath = Path.Combine(gcProfilesDir, "HandheldGyroDSU_Xbox.ini");
+        File.WriteAllText(xboxGcProfilePath, BuildDolphinGcPadProfileSection("Profile"));
+    }
+
+    private static string BuildDolphinWiimoteNewIni(string dsuPrefix)
+    {
+        return BuildDolphinWiimoteProfileSection("Wiimote1", dsuPrefix, sideways: false) +
+               Environment.NewLine +
+               "[Wiimote2]" + Environment.NewLine +
+               "Source = 0" + Environment.NewLine +
+               "[Wiimote3]" + Environment.NewLine +
+               "Source = 0" + Environment.NewLine +
+               "[Wiimote4]" + Environment.NewLine +
+               "Source = 0" + Environment.NewLine +
+               "[BalanceBoard]" + Environment.NewLine +
+               "Source = 0" + Environment.NewLine;
+    }
+
+    private static string BuildDolphinWiimoteProfileSection(string sectionName, string dsuPrefix, bool sideways)
+    {
+        string extensionLine = sideways ? "Extension = None" : "Extension = Nunchuk";
+        string sidewaysLine = sideways ? "Options/Sideways Wiimote = True" : "Options/Sideways Wiimote = False";
+
+        return $"""
+            [{sectionName}]
+            Device = XInput/0/Gamepad
+            Buttons/A = `Button A`
+            Buttons/B = `Button B`
+            Buttons/1 = `Button X`
+            Buttons/2 = `Button Y`
+            Buttons/- = Back
+            Buttons/+ = Start
+            Buttons/Home = Guide
+            D-Pad/Up = `Pad N`
+            D-Pad/Down = `Pad S`
+            D-Pad/Left = `Pad W`
+            D-Pad/Right = `Pad E`
+            IR/Vertical Offset = 12.
+            IR/Total Yaw = 19.
+            IR/Total Pitch = 22.
+            IR/Auto-Hide = False
+            IR/Up = `Right Y+`
+            IR/Down = `Right Y-`
+            IR/Left = `Right X-`
+            IR/Right = `Right X+`
+            Shake/X = `Shoulder L`
+            Shake/Y = `Shoulder L`
+            Shake/Z = `Shoulder L`
+            IMUAccelerometer/Up = `{dsuPrefix}Accel Up`
+            IMUAccelerometer/Down = `{dsuPrefix}Accel Down`
+            IMUAccelerometer/Left = `{dsuPrefix}Accel Left`
+            IMUAccelerometer/Right = `{dsuPrefix}Accel Right`
+            IMUAccelerometer/Forward = `{dsuPrefix}Accel Forward`
+            IMUAccelerometer/Backward = `{dsuPrefix}Accel Backward`
+            IMUGyroscope/Pitch Up = `{dsuPrefix}Gyro Pitch Up`
+            IMUGyroscope/Pitch Down = `{dsuPrefix}Gyro Pitch Down`
+            IMUGyroscope/Roll Left = `{dsuPrefix}Gyro Roll Left`
+            IMUGyroscope/Roll Right = `{dsuPrefix}Gyro Roll Right`
+            IMUGyroscope/Yaw Left = `{dsuPrefix}Gyro Yaw Left`
+            IMUGyroscope/Yaw Right = `{dsuPrefix}Gyro Yaw Right`
+            IMUIR/Enabled = True
+            IMUIR/Recenter = `Thumb R`
+            IRPassthrough/Enabled = False
+            {extensionLine}
+            {sidewaysLine}
+            Nunchuk/Buttons/C = `Shoulder R`
+            Nunchuk/Buttons/Z = `Trigger R`
+            Nunchuk/Stick/Up = `Left Y+`
+            Nunchuk/Stick/Down = `Left Y-`
+            Nunchuk/Stick/Left = `Left X-`
+            Nunchuk/Stick/Right = `Left X+`
+            Nunchuk/Shake/X = `Trigger L`
+            Nunchuk/Shake/Y = `Trigger L`
+            Nunchuk/Shake/Z = `Trigger L`
+            Classic/Buttons/A = `Button B`
+            Classic/Buttons/B = `Button A`
+            Classic/Buttons/X = `Button Y`
+            Classic/Buttons/Y = `Button X`
+            Classic/Buttons/ZL = `Shoulder L`
+            Classic/Buttons/ZR = `Shoulder R`
+            Classic/Buttons/- = Back
+            Classic/Buttons/+ = Start
+            Classic/Buttons/Home = Guide
+            Classic/Left Stick/Up = `Left Y+`
+            Classic/Left Stick/Down = `Left Y-`
+            Classic/Left Stick/Left = `Left X-`
+            Classic/Left Stick/Right = `Left X+`
+            Classic/Right Stick/Up = `Right Y+`
+            Classic/Right Stick/Down = `Right Y-`
+            Classic/Right Stick/Left = `Right X-`
+            Classic/Right Stick/Right = `Right X+`
+            Classic/Triggers/L = `Trigger L`
+            Classic/Triggers/R = `Trigger R`
+            Classic/Triggers/L-Analog = `Trigger L`
+            Classic/Triggers/R-Analog = `Trigger R`
+            Classic/D-Pad/Up = `Pad N`
+            Classic/D-Pad/Down = `Pad S`
+            Classic/D-Pad/Left = `Pad W`
+            Classic/D-Pad/Right = `Pad E`
+            Rumble/Motor = `Motor L`|`Motor R`
+            Source = 1
+            """;
+    }
+
+    private static string BuildDolphinGcPadProfileSection(string sectionName)
+    {
+        return $"""
+            [{sectionName}]
+            Device = XInput/0/Gamepad
+            Buttons/A = `Button A`
+            Buttons/B = `Button B`
+            Buttons/X = `Button X`
+            Buttons/Y = `Button Y`
+            Buttons/Z = `Shoulder R`
+            Buttons/Start = Start
+            Main Stick/Up = `Left Y+`
+            Main Stick/Down = `Left Y-`
+            Main Stick/Left = `Left X-`
+            Main Stick/Right = `Left X+`
+            C-Stick/Up = `Right Y+`
+            C-Stick/Down = `Right Y-`
+            C-Stick/Left = `Right X-`
+            C-Stick/Right = `Right X+`
+            Triggers/L = `Trigger L`
+            Triggers/R = `Trigger R`
+            Triggers/L-Analog = `Trigger L`
+            Triggers/R-Analog = `Trigger R`
+            D-Pad/Up = `Pad N`
+            D-Pad/Down = `Pad S`
+            D-Pad/Left = `Pad W`
+            D-Pad/Right = `Pad E`
+            Rumble/Motor = `Motor L`|`Motor R`
+            """;
     }
 
     public void Dispose()
