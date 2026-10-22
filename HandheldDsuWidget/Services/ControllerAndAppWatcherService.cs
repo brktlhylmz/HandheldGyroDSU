@@ -24,7 +24,33 @@ public sealed class ControllerAndAppWatcherService : IDisposable
     [DllImport("user32.dll")]
     private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
 
+    [DllImport("user32.dll")]
+    private static extern short GetAsyncKeyState(int vKey);
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct XInputGamepad
+    {
+        public ushort wButtons;
+        public byte bLeftTrigger;
+        public byte bRightTrigger;
+        public short sThumbLX;
+        public short sThumbLY;
+        public short sThumbRX;
+        public short sThumbRY;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct XInputState
+    {
+        public uint dwPacketNumber;
+        public XInputGamepad Gamepad;
+    }
+
+    [DllImport("xinput1_4.dll", EntryPoint = "XInputGetState")]
+    private static extern uint XInputGetState(uint dwUserIndex, out XInputState pState);
+
     private readonly DispatcherTimer _watcherTimer;
+    private readonly DispatcherTimer _hotkeyTimer;
     private readonly object _syncLock = new();
     private readonly List<(string HwId, string DisplayName, string DefaultProfile)> _simulatedControllers = [];
     private AutomationConfig _config;
@@ -33,13 +59,22 @@ public sealed class ControllerAndAppWatcherService : IDisposable
     private bool _isInitialScan = true;
     private bool _isScanning;
 
+    private string? _recordingHardwareId;
+    private bool _recordingReadyAfterRelease;
+    private ushort _recordedXInputMask;
+    private DateTime _recordingStartedUtc;
+    private bool _wasHotkeyDown;
+    private DateTime _lastHotkeyTriggerUtc = DateTime.MinValue;
+
     public AutomationConfig Config => _config;
+    public string? RecordingHardwareId => _recordingHardwareId;
     public int SimulatedControllerCount
     {
         get { lock (_syncLock) return _simulatedControllers.Count; }
     }
 
     public event EventHandler<(string Title, string Subtitle, string? ProfileToApply, int ConnectedCount)>? AutomationNotification;
+    public event EventHandler<(string ControllerName, string HotkeyDisplay)>? RecenterHotkeyTriggered;
     public event EventHandler? ControllersChanged;
 
     public ControllerAndAppWatcherService()
@@ -53,6 +88,12 @@ public sealed class ControllerAndAppWatcherService : IDisposable
         };
         _watcherTimer.Tick += WatcherTimer_Tick;
 
+        _hotkeyTimer = new DispatcherTimer
+        {
+            Interval = TimeSpan.FromMilliseconds(35)
+        };
+        _hotkeyTimer.Tick += HotkeyTimer_Tick;
+
         RawGameController.RawGameControllerAdded += OnRawControllerChanged;
         RawGameController.RawGameControllerRemoved += OnRawControllerChanged;
     }
@@ -63,6 +104,7 @@ public sealed class ControllerAndAppWatcherService : IDisposable
         ScanControllers(basePort: 26760);
         _isInitialScan = false;
         _watcherTimer.Start();
+        _hotkeyTimer.Start();
     }
 
     public IReadOnlyList<KnownControllerConfig> GetControllersSnapshot()
@@ -800,7 +842,340 @@ public sealed class ControllerAndAppWatcherService : IDisposable
     public void Dispose()
     {
         _watcherTimer.Stop();
+        _hotkeyTimer.Stop();
         RawGameController.RawGameControllerAdded -= OnRawControllerChanged;
         RawGameController.RawGameControllerRemoved -= OnRawControllerChanged;
+    }
+
+    public void StartRecordingHotkey(string hardwareId)
+    {
+        _recordingHardwareId = hardwareId;
+        _recordingReadyAfterRelease = false;
+        _recordedXInputMask = 0;
+        _recordingStartedUtc = DateTime.UtcNow;
+        ControllersChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    public void CancelRecordingHotkey()
+    {
+        if (_recordingHardwareId is null)
+            return;
+
+        _recordingHardwareId = null;
+        _recordedXInputMask = 0;
+        ControllersChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    public void ClearControllerHotkey(string hardwareId)
+    {
+        lock (_syncLock)
+        {
+            var ctrl = _config.Controllers.FirstOrDefault(c =>
+                string.Equals(c.HardwareId, hardwareId, StringComparison.OrdinalIgnoreCase));
+            if (ctrl is not null)
+            {
+                ctrl.RecenterHotkey = string.Empty;
+                ctrl.RecenterHotkeyDisplay = string.Empty;
+                _config.Save();
+            }
+        }
+
+        if (string.Equals(_recordingHardwareId, hardwareId, StringComparison.OrdinalIgnoreCase))
+        {
+            _recordingHardwareId = null;
+        }
+
+        ControllersChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void HotkeyTimer_Tick(object? sender, EventArgs e)
+    {
+        try
+        {
+            if (_recordingHardwareId is not null)
+            {
+                ProcessHotkeyRecordingTick();
+                return;
+            }
+
+            ProcessHotkeyTriggerTick();
+        }
+        catch
+        {
+            // Ignore transient input polling errors
+        }
+    }
+
+    private void ProcessHotkeyRecordingTick()
+    {
+        if ((DateTime.UtcNow - _recordingStartedUtc).TotalSeconds > 8.0)
+        {
+            CancelRecordingHotkey();
+            return;
+        }
+
+        ushort currentXInput = GetMergedXInputButtons();
+        int extraRawBtn = GetFirstPressedExtraRawButton();
+        int pressedVKey = GetFirstPressedMacroKey();
+
+        if (!_recordingReadyAfterRelease)
+        {
+            if (currentXInput == 0 && extraRawBtn < 0 && pressedVKey < 0)
+            {
+                _recordingReadyAfterRelease = true;
+            }
+            return;
+        }
+
+        if (extraRawBtn >= 0)
+        {
+            CompleteHotkeyRecording($"RawBtn:{extraRawBtn}", $"Paddle / Btn #{extraRawBtn + 1}");
+            return;
+        }
+
+        if (pressedVKey >= 0)
+        {
+            CompleteHotkeyRecording($"Key:{pressedVKey:X2}", FormatVirtualKeyName(pressedVKey));
+            return;
+        }
+
+        if (currentXInput != 0)
+        {
+            _recordedXInputMask |= currentXInput;
+            return;
+        }
+
+        if (_recordedXInputMask != 0 && currentXInput == 0)
+        {
+            CompleteHotkeyRecording($"XInput:{_recordedXInputMask:X4}", FormatXInputMask(_recordedXInputMask));
+        }
+    }
+
+    private void CompleteHotkeyRecording(string code, string display)
+    {
+        string? targetHwId = _recordingHardwareId;
+        _recordingHardwareId = null;
+        _recordedXInputMask = 0;
+
+        if (string.IsNullOrWhiteSpace(targetHwId))
+            return;
+
+        lock (_syncLock)
+        {
+            var ctrl = _config.Controllers.FirstOrDefault(c =>
+                string.Equals(c.HardwareId, targetHwId, StringComparison.OrdinalIgnoreCase));
+            if (ctrl is not null)
+            {
+                ctrl.RecenterHotkey = code;
+                ctrl.RecenterHotkeyDisplay = display;
+                _config.Save();
+            }
+        }
+
+        _wasHotkeyDown = true;
+        _lastHotkeyTriggerUtc = DateTime.UtcNow;
+        ControllersChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void ProcessHotkeyTriggerTick()
+    {
+        List<KnownControllerConfig> activeWithHotkeys;
+        lock (_syncLock)
+        {
+            activeWithHotkeys = _config.Controllers
+                .Where(c => c.IsConnected && !string.IsNullOrWhiteSpace(c.RecenterHotkey))
+                .ToList();
+        }
+
+        if (activeWithHotkeys.Count == 0)
+        {
+            _wasHotkeyDown = false;
+            return;
+        }
+
+        ushort currentXInput = GetMergedXInputButtons();
+        bool anyMatched = false;
+        KnownControllerConfig? matchedController = null;
+
+        foreach (KnownControllerConfig ctrl in activeWithHotkeys)
+        {
+            string hk = ctrl.RecenterHotkey;
+            if (hk.StartsWith("XInput:", StringComparison.OrdinalIgnoreCase))
+            {
+                if (ushort.TryParse(hk.AsSpan(7), System.Globalization.NumberStyles.HexNumber, null, out ushort mask) &&
+                    mask != 0 &&
+                    (currentXInput & mask) == mask)
+                {
+                    anyMatched = true;
+                    matchedController = ctrl;
+                    break;
+                }
+            }
+            else if (hk.StartsWith("RawBtn:", StringComparison.OrdinalIgnoreCase))
+            {
+                if (int.TryParse(hk.AsSpan(7), out int btnIndex) && IsExtraRawButtonPressed(btnIndex))
+                {
+                    anyMatched = true;
+                    matchedController = ctrl;
+                    break;
+                }
+            }
+            else if (hk.StartsWith("Key:", StringComparison.OrdinalIgnoreCase))
+            {
+                if (int.TryParse(hk.AsSpan(4), System.Globalization.NumberStyles.HexNumber, null, out int vk) &&
+                    (GetAsyncKeyState(vk) & 0x8000) != 0)
+                {
+                    anyMatched = true;
+                    matchedController = ctrl;
+                    break;
+                }
+            }
+        }
+
+        if (anyMatched && !_wasHotkeyDown && matchedController is not null)
+        {
+            DateTime now = DateTime.UtcNow;
+            if ((now - _lastHotkeyTriggerUtc).TotalMilliseconds > 500)
+            {
+                _lastHotkeyTriggerUtc = now;
+                RecenterHotkeyTriggered?.Invoke(
+                    this,
+                    (matchedController.DisplayName, matchedController.RecenterHotkeyDisplay));
+            }
+        }
+
+        _wasHotkeyDown = anyMatched;
+    }
+
+    private static ushort GetMergedXInputButtons()
+    {
+        ushort merged = 0;
+        for (uint i = 0; i < 4; i++)
+        {
+            try
+            {
+                if (XInputGetState(i, out XInputState state) == 0)
+                {
+                    merged |= state.Gamepad.wButtons;
+                }
+            }
+            catch
+            {
+                break;
+            }
+        }
+        return merged;
+    }
+
+    private static int GetFirstPressedExtraRawButton()
+    {
+        try
+        {
+            foreach (RawGameController raw in RawGameController.RawGameControllers)
+            {
+                int count = raw.ButtonCount;
+                if (count <= 14)
+                    continue;
+
+                bool[] buttons = new bool[count];
+                GameControllerSwitchPosition[] switches = new GameControllerSwitchPosition[raw.SwitchCount];
+                double[] axes = new double[raw.AxisCount];
+                raw.GetCurrentReading(buttons, switches, axes);
+
+                for (int i = 14; i < count; i++)
+                {
+                    if (buttons[i])
+                        return i;
+                }
+            }
+        }
+        catch
+        {
+            // Ignore RawGameController reading errors
+        }
+        return -1;
+    }
+
+    private static bool IsExtraRawButtonPressed(int targetIndex)
+    {
+        try
+        {
+            foreach (RawGameController raw in RawGameController.RawGameControllers)
+            {
+                int count = raw.ButtonCount;
+                if (targetIndex < 0 || targetIndex >= count)
+                    continue;
+
+                bool[] buttons = new bool[count];
+                GameControllerSwitchPosition[] switches = new GameControllerSwitchPosition[raw.SwitchCount];
+                double[] axes = new double[raw.AxisCount];
+                raw.GetCurrentReading(buttons, switches, axes);
+
+                if (buttons[targetIndex])
+                    return true;
+            }
+        }
+        catch
+        {
+            // Ignore RawGameController reading errors
+        }
+        return false;
+    }
+
+    private static int GetFirstPressedMacroKey()
+    {
+        // Check F6..F24 (0x75..0x87), Insert (0x2D), Delete (0x2E), Home (0x24), End (0x23), PageUp/Down (0x21/0x22), Pause (0x13), ScrollLock (0x91)
+        int[] candidateKeys =
+        [
+            0x75, 0x76, 0x77, 0x78, 0x79, 0x7A, 0x7B,
+            0x7C, 0x7D, 0x7E, 0x7F, 0x80, 0x81, 0x82, 0x83, 0x84, 0x85, 0x86, 0x87,
+            0x2D, 0x24, 0x23, 0x21, 0x22, 0x13, 0x91
+        ];
+
+        foreach (int vk in candidateKeys)
+        {
+            if ((GetAsyncKeyState(vk) & 0x8000) != 0)
+                return vk;
+        }
+        return -1;
+    }
+
+    private static string FormatVirtualKeyName(int vk)
+    {
+        if (vk is >= 0x70 and <= 0x87)
+            return $"F{vk - 0x70 + 1}";
+
+        return vk switch
+        {
+            0x2D => "Insert",
+            0x24 => "Home",
+            0x23 => "End",
+            0x21 => "PageUp",
+            0x22 => "PageDown",
+            0x13 => "Pause",
+            0x91 => "ScrollLock",
+            _ => $"Key 0x{vk:X2}"
+        };
+    }
+
+    private static string FormatXInputMask(ushort mask)
+    {
+        var parts = new List<string>();
+        if ((mask & 0x0020) != 0) parts.Add("Back");
+        if ((mask & 0x0010) != 0) parts.Add("Start");
+        if ((mask & 0x0100) != 0) parts.Add("LB");
+        if ((mask & 0x0200) != 0) parts.Add("RB");
+        if ((mask & 0x0040) != 0) parts.Add("L3");
+        if ((mask & 0x0080) != 0) parts.Add("R3");
+        if ((mask & 0x1000) != 0) parts.Add("A");
+        if ((mask & 0x2000) != 0) parts.Add("B");
+        if ((mask & 0x4000) != 0) parts.Add("X");
+        if ((mask & 0x8000) != 0) parts.Add("Y");
+        if ((mask & 0x0001) != 0) parts.Add("D-Up");
+        if ((mask & 0x0002) != 0) parts.Add("D-Down");
+        if ((mask & 0x0004) != 0) parts.Add("D-Left");
+        if ((mask & 0x0008) != 0) parts.Add("D-Right");
+
+        return parts.Count > 0 ? string.Join(" + ", parts) : $"0x{mask:X4}";
     }
 }

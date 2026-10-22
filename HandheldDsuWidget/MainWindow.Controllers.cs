@@ -32,6 +32,18 @@ public partial class MainWindow
         ShowToastNotification(args.Title, args.Subtitle, isError: false, showHudOverlay: true);
     }
 
+    private async void OnRecenterHotkeyTriggered(object? sender, (string ControllerName, string HotkeyDisplay) args)
+    {
+        DsuStatusDto status = await _ipcClient.RecenterImmediateAsync();
+        UpdateUiFromStatus(status);
+
+        ShowToastNotification(
+            _loc["ToastRecenterSuccessTitle"],
+            _loc.Format("ToastRecenterSuccessSubFormat", args.ControllerName, args.HotkeyDisplay),
+            isError: false,
+            showHudOverlay: true);
+    }
+
     private void AutoControllerSwitchToggle_Click(object sender, RoutedEventArgs e)
     {
         if (_suppressUiEvents)
@@ -272,6 +284,79 @@ public partial class MainWindow
             bottomGrid.Children.Add(profileCombo);
 
             rootStack.Children.Add(bottomGrid);
+
+            // Row 3: Per-Controller Quick Recenter Hotkey Selector
+            var hotkeyGrid = new Grid { Margin = new Thickness(0, 6, 0, 0) };
+            hotkeyGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            hotkeyGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            hotkeyGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+            var hotkeyLabel = new TextBlock
+            {
+                Text = _loc["ControllerHotkeyLabel"],
+                FontSize = 10,
+                FontWeight = FontWeights.SemiBold,
+                Foreground = TextSecondaryBrush,
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(0, 0, 8, 0)
+            };
+            Grid.SetColumn(hotkeyLabel, 0);
+            hotkeyGrid.Children.Add(hotkeyLabel);
+
+            bool isRecordingThis = string.Equals(
+                _automationWatcher.RecordingHardwareId,
+                ctrl.HardwareId,
+                StringComparison.OrdinalIgnoreCase);
+            bool hasHotkey = !string.IsNullOrWhiteSpace(ctrl.RecenterHotkey);
+
+            string hotkeyBtnText = isRecordingThis
+                ? _loc["ControllerHotkeyListening"]
+                : (hasHotkey ? $"🎯 {ctrl.RecenterHotkeyDisplay}" : _loc["ControllerHotkeyBindBtn"]);
+
+            var bindHotkeyBtn = new Button
+            {
+                Content = hotkeyBtnText,
+                Style = (Style)FindResource(isRecordingThis ? "AppAccentButtonStyle" : "AppSecondaryButtonStyle"),
+                Height = 26,
+                FontSize = 10,
+                HorizontalContentAlignment = HorizontalAlignment.Center
+            };
+
+            string ctrlHwId = ctrl.HardwareId;
+            bindHotkeyBtn.Click += (_, _) =>
+            {
+                if (string.Equals(_automationWatcher.RecordingHardwareId, ctrlHwId, StringComparison.OrdinalIgnoreCase))
+                {
+                    _automationWatcher.CancelRecordingHotkey();
+                }
+                else
+                {
+                    _automationWatcher.StartRecordingHotkey(ctrlHwId);
+                }
+            };
+
+            Grid.SetColumn(bindHotkeyBtn, 1);
+            hotkeyGrid.Children.Add(bindHotkeyBtn);
+
+            if (hasHotkey && !isRecordingThis)
+            {
+                var clearHotkeyBtn = new Button
+                {
+                    Content = "✕",
+                    Style = (Style)FindResource("AppGhostButtonStyle"),
+                    Width = 26,
+                    Height = 26,
+                    Padding = new Thickness(0),
+                    Margin = new Thickness(5, 0, 0, 0),
+                    FontSize = 10,
+                    ToolTip = _loc["ControllerHotkeyClearTooltip"]
+                };
+                clearHotkeyBtn.Click += (_, _) => _automationWatcher.ClearControllerHotkey(ctrlHwId);
+                Grid.SetColumn(clearHotkeyBtn, 2);
+                hotkeyGrid.Children.Add(clearHotkeyBtn);
+            }
+
+            rootStack.Children.Add(hotkeyGrid);
             cardBorder.Child = rootStack;
             ControllersListPanel.Children.Add(cardBorder);
         }

@@ -23,6 +23,12 @@ public sealed class KnownControllerConfig
     [JsonPropertyName("autoSwitchProfile")]
     public bool AutoSwitchProfile { get; set; } = true;
 
+    [JsonPropertyName("recenterHotkey")]
+    public string RecenterHotkey { get; set; } = string.Empty;
+
+    [JsonPropertyName("recenterHotkeyDisplay")]
+    public string RecenterHotkeyDisplay { get; set; } = string.Empty;
+
     [JsonPropertyName("lastSeenUtc")]
     public DateTime LastSeenUtc { get; set; } = DateTime.UtcNow;
 

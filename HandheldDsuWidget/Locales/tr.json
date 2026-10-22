@@ -170,5 +170,12 @@
   "ToastDevHudSampleTitle": "🎮 OYUN İÇİ HUD TESTİ AKTİF",
   "ToastDevHudSampleDesc": "Tıklama geçiren (Click-Through) HUD katmanı doğrulandı • 250 Hz DSU Hazır",
 
+  "ControllerHotkeyLabel": "Merkezleme Kısayolu:",
+  "ControllerHotkeyBindBtn": "🎯 Tuş / Kombinasyon Ata...",
+  "ControllerHotkeyListening": "● Dinleniyor... Tuşa Basın",
+  "ControllerHotkeyClearTooltip": "Atanan merkezleme kısayolunu temizle",
+  "ToastRecenterSuccessTitle": "🎯 MERKEZ VE TUTUŞ AÇISI SIFIRLANDI",
+  "ToastRecenterSuccessSubFormat": "{0} ({1}) • 0° Tutuş Açısı Güncellendi",
+
   "GamepadHint": "[D-PAD] Gezin   [A] Seç/Değiştir   [Y] Kalibre Et   [LB/RB] Sekme Değiştir"
 }
