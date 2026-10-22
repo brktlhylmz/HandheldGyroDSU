@@ -1,10 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using Microsoft.Win32;
 using HandheldDsuServer.Models;
 using HandheldDsuWidget.Services;
 
@@ -49,28 +52,59 @@ public partial class MainWindow
 
     private void AddCustomExeRuleButton_Click(object sender, RoutedEventArgs e)
     {
-        AddCustomExeRule();
+        BrowseAndAddExeRule();
     }
 
-    private void CustomExeTextBox_KeyDown(object sender, KeyEventArgs e)
+    private void BrowseAndAddExeRule()
     {
-        if (e.Key == Key.Enter)
+        string emuDeckDir = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            "emudeck",
+            "Emulators");
+
+        var ofd = new OpenFileDialog
         {
-            e.Handled = true;
-            AddCustomExeRule();
-            Keyboard.ClearFocus();
-        }
-    }
+            Title = _loc["BtnAddRule"],
+            Filter = "Application / Emulator (*.exe)|*.exe|All files (*.*)|*.*",
+            Multiselect = false,
+            CheckFileExists = true
+        };
 
-    private void AddCustomExeRule()
-    {
-        string rawInput = CustomExeTextBox.Text.Trim();
-        if (string.IsNullOrWhiteSpace(rawInput))
+        if (Directory.Exists(emuDeckDir))
+        {
+            ofd.InitialDirectory = emuDeckDir;
+        }
+
+        if (ofd.ShowDialog(this) != true)
             return;
 
-        string cleanProc = rawInput.Replace(".exe", "", StringComparison.OrdinalIgnoreCase);
+        string filePath = ofd.FileName;
+        string cleanProc = Path.GetFileNameWithoutExtension(filePath).Trim();
+        if (string.IsNullOrWhiteSpace(cleanProc))
+            return;
+
         string activeProfile = _lastStatus?.ActiveProfileName ?? "Standard Landscape";
         string friendlyDisplayName = AutomationConfig.ResolveFriendlyProcessDisplayName(cleanProc);
+
+        if (string.Equals(friendlyDisplayName, $"{cleanProc}.exe", StringComparison.OrdinalIgnoreCase))
+        {
+            try
+            {
+                FileVersionInfo info = FileVersionInfo.GetVersionInfo(filePath);
+                if (!string.IsNullOrWhiteSpace(info.FileDescription))
+                {
+                    friendlyDisplayName = info.FileDescription.Trim();
+                }
+                else if (!string.IsNullOrWhiteSpace(info.ProductName))
+                {
+                    friendlyDisplayName = info.ProductName.Trim();
+                }
+            }
+            catch
+            {
+                // Keep default process filename if version info is unavailable
+            }
+        }
 
         _automationWatcher.AddOrUpdateEmulatorRule(
             processName: cleanProc,
@@ -78,9 +112,8 @@ public partial class MainWindow
             profileName: activeProfile,
             isEnabled: true);
 
-        CustomExeTextBox.Text = string.Empty;
         RenderControllersAndRulesUi();
-        ShowToastNotification(_loc["ToastEmulatorRuleAddedTitle"], $"{cleanProc}.exe → {activeProfile}");
+        ShowToastNotification(_loc["ToastEmulatorRuleAddedTitle"], $"{friendlyDisplayName} ({cleanProc}.exe) → {activeProfile}");
     }
 
     private bool _isRenderingControllersUi;
