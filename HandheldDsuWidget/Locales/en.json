@@ -183,6 +183,10 @@
   "ControllerRenameSaveBtn": "SAVE",
   "ControllerInputActiveBadge": "● BUTTON PRESSED",
   "ToastControllerRenamedTitle": "CONTROLLER RENAMED",
+  "ToastPinEnabledTitle": "📌 ALWAYS ON TOP ENABLED",
+  "ToastPinEnabledDesc": "Window pinned above other desktop and borderless game windows",
+  "ToastPinDisabledTitle": "📌 ALWAYS ON TOP DISABLED",
+  "ToastPinDisabledDesc": "Window returned to normal desktop z-order",
 
   "GamepadHint": "[D-PAD] Navigate   [A] Toggle/Select   [Y] Calibrate   [LB/RB] Switch Tab"
 }
