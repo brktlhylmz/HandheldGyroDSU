@@ -377,9 +377,9 @@ public sealed class ControllerAndAppWatcherService : IDisposable
                     playerIndex++;
                 }
 
+                const string builtInId = "BUILTIN_HANDHELD_IMU";
                 if (rawSnapshot.Count == 0 && _simulatedControllers.Count == 0)
                 {
-                    const string builtInId = "BUILTIN_HANDHELD_IMU";
                     currentConnectedHwIds.Add(builtInId);
                     var builtIn = _config.Controllers.FirstOrDefault(c => c.HardwareId == builtInId);
                     if (builtIn is null)
@@ -399,8 +399,18 @@ public sealed class ControllerAndAppWatcherService : IDisposable
                     builtIn.AssignedUdpPort = basePort;
                     builtIn.AssignedDsuSlot = 0;
                 }
+                else
+                {
+                    if (_config.Controllers.RemoveAll(c => string.Equals(c.HardwareId, builtInId, StringComparison.OrdinalIgnoreCase)) > 0)
+                    {
+                        changed = true;
+                    }
+                }
 
-                changed = !_previousConnectedHwIds.SetEquals(currentConnectedHwIds);
+                if (!_previousConnectedHwIds.SetEquals(currentConnectedHwIds))
+                {
+                    changed = true;
+                }
                 _previousConnectedHwIds = currentConnectedHwIds;
 
                 if (changed)
