@@ -44,15 +44,11 @@ Every commit pushed to `master` is automatically built and published to [GitHub 
 
 ## 🎬 Live Gameplay Demo (Cemu — *Splatoon* on ASUS ROG Ally)
 
-<p align="center">
-  <a href="docs/demo/cemu-splatoon-demo.mp4">
-    <img src="docs/demo/cemu-splatoon-demo.gif" alt="Cemu Splatoon Gyro Aiming Demo with HandheldGyroDSU" width="100%" />
-  </a>
-</p>
+> *Live gyro aiming in **Cemu (Splatoon)** alongside **HandheldGyroDSU** real-time telemetry:*
 
-<p align="center">
-  <em>🎥 <a href="docs/demo/cemu-splatoon-demo.mp4"><strong>Click here to watch/download the full high-resolution MP4 gameplay video</strong></a> (`docs/demo/cemu-splatoon-demo.mp4`)</em>
-</p>
+https://github.com/user-attachments/assets/6d894e63-4da2-45ef-b621-844247db87f9
+
+*🎥 Raw video file in repository: [docs/demo/cemu-splatoon-demo.mp4](docs/demo/cemu-splatoon-demo.mp4)*
 
 ---
 
