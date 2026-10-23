@@ -15,7 +15,7 @@ public partial class MainWindow
         bool isWindowHiddenOrMinimized = !IsVisible || WindowState == WindowState.Minimized;
 
         _gameBarAdapter.PollGameBarCompanionState(
-            isEnabled: _lastStatus?.GameBarOverlayEnabled ?? true,
+            isEnabled: false,
             isWindowVisible: !isWindowHiddenOrMinimized,
             isOurWindowActive: IsVisible && (IsActive || IsMouseOver),
             isPinnedByUser: _isPinnedByUser);
