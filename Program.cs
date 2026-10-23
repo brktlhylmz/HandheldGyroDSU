@@ -39,10 +39,13 @@ public static class Program
         // Run automated self-test suite if '--self-test' is passed
         if (args.Length > 0 && string.Equals(args[0], "--self-test", StringComparison.OrdinalIgnoreCase))
         {
+            var testSettings = new AppSettings();
             using var testUdpServer = new DsuUdpServer(sensorService, 26770, 0, 26772);
             testUdpServer.ToggleStreaming(true);
-            using var testIpcServer = new IpcHttpServer(sensorService, testUdpServer, settings, 26771);
-            return await RunSelfTestAsync(testUdpServer, testIpcServer, sensorService, cts);
+            using var testIpcServer = new IpcHttpServer(sensorService, testUdpServer, testSettings, 26771);
+            int exitCode = await RunSelfTestAsync(testUdpServer, testIpcServer, sensorService, cts);
+            settings.Save();
+            return exitCode;
         }
 
         Task serverTask = udpServer.RunAsync(cts.Token);
