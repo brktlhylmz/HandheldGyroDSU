@@ -252,6 +252,11 @@ public sealed class ControllerAndAppWatcherService : IDisposable
 
             _config.Save();
         }
+
+        if (cleanProc.Contains("dolphin", StringComparison.OrdinalIgnoreCase))
+        {
+            _ = Task.Run(() => EnsureDolphinDsuConfigured());
+        }
     }
 
     public void RemoveEmulatorRule(string processName)
