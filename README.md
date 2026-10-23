@@ -1,4 +1,12 @@
-# HandheldGyroDSU
+<p align="center">
+  <img src="docs/logo.png" alt="HandheldGyroDSU Logo" width="180" />
+</p>
+
+<h1 align="center">HandheldGyroDSU</h1>
+
+<p align="center">
+  <strong>Native Gyro & Motion Controls for Emulators on Windows Handhelds — Without Controller Driver Conflicts</strong>
+</p>
 
 [![Build & DSU Self-Test](https://github.com/brktlhylmz/HandheldGyroDSU/actions/workflows/build-and-release.yml/badge.svg)](https://github.com/brktlhylmz/HandheldGyroDSU/actions/workflows/build-and-release.yml)
 [![Download Portable .ZIP](https://img.shields.io/badge/Download-Portable%20.ZIP-00B0FF?logo=windows&logoColor=white)](https://github.com/brktlhylmz/HandheldGyroDSU/releases/latest/download/HandheldGyroDSU-win-x64.zip)
@@ -9,7 +17,10 @@
 [![Protocol](https://img.shields.io/badge/Protocol-Cemuhook%20DSU%20v1001-00B0FF)](https://v1993.github.io/cemuhook-protocol/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**HandheldGyroDSU** is a zero-configuration **250 Hz Cemuhook DSU (`v1001`) motion server** and **Xbox Game Bar (`Win + G`) companion overlay** built for Windows handheld gaming PCs (**ASUS ROG Ally / Ally X**, **Lenovo Legion Go**, **MSI Claw**, **Ayaneo**, **GPD**) and motion-capable controllers (**Sony DualSense**, **DualShock 4**, **Nintendo Switch Pro**, **8BitDo**, **GameSir**).
+**HandheldGyroDSU** is a lightweight, zero-configuration **Cemuhook DSU (`v1001`) motion server** and **Xbox Game Bar (`Win + G`) companion overlay** built to bring native gyro aiming and motion controls to **Dolphin**, **Cemu**, and **Nintendo Switch emulators** (**Eden**, **Yuzu**, **Sudachi**, **Ryujinx**) on Windows handheld gaming PCs (**ASUS ROG Ally / Ally X**, **Lenovo Legion Go**, **MSI Claw**, **Ayaneo**, **GPD**) and motion-capable controllers.
+
+### Why HandheldGyroDSU?
+On Windows handhelds, trying to use gyro in emulators often means fighting between **ASUS Armoury Crate**, **Steam Input**, and **Handheld Companion**—resulting in virtual controller conflicts, `HidHide` issues, double inputs, or broken desktop/gamepad mode switching. **HandheldGyroDSU** solves this by reading your handheld's built-in Windows `Gyrometer` and `Accelerometer` directly and streaming native Cemuhook DSU motion data to your emulators **without installing virtual gamepad drivers or hijacking your controls**.
 
 It bridges internal Windows WinRT Inertial Measurement Units (`Gyrometer` + `Accelerometer`) and connected gamepads directly to **Dolphin**, **Cemu**, **Eden**, **Yuzu**, **Sudachi**, and **Ryujinx** with sub-4ms latency—available as both a **lightweight Portable `.zip` archive** and a **Self-Contained Single-File `.exe`**.
 
@@ -33,7 +44,7 @@ Every commit pushed to `master` is automatically built and published to [GitHub 
 
 ## 📸 Screenshots
 
-| **Dashboard (250 Hz Live Telemetry & Radar)** | **Controllers (Custom Names, Hotkeys & Auto-Switch)** |
+| **Dashboard (Live Gyro Telemetry & Radar)** | **Controllers (Custom Names, Hotkeys & Auto-Switch)** |
 | :---: | :---: |
 | ![Dashboard](docs/screenshots/dashboard.png) | ![Controllers](docs/screenshots/controllers.png) |
 | **Profiles (Presets & JSON Import / Export)** | **Settings (Multi-Port Cluster, Game Bar & Tray)** |
@@ -43,7 +54,7 @@ Every commit pushed to `master` is automatically built and published to [GitHub 
 
 ## ✨ Key Features
 
-- **⚡ 250 Hz Zero-Allocation IMU Engine**:
+- **🚫 Zero Controller Conflicts & Direct IMU Streaming**:
   - Polls hardware `Windows.Devices.Sensors.Gyrometer` and `Accelerometer` at a 4 ms interval (`250 Hz`) with stack-allocated `Span<byte>` Cemuhook DSU `v1001` UDP packet serialization and IEEE 802.3 CRC32 verification.
   - Optional **Full Gamepad Input Forwarding**: Embeds live XInput buttons, D-Pad, dual analog sticks, and analog triggers (`L2`/`R2`) directly into the DSU packet stream alongside motion data.
 - **🎯 Per-Controller Quick Recenter Hotkey (Single, Combo & Handheld Macro Keys)**:
@@ -128,7 +139,7 @@ flowchart LR
         WGI["Windows.Gaming.Input\n& XInput 1.4"]
     end
 
-    subgraph Engine ["HandheldDsuServer (Core 250 Hz Engine)"]
+    subgraph Engine ["HandheldDsuServer (Core DSU Motion Engine)"]
         SS["SensorService (250 Hz)\nTabletop Guard + Pitch Offset + Deadzone"]
         UDP1["Primary DsuUdpServer\n127.0.0.1:26760 (Slots 0..3)"]
         UDP2["Secondary DsuUdpServer\n127.0.0.1:26762 (Slots 4..7)"]
@@ -158,7 +169,7 @@ flowchart LR
 ```text
 HandheldGyroDSU/
 ├── HandheldGyroDSU.sln                 # .NET 10 Solution (Core Server + Single-File WPF Overlay)
-├── HandheldDsuServer.csproj            # Core 250 Hz DSU UDP Server & CLI Self-Test Engine
+├── HandheldDsuServer.csproj            # Core DSU UDP Server & CLI Self-Test Engine
 ├── Program.cs                          # Headless CLI EntryPoint & Automated --self-test Suite
 ├── Models/                             # AppSettings, AutomationConfig, DeviceProfile, HandheldProfile, MotionData
 ├── Protocol/                           # Cemuhook DSU v1001 Packet Builder & IEEE 802.3 CRC32

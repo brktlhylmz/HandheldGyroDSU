@@ -158,7 +158,7 @@ public partial class MainWindow : Window
         Closed += (_, _) =>
         {
             _snackbarTimer?.Stop();
-            _loopbackTester.Dispose();
+            _gameBarAdapter.Dispose(); _loopbackTester.Dispose();
             _automationWatcher.Dispose();
             _hudToastService.Dispose();
             _gamepadService.Dispose();

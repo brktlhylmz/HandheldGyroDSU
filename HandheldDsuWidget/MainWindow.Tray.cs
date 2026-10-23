@@ -35,7 +35,7 @@ public partial class MainWindow
         Focus();
     }
 
-    private void ShowForGameBarOverlay()
+    private async void ShowForGameBarOverlay()
     {
         Show();
         if (WindowState == WindowState.Minimized)
@@ -47,8 +47,11 @@ public partial class MainWindow
         {
             UpdateUiFromStatus(_lastStatus);
         }
-        Activate();
+        if (!_gameBarAdapter.IsGameBarCurrentlyForeground) { Activate(); }
+        await System.Threading.Tasks.Task.Delay(280);
+        if (IsVisible && (_gameBarAdapter.IsOverlaySessionActive || _isPinnedByUser)) { ApplyWindowTopmost(true); }
     }
+
 
     private void HideFromGameBarOverlay()
     {

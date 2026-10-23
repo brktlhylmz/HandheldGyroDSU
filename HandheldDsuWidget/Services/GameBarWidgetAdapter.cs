@@ -60,14 +60,30 @@ namespace HandheldDsuWidget.Services
     using Microsoft.Gaming.XboxGameBar;
 
     /// <summary>
-    /// Manages Xbox Game Bar (Win + G) integration, supporting both native SDK hosting
-    /// and automatic Win + G / Game Bar companion overlay pop-up and auto-hide.
+    /// Manages Xbox Game Bar (Win + G / Win + Shift + G) integration, supporting both low-level shortcut hooks
+    /// and automatic Windows 10/11 Game Bar foreground companion overlay pop-up and auto-hide.
     /// </summary>
-    public sealed class GameBarWidgetAdapter
+    public sealed class GameBarWidgetAdapter : IDisposable
     {
         private const int VK_LWIN = 0x5B;
         private const int VK_RWIN = 0x5C;
         private const int VK_G = 0x47;
+        private const int WH_KEYBOARD_LL = 13;
+        private const int WM_KEYDOWN = 0x0100;
+        private const int WM_SYSKEYDOWN = 0x0104;
+
+        private delegate IntPtr LowLevelKeyboardProc(int nCode, IntPtr wParam, IntPtr lParam);
+        private delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct KBDLLHOOKSTRUCT
+        {
+            public uint vkCode;
+            public uint scanCode;
+            public uint flags;
+            public uint time;
+            public IntPtr dwExtraInfo;
+        }
 
         [DllImport("user32.dll")]
         private static extern short GetAsyncKeyState(int vKey);
@@ -81,21 +97,76 @@ namespace HandheldDsuWidget.Services
         [DllImport("user32.dll")]
         private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
 
+        [DllImport("user32.dll")]
+        private static extern bool EnumChildWindows(IntPtr hWndParent, EnumWindowsProc lpEnumFunc, IntPtr lParam);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern IntPtr SetWindowsHookExW(int idHook, LowLevelKeyboardProc lpfn, IntPtr hMod, uint dwThreadId);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern bool UnhookWindowsHookEx(IntPtr hhk);
+
+        [DllImport("user32.dll")]
+        private static extern IntPtr CallNextHookEx(IntPtr hhk, int nCode, IntPtr wParam, IntPtr lParam);
+
+        [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+        private static extern IntPtr GetModuleHandleW(string? lpModuleName);
+
+        private readonly LowLevelKeyboardProc _hookProc;
+        private IntPtr _hookId = IntPtr.Zero;
         private XboxGameBarWidget? _gameBarWidget;
         private XboxGameBarWidgetControl? _widgetControl;
+        private volatile bool _hookDetectedWinG;
         private bool _wasWinGDown;
         private bool _wasGameBarForeground;
         private bool _isOverlaySessionActive;
         private DateTime _overlayOpenedUtc = DateTime.MinValue;
+        private DateTime _lastKeyTriggerUtc = DateTime.MinValue;
 
         public bool IsHostedInGameBar => _gameBarWidget is not null;
         public bool IsPinned => _gameBarWidget?.Pinned ?? false;
         public bool IsOverlaySessionActive => _isOverlaySessionActive;
+        public bool IsGameBarCurrentlyForeground => _wasGameBarForeground;
 
         public event EventHandler? PinnedStateChanged;
         public event EventHandler? RequestedOpacityChanged;
         public event EventHandler? OverlayShowRequested;
         public event EventHandler? OverlayHideRequested;
+
+        public GameBarWidgetAdapter()
+        {
+            _hookProc = HookCallback;
+            try
+            {
+                using Process curProcess = Process.GetCurrentProcess();
+                using ProcessModule? curModule = curProcess.MainModule;
+                IntPtr moduleHandle = GetModuleHandleW(curModule?.ModuleName);
+                _hookId = SetWindowsHookExW(WH_KEYBOARD_LL, _hookProc, moduleHandle, 0);
+            }
+            catch
+            {
+                // Fallback to polling if low-level keyboard hook cannot be installed
+            }
+        }
+
+        private IntPtr HookCallback(int nCode, IntPtr wParam, IntPtr lParam)
+        {
+            if (nCode >= 0 && (wParam == (IntPtr)WM_KEYDOWN || wParam == (IntPtr)WM_SYSKEYDOWN))
+            {
+                KBDLLHOOKSTRUCT kb = Marshal.PtrToStructure<KBDLLHOOKSTRUCT>(lParam);
+                if (kb.vkCode == VK_G)
+                {
+                    bool isWinDown = (GetAsyncKeyState(VK_LWIN) & 0x8000) != 0 ||
+                                     (GetAsyncKeyState(VK_RWIN) & 0x8000) != 0;
+                    if (isWinDown && (DateTime.UtcNow - _lastKeyTriggerUtc).TotalMilliseconds > 350)
+                    {
+                        _lastKeyTriggerUtc = DateTime.UtcNow;
+                        _hookDetectedWinG = true;
+                    }
+                }
+            }
+            return CallNextHookEx(_hookId, nCode, wParam, lParam);
+        }
 
         public void AttachGameBarWidget(XboxGameBarWidget widget)
         {
@@ -131,6 +202,7 @@ namespace HandheldDsuWidget.Services
         {
             if (!isEnabled)
             {
+                _hookDetectedWinG = false;
                 _wasWinGDown = false;
                 _wasGameBarForeground = false;
                 _isOverlaySessionActive = false;
@@ -140,8 +212,9 @@ namespace HandheldDsuWidget.Services
             bool isWinDown = (GetAsyncKeyState(VK_LWIN) & 0x8000) != 0 || (GetAsyncKeyState(VK_RWIN) & 0x8000) != 0;
             bool isGDown = (GetAsyncKeyState(VK_G) & 0x8000) != 0;
             bool isWinGDown = isWinDown && isGDown;
-            bool justPressedWinG = isWinGDown && !_wasWinGDown;
+            bool justPressedWinG = (isWinGDown && !_wasWinGDown) || _hookDetectedWinG;
             _wasWinGDown = isWinGDown;
+            _hookDetectedWinG = false;
 
             bool isGameBarFg = IsXboxGameBarWindowForeground();
             bool gameBarJustAppeared = isGameBarFg && !_wasGameBarForeground;
@@ -151,7 +224,7 @@ namespace HandheldDsuWidget.Services
 
             if (justPressedWinG)
             {
-                if (!isWindowVisible && !_isOverlaySessionActive)
+                if ((!isWindowVisible || !isOurWindowActive) && !_isOverlaySessionActive)
                 {
                     _isOverlaySessionActive = true;
                     _overlayOpenedUtc = now;
@@ -159,7 +232,7 @@ namespace HandheldDsuWidget.Services
                     return;
                 }
 
-                if (_isOverlaySessionActive && (now - _overlayOpenedUtc).TotalMilliseconds > 500)
+                if ((_isOverlaySessionActive || isOurWindowActive) && (now - _overlayOpenedUtc).TotalMilliseconds > 450)
                 {
                     _isOverlaySessionActive = false;
                     if (!isPinnedByUser)
@@ -170,7 +243,7 @@ namespace HandheldDsuWidget.Services
                 }
             }
 
-            if (gameBarJustAppeared && !isWindowVisible && !_isOverlaySessionActive)
+            if (gameBarJustAppeared && (!isWindowVisible || !isOurWindowActive) && !_isOverlaySessionActive)
             {
                 _isOverlaySessionActive = true;
                 _overlayOpenedUtc = now;
@@ -181,7 +254,7 @@ namespace HandheldDsuWidget.Services
             if (_isOverlaySessionActive)
             {
                 double elapsedMs = (now - _overlayOpenedUtc).TotalMilliseconds;
-                if (elapsedMs > 1400 && !isGameBarFg && !isOurWindowActive)
+                if (elapsedMs > 2200 && !isGameBarFg && !isOurWindowActive)
                 {
                     _isOverlaySessionActive = false;
                     if (!isPinnedByUser)
@@ -205,26 +278,59 @@ namespace HandheldDsuWidget.Services
                 {
                     string title = sb.ToString();
                     if (title.Contains("Xbox Game Bar", StringComparison.OrdinalIgnoreCase) ||
-                        title.Equals("Game Bar", StringComparison.OrdinalIgnoreCase))
+                        title.Equals("Game Bar", StringComparison.OrdinalIgnoreCase) ||
+                        title.Contains("Oyun Çubuğu", StringComparison.OrdinalIgnoreCase))
                     {
                         return true;
                     }
                 }
 
-                GetWindowThreadProcessId(hwnd, out uint pid);
-                if (pid == 0)
-                    return false;
+                if (IsGameBarProcessWindow(hwnd, out bool isAppFrameHost))
+                    return true;
 
-                using Process proc = Process.GetProcessById((int)pid);
-                string procName = proc.ProcessName;
-                return procName.Equals("GameBar", StringComparison.OrdinalIgnoreCase)
-                    || procName.Equals("XboxGameBarWidgets", StringComparison.OrdinalIgnoreCase)
-                    || procName.Equals("GameBarFTServer", StringComparison.OrdinalIgnoreCase);
+                if (isAppFrameHost)
+                {
+                    bool foundChildGameBar = false;
+                    EnumChildWindows(hwnd, (childHwnd, lParam) =>
+                    {
+                        if (IsGameBarProcessWindow(childHwnd, out bool _))
+                        {
+                            foundChildGameBar = true;
+                            return false;
+                        }
+                        return true;
+                    }, IntPtr.Zero);
+
+                    if (foundChildGameBar)
+                        return true;
+                }
+
+                return false;
             }
             catch
             {
                 return false;
             }
+        }
+
+        private static bool IsGameBarProcessWindow(IntPtr hwnd, out bool isAppFrameHost)
+        {
+            isAppFrameHost = false;
+            GetWindowThreadProcessId(hwnd, out uint pid);
+            if (pid == 0)
+                return false;
+
+            using Process proc = Process.GetProcessById((int)pid);
+            string procName = proc.ProcessName;
+            if (procName.Equals("ApplicationFrameHost", StringComparison.OrdinalIgnoreCase))
+            {
+                isAppFrameHost = true;
+                return false;
+            }
+
+            return procName.Equals("GameBar", StringComparison.OrdinalIgnoreCase)
+                || procName.Equals("XboxGameBarWidgets", StringComparison.OrdinalIgnoreCase)
+                || procName.Equals("GameBarFTServer", StringComparison.OrdinalIgnoreCase);
         }
 
         private void OnPinnedChanged(object? sender, object args)
@@ -235,6 +341,15 @@ namespace HandheldDsuWidget.Services
         private void OnRequestedOpacityChanged(object? sender, object args)
         {
             RequestedOpacityChanged?.Invoke(this, EventArgs.Empty);
+        }
+
+        public void Dispose()
+        {
+            if (_hookId != IntPtr.Zero)
+            {
+                UnhookWindowsHookEx(_hookId);
+                _hookId = IntPtr.Zero;
+            }
         }
     }
 }
