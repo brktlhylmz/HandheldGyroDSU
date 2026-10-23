@@ -148,6 +148,7 @@ public partial class MainWindow : Window
             AutoEmulatorSwitchToggle.IsChecked = _automationWatcher.Config.AutoSwitchByEmulator;
             _suppressUiEvents = false;
 
+            if (GameBarOverlayToggle.Parent is FrameworkElement gbGrid && gbGrid.Parent is Panel sStack) { int idx = sStack.Children.IndexOf(gbGrid); gbGrid.Visibility = Visibility.Collapsed; if (idx > 0 && sStack.Children[idx - 1] is FrameworkElement div) div.Visibility = Visibility.Collapsed; }
             _automationWatcher.Start();
             RenderControllersAndRulesUi();
 

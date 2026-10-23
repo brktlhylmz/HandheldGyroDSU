@@ -46,7 +46,7 @@ jobs:
           dotnet publish .\HandheldDsuWidget\HandheldDsuWidget.csproj `
             -c Release `
             -r win-x64 `
-            --self-contained false `
+            -p:SelfContained=false `
             -o $zipStageDir
 
           Copy-Item .\README.md -Destination $zipStageDir -Force
@@ -62,7 +62,7 @@ jobs:
           dotnet publish .\HandheldDsuWidget\HandheldDsuWidget.csproj `
             -c Release `
             -r win-x64 `
-            --self-contained false `
+            -p:SelfContained=false `
             -p:PublishSingleFile=true `
             -p:DebugType=embedded `
             -o $lightStageDir
@@ -76,7 +76,7 @@ jobs:
           dotnet publish .\HandheldDsuWidget\HandheldDsuWidget.csproj `
             -c Release `
             -r win-x64 `
-            --self-contained true `
+            -p:SelfContained=true `
             -p:PublishSingleFile=true `
             -p:IncludeNativeLibrariesForSelfExtract=true `
             -p:EnableCompressionInSingleFile=true `

@@ -17,7 +17,7 @@
 [![Protocol](https://img.shields.io/badge/Protocol-Cemuhook%20DSU%20v1001-00B0FF)](https://v1993.github.io/cemuhook-protocol/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**HandheldGyroDSU** is a lightweight, zero-configuration **Cemuhook DSU (`v1001`) motion server** and **Xbox Game Bar (`Win + G`) companion overlay** built to bring native gyro aiming and motion controls to **Dolphin**, **Cemu**, and **Nintendo Switch emulators** (**Eden**, **Yuzu**, **Sudachi**, **Ryujinx**) on Windows handheld gaming PCs (**ASUS ROG Ally / Ally X**, **Lenovo Legion Go**, **MSI Claw**, **Ayaneo**, **GPD**) and motion-capable controllers.
+**HandheldGyroDSU** is a lightweight, zero-configuration **Cemuhook DSU (`v1001`) motion server** and **desktop / in-game HUD companion** built to bring native gyro aiming and motion controls to **Dolphin**, **Cemu**, and **Nintendo Switch emulators** (**Eden**, **Yuzu**, **Sudachi**, **Ryujinx**) on Windows handheld gaming PCs (**ASUS ROG Ally / Ally X**, **Lenovo Legion Go**, **MSI Claw**, **Ayaneo**, **GPD**) and motion-capable controllers.
 
 ### Why HandheldGyroDSU?
 On Windows handhelds, trying to use gyro in emulators often means fighting between **ASUS Armoury Crate**, **Steam Input**, and **Handheld Companion**—resulting in virtual controller conflicts, `HidHide` issues, double inputs, or broken desktop/gamepad mode switching. **HandheldGyroDSU** solves this by reading your handheld's built-in Windows `Gyrometer` and `Accelerometer` directly and streaming native Cemuhook DSU motion data to your emulators **without installing virtual gamepad drivers or hijacking your controls**.
@@ -47,7 +47,7 @@ Every commit pushed to `master` is automatically built and published to [GitHub 
 | **Dashboard (Live Gyro Telemetry & Radar)** | **Controllers (Custom Names, Hotkeys & Auto-Switch)** |
 | :---: | :---: |
 | ![Dashboard](docs/screenshots/dashboard.png) | ![Controllers](docs/screenshots/controllers.png) |
-| **Profiles (Presets & JSON Import / Export)** | **Settings (Multi-Port Cluster, Game Bar & Tray)** |
+| **Profiles (Presets & JSON Import / Export)** | **Settings (Multi-Port Cluster, Calibration Guard & Tray)** |
 | ![Profiles](docs/screenshots/profiles.png) | ![Settings](docs/screenshots/settings.png) |
 
 ---
@@ -67,8 +67,8 @@ Every commit pushed to `master` is automatically built and published to [GitHub 
   - Automatically numbers identical controllers (`#2`, `#3`), highlights the currently pressed controller with a live **`ACTIVE INPUT`** badge, and lets you assign custom names (`✎`) to each controller.
 - **🐬 Automatic Dolphin Emulator Configuration**:
   - Automatically configures `DSUClient.ini` and `WiimoteNew.ini` on startup (and whenever Dolphin is launched or added under **Controllers → Emulator & Game (`.exe`) Auto-Profile**), generates ready-to-load profiles (`Profiles/Wiimote/HandheldGyroDSU_Xbox.ini`, `Profiles/Wiimote/HandheldGyroDSU_Sideways.ini` with full `Upright + Sideways` Wii Wheel steering math, and `Profiles/GCPad/HandheldGyroDSU_Xbox.ini`), and binds `IMUIR` pointer + motion axes out of the box.
-- **🪟 `Win + G` Xbox Game Bar Companion & Click-Through HUD**:
-  - Pops up automatically alongside **Xbox Game Bar (`Win + G`)** and hides when returning to your game unless pinned (`📌`).
+- **🪟 Click-Through In-Game HUD & Always-on-Top Pin (`📌`)**:
+  - Pin (`📌`) the window above other apps when tuning settings, or minimize to the system tray (`—` / `✕`).
   - Uses a click-through `WS_EX_TRANSPARENT | WS_EX_NOACTIVATE` HUD toast overlay so fullscreen games never lose focus, and drops UI polling to **0% CPU** when minimized to the system tray.
 - **🕹️ 100% Gamepad-First UI & Multi-Language Support (`en` / `tr`)**:
   - Full controller navigation (`LB`/`RB` tabs, `D-Pad`/`Left Stick` focus & sliders, `A` toggle, `Y` calibrate) and embedded JSON localization (`English` & `Türkçe`) with instant live switching.
@@ -149,7 +149,7 @@ flowchart LR
     subgraph UI ["HandheldGyroDSU (Single-File WPF Overlay)"]
         MW["MainWindow Overlay UI\n(Dashboard / Controllers / Profiles / Settings)"]
         CW["ControllerAndAppWatcherService\nAuto-Slot + Hotkeys + Dolphin Auto-Config"]
-        GB["GameBarWidgetAdapter\n(Win + G Companion Hook)"]
+        HUD["HudToastService\n(Click-Through In-Game OSD)"]
         HUD["HudToastService\n(Click-Through In-Game OSD)"]
     end
 
@@ -160,7 +160,7 @@ flowchart LR
     SS --> UDP2
     IPC <--> MW
     CW <--> MW
-    GB --> MW
+    MW --> HUD
     MW --> HUD
 ```
 
@@ -174,7 +174,7 @@ HandheldGyroDSU/
 ├── Models/                             # AppSettings, AutomationConfig, DeviceProfile, HandheldProfile, MotionData
 ├── Protocol/                           # Cemuhook DSU v1001 Packet Builder & IEEE 802.3 CRC32
 ├── Services/                           # SensorService, DsuUdpServer, IpcHttpServer, ProfileManager, StartupManager
-├── HandheldDsuWidget/                  # WPF Overlay & Xbox Game Bar Companion (HandheldGyroDSU.exe)
+├── HandheldDsuWidget/                  # WPF Desktop & In-Game HUD Companion (HandheldGyroDSU.exe)
 │   ├── MainWindow.xaml                 # Responsive Card Layout & Left Navigation Rail
 │   ├── MainWindow.*.cs                 # Modular Partial Classes (Dashboard, Controllers, Profiles, Settings, Tray)
 │   ├── Services/                       # ControllerAndAppWatcherService, DsuIpcClient, LocalizationService, HudToastService

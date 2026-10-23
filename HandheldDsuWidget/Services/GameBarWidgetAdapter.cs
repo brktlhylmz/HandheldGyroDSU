@@ -141,7 +141,8 @@ namespace HandheldDsuWidget.Services
                 using Process curProcess = Process.GetCurrentProcess();
                 using ProcessModule? curModule = curProcess.MainModule;
                 IntPtr moduleHandle = GetModuleHandleW(curModule?.ModuleName);
-                _hookId = SetWindowsHookExW(WH_KEYBOARD_LL, _hookProc, moduleHandle, 0);
+                // Low-level Win+G hook disabled while Game Bar companion feature is hidden
+                _ = moduleHandle;
             }
             catch
             {
