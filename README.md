@@ -30,6 +30,16 @@ Every commit pushed to `master` is automatically built and published to [GitHub 
 
 ---
 
+## 📸 Screenshots
+
+| **Dashboard (250 Hz Live Telemetry & Radar)** | **Controllers (Custom Names, Hotkeys & Auto-Switch)** |
+| :---: | :---: |
+| ![Dashboard](docs/screenshots/dashboard.png) | ![Controllers](docs/screenshots/controllers.png) |
+| **Profiles (Presets & JSON Import / Export)** | **Settings (Multi-Port Cluster, Game Bar & Tray)** |
+| ![Profiles](docs/screenshots/profiles.png) | ![Settings](docs/screenshots/settings.png) |
+
+---
+
 ## ✨ Key Features
 
 - **⚡ 250 Hz Zero-Allocation IMU Engine**:
