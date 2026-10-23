@@ -54,7 +54,7 @@ Every commit pushed to `master` is automatically built and published to [GitHub 
   - Automatically assigns slots `0..3` on primary UDP port **`26760`** and spawns a **Secondary DSU Cluster** on UDP port **`26762`** for controllers 5–8.
   - Automatically numbers identical controllers (`#2`, `#3`), highlights the currently pressed controller with a live **`ACTIVE INPUT`** badge, and lets you assign custom names (`✎`) to each controller.
 - **🐬 1-Click Dolphin Emulator Auto-Configuration**:
-  - Selecting `dolphin.exe` in the **Controllers → Emulator Auto-Switch** section automatically configures `DSUClient.ini`, generates ready-to-load profiles (`HandheldGyroDSU_Wiimote.ini`, `HandheldGyroDSU_Sideways.ini` with full `Upright + Sideways` Wii Wheel steering math, and `HandheldGyroDSU_GCPad.ini`), and binds `IMUIR` pointer + motion axes out of the box.
+  - Selecting `dolphin.exe` in the **Controllers → Emulator Auto-Switch** section (or launching Dolphin) automatically configures `DSUClient.ini` and `WiimoteNew.ini`, generates ready-to-load profiles (`Profiles/Wiimote/HandheldGyroDSU_Xbox.ini`, `Profiles/Wiimote/HandheldGyroDSU_Sideways.ini` with full `Upright + Sideways` Wii Wheel steering math, and `Profiles/GCPad/HandheldGyroDSU_Xbox.ini`), and binds `IMUIR` pointer + motion axes out of the box.
 - **🪟 `Win + G` Xbox Game Bar Companion & Click-Through HUD**:
   - Pops up automatically alongside **Xbox Game Bar (`Win + G`)** and hides when returning to your game unless pinned (`📌`).
   - Uses a click-through `WS_EX_TRANSPARENT | WS_EX_NOACTIVATE` HUD toast overlay so fullscreen games never lose focus, and drops UI polling to **0% CPU** when minimized to the system tray.
@@ -98,8 +98,9 @@ Download and launch [**`HandheldGyroDSU.exe`**](https://github.com/brktlhylmz/Ha
 #### **Dolphin (Wii / GameCube) — 1-Click Auto-Setup**
 1. In **HandheldGyroDSU**, open the **Controllers** tab → click **Select Emulator `.exe`** under **Emulator Auto-Switch** and pick your `Dolphin.exe`.
 2. HandheldGyroDSU automatically enables Dolphin's DSU Client (`127.0.0.1:26760`) and generates ready-to-use controller profiles:
-   - **Standard Wii Remote + IR Pointer**: `HandheldGyroDSU_Wiimote` (applied automatically)
+   - **Standard Wii Remote + Nunchuk + IR Pointer**: `HandheldGyroDSU_Xbox` (under `Profiles/Wiimote`, applied automatically to `WiimoteNew.ini`)
    - **Mario Kart Wii / Sideways Wii Wheel**: Load `HandheldGyroDSU_Sideways` in Dolphin's Emulated Wii Remote profile dropdown.
+   - **GameCube Controller**: Load `HandheldGyroDSU_Xbox` in Dolphin's GameCube Pad profile dropdown.
 
 #### **Cemu (Wii U)**
 1. Open **Options → Input settings**.
