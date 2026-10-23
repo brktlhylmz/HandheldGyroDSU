@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
         xmlns:services="clr-namespace:HandheldDsuWidget.Services"
-        Title="Handheld Gyro DSU"
+        Title="Handheld Gyro DSU" Icon="pack://application:,,,/Assets/app.ico"
         Width="495"
         Height="640"
         MinWidth="440"
@@ -57,7 +57,8 @@
                     </Grid.ColumnDefinitions>
 
                     <!-- Brand Emblem Vector Icon -->
-                    <Path Grid.Column="0"
+                    <Image Grid.Column="0" Source="pack://application:,,,/Assets/logo.png" Width="28" Height="28" Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality" VerticalAlignment="Center" Margin="0,0,10,0" />
+                    <Path Visibility="Collapsed"
                           Data="{DynamicResource IconBrandEmblem}"
                           Fill="{DynamicResource BrushAccentPrimary}"
                           Width="18"
