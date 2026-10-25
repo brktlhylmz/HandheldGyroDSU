@@ -572,6 +572,20 @@ public sealed class SensorService : IDisposable
         float calGy = rawGy - bias.BiasY;
         float calGz = rawGz - bias.BiasZ;
 
+        if (_usePitchOffset)
+        {
+            float mag = MathF.Sqrt((restAy * restAy) + (restAz * restAz));
+            if (mag > 0.2f)
+            {
+                float sinT = restAy / mag;
+                float cosT = -restAz / mag;
+                float rotatedGy = (calGy * cosT) + (calGz * sinT);
+                float rotatedGz = -(calGy * sinT) + (calGz * cosT);
+                calGy = rotatedGy;
+                calGz = rotatedGz;
+            }
+        }
+
         // Zero angular velocity if the IMU driver stops firing ReadingChanged while stationary (> 200ms)
         long lastGyroTicks = Interlocked.Read(ref _lastGyroEventTimestamp);
         if (lastGyroTicks > 0)

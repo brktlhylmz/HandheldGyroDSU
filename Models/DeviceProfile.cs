@@ -62,16 +62,19 @@ public sealed class DeviceProfile
             (gx, gy) = (gy, gx);
         }
 
-        // Apply per-axis inversions
+        // Apply per-axis inversions:
+        // - InvertX ("Invert Pitch (X)") inverts both Pitch gyro (gx) and Pitch gravity (ay -> AccZ)
+        // - InvertY ("Invert Roll (Y)") inverts both Roll gyro (gy) and Roll gravity (ax -> AccX)
+        // - InvertZ ("Invert Yaw (Z)") inverts both Yaw gyro (gz) and Vertical gravity (az -> AccY)
         if (InvertX)
         {
-            ax = -ax;
+            ay = -ay;
             gx = -gx;
         }
 
         if (InvertY)
         {
-            ay = -ay;
+            ax = -ax;
             gy = -gy;
         }
 
@@ -83,14 +86,14 @@ public sealed class DeviceProfile
 
         // Cemuhook DSU standard coordinate mapping:
         // AccY resting gravity is -1.0G (so Dolphin's Accel Up = -AccY * 9.81 = +9.81 m/s^2)
-        // Pitch = rotation around X-axis
+        // Pitch = rotation around X-axis (paired with Y-axis gravity -> AccZ)
         // Yaw   = rotation around Z-axis
-        // Roll  = rotation around Y-axis
+        // Roll  = rotation around Y-axis (paired with X-axis gravity -> AccX)
         return new MotionData(
-            AccX: ax,
+            AccX: -ax,
             AccY: -az,
-            AccZ: ay,
-            GyroPitch: gx,
+            AccZ: -ay,
+            GyroPitch: -gx,
             GyroYaw: gz,
             GyroRoll: gy,
             TimestampUs: timestampUs

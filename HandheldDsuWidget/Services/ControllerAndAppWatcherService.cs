@@ -875,6 +875,10 @@ public sealed class ControllerAndAppWatcherService : IDisposable
                     // Ensure IRPassthrough is disabled and IMUIR (gyro pointer) is enabled
                     updatedWiimote = Regex.Replace(updatedWiimote, @"(?m)^(\s*IRPassthrough/Enabled\s*=\s*)True", "${1}False");
                     updatedWiimote = Regex.Replace(updatedWiimote, @"(?m)^(\s*IMUIR/Enabled\s*=\s*)False", "${1}True");
+                    updatedWiimote = Regex.Replace(updatedWiimote, @"(?m)^(\s*IR/Vertical Offset\s*=\s*)12\.", "${1}0.");
+                    updatedWiimote = Regex.Replace(updatedWiimote, @"(?m)^(\s*IR/Total Yaw\s*=\s*)19\.", "${1}35.");
+                    updatedWiimote = Regex.Replace(updatedWiimote, @"(?m)^(\s*IR/Total Pitch\s*=\s*)22\.", "${1}30.");
+                    updatedWiimote = Regex.Replace(updatedWiimote, @"(?m)^(\s*Options/Upright Wiimote\s*=\s*)True", "${1}False");
 
                     // If Wiimote1 was bound to Keyboard/Mouse clicks (`Click 0`) or missing Extension in Sideways mode, upgrade WiimoteNew.ini
                     if (updatedWiimote.Contains("Buttons/A = `Click 0`", StringComparison.OrdinalIgnoreCase))
@@ -939,7 +943,7 @@ public sealed class ControllerAndAppWatcherService : IDisposable
     {
         string extensionLine = sideways ? "Extension = None" : "Extension = Nunchuk";
         string sidewaysLine = sideways
-            ? $"Options/Sideways Wiimote = True{Environment.NewLine}Options/Upright Wiimote = True"
+            ? $"Options/Sideways Wiimote = True{Environment.NewLine}Options/Upright Wiimote = False"
             : $"Options/Sideways Wiimote = False{Environment.NewLine}Options/Upright Wiimote = False";
 
         string btnA = sideways ? "`Button Y`" : "`Button A`";
@@ -964,9 +968,9 @@ public sealed class ControllerAndAppWatcherService : IDisposable
             D-Pad/Down = `Pad S`
             D-Pad/Left = `Pad W`
             D-Pad/Right = `Pad E`
-            IR/Vertical Offset = 12.
-            IR/Total Yaw = 19.
-            IR/Total Pitch = 22.
+            IR/Vertical Offset = 0.
+            IR/Total Yaw = 35.
+            IR/Total Pitch = 30.
             IR/Auto-Hide = False
             IR/Up = `Right Y+`
             IR/Down = `Right Y-`
