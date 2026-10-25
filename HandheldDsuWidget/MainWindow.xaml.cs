@@ -205,6 +205,10 @@ public partial class MainWindow : Window
             [
                 ProfileComboBox,
                 DeleteProfileButton,
+                DevGyroMouseToggle,
+                DevGyroMouseModeComboBox,
+                DevGyroMouseBindButton,
+                DevGyroMouseSpeedSlider,
                 NewProfileNameTextBox,
                 SaveProfileButton,
                 ImportProfileButton,

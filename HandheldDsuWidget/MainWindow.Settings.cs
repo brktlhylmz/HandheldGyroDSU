@@ -377,7 +377,7 @@ public partial class MainWindow
             _gyroMouseService.TriggerDisplay,
             (float)Math.Round(_gyroMouseService.SpeedMultiplier, 1));
 
-        if (ProfileComboBox.SelectedItem is HandheldProfile selected && !IsCoreOrientationPreset(selected))
+        if (ProfileComboBox.SelectedItem is HandheldProfile selected)
         {
             selected.GyroMouseEnabled = status.GyroMouseEnabled;
             selected.GyroMouseAlwaysActive = status.GyroMouseAlwaysActive;
