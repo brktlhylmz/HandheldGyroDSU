@@ -214,6 +214,7 @@ public partial class MainWindow
         try
         {
             _loopbackTester.Stop();
+            _gyroMouseService.IsEnabled = false;
             _automationWatcher.ClearSimulatedControllers();
             _lastSyncedServerPort = -1;
             _lastSyncedSecondaryPort = -1;
@@ -224,6 +225,9 @@ public partial class MainWindow
             _automationWatcher.SaveConfig();
 
             _suppressUiEvents = true;
+            DevGyroMouseToggle.IsChecked = false;
+            DevGyroMouseModeComboBox.SelectedIndex = 0;
+            DevGyroMouseSpeedSlider.Value = 1.2;
             AutoControllerSwitchToggle.IsChecked = true;
             AutoEmulatorSwitchToggle.IsChecked = true;
             PortStatusSubtitle.Text = _loc["PortDefaultDesc"];
@@ -310,5 +314,46 @@ public partial class MainWindow
             _loc["ToastDevHudSampleDesc"],
             isError: false,
             showHudOverlay: true);
+    }
+
+    private void DevGyroMouseToggle_Click(object sender, RoutedEventArgs e)
+    {
+        if (_suppressUiEvents)
+            return;
+
+        bool enabled = DevGyroMouseToggle.IsChecked == true;
+        _gyroMouseService.IsEnabled = enabled;
+        ShowToastNotification(
+            enabled ? _loc["ToastDevGyroMouseOnTitle"] : _loc["ToastDevGyroMouseOffTitle"],
+            enabled ? _loc["ToastDevGyroMouseOnDesc"] : _loc["ToastDevGyroMouseOffDesc"],
+            isError: false,
+            showHudOverlay: true);
+    }
+
+    private void DevGyroMouseModeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_gyroMouseService is null || DevGyroMouseModeComboBox.SelectedItem is not ComboBoxItem item)
+            return;
+
+        string tag = (item.Tag as string) ?? "lt";
+        _gyroMouseService.ActivationMode = tag switch
+        {
+            "lb" => GyroMouseActivationMode.HoldLeftShoulder,
+            "always" => GyroMouseActivationMode.AlwaysOn,
+            _ => GyroMouseActivationMode.HoldLeftTrigger
+        };
+    }
+
+    private void DevGyroMouseSpeedSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+    {
+        if (DevGyroMouseSpeedValueText is not null)
+        {
+            DevGyroMouseSpeedValueText.Text = FormattableString.Invariant($"{e.NewValue:0.0}x");
+        }
+
+        if (_gyroMouseService is not null)
+        {
+            _gyroMouseService.SpeedMultiplier = e.NewValue;
+        }
     }
 }
