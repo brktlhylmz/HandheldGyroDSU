@@ -227,6 +227,21 @@
   "ToastUpdateAvailableDesc": "Ayarlar sekmesinden tek tıkla yeni sürüme geçebilirsiniz",
   "ToastUpdateUpToDateTitle": "✓ UYGULAMA GÜNCEL",
   "ToastUpdateCheckFailedTitle": "GÜNCELLEME KONTROLÜ BAŞARISIZ",
+  "DevRpcs3PatchTitle": "RPCS3 El Konsolu SDL Gyro & Eksen Yaması",
+  "DevRpcs3PatchDesc": "RPCS3'ün ana iş parçacığı (Main Thread) SDL_Init sensör ve yatay ekran eksen bayraklarını onarır; sanal kol sürücüsü kurmadan SIXAXIS oyunlarında yerleşik jiroskopu çalıştırır",
+  "DevRpcs3BadgePatched": "✓ YAMALANDI & AKTİF",
+  "DevRpcs3BadgeUnpatched": "YAMALANMADI",
+  "DevRpcs3BadgeUnsupported": "DESTEKLENMEYEN SÜRÜM",
+  "DevRpcs3BadgeNotFound": "BULUNAMADI",
+  "DevRpcs3NotFoundDesc": "rpcs3.exe otomatik bulunamadı • Seçmek için Gözat'a tıklayın",
+  "BtnDevRpcs3ApplyPatch": "⚡ SDL GYRO YAMASINI UYGULA",
+  "BtnDevRpcs3Restore": "ORİJİNALİ GERİ YÜKLE",
+  "BtnDevRpcs3Browse": "GÖZAT...",
+  "ToastRpcs3PatchedTitle": "⚡ RPCS3 SDL GYRO YAMASI UYGULANDI",
+  "ToastRpcs3PatchedDesc": "SDL_Init bayrakları (0x1B020) ve Player 1 SDL kontrolcüsü ayarlandı • Yedek: rpcs3.exe.bak",
+  "ToastRpcs3RestoredTitle": "↩️ RPCS3 ORİJİNAL DOSYASI GERİ YÜKLENDİ",
+  "ToastRpcs3RestoredDesc": "Yedekten orijinal rpcs3.exe geri yüklendi",
+  "ToastRpcs3PatchErrorTitle": "RPCS3 YAMA HATASI",
 
   "GamepadHint": "[D-PAD] Gezin   [A] Seç/Değiştir   [Y] Kalibre Et   [LB/RB] Sekme Değiştir"
 }

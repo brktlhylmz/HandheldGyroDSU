@@ -1,4 +1,5 @@
 using System;
+using Microsoft.Win32;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -552,6 +553,127 @@ public partial class MainWindow
                 isError: false,
                 showHudOverlay: true);
         });
+    }
+
+    private void RefreshRpcs3PatchStatusUi()
+    {
+        if (DevRpcs3PathText is null || DevRpcs3StatusBadgeText is null)
+            return;
+
+        (Rpcs3PatchState state, string? exePath, bool hasBackup) = Rpcs3SdlPatcherService.GetCurrentStatus();
+
+        switch (state)
+        {
+            case Rpcs3PatchState.Patched:
+                DevRpcs3StatusBadgeText.Text = _loc["DevRpcs3BadgePatched"];
+                DevRpcs3StatusBadgeText.Foreground = StatusOnlineBrush;
+                DevRpcs3PathText.Text = exePath ?? string.Empty;
+                DevRpcs3ApplyPatchButton.IsEnabled = true;
+                DevRpcs3RestoreButton.IsEnabled = true;
+                break;
+
+            case Rpcs3PatchState.Unpatched:
+                DevRpcs3StatusBadgeText.Text = _loc["DevRpcs3BadgeUnpatched"];
+                DevRpcs3StatusBadgeText.Foreground = AccentPrimaryBrush;
+                DevRpcs3PathText.Text = exePath ?? string.Empty;
+                DevRpcs3ApplyPatchButton.IsEnabled = true;
+                DevRpcs3RestoreButton.IsEnabled = hasBackup;
+                break;
+
+            case Rpcs3PatchState.UnsupportedBinary:
+                DevRpcs3StatusBadgeText.Text = _loc["DevRpcs3BadgeUnsupported"];
+                DevRpcs3StatusBadgeText.Foreground = StatusOfflineBrush;
+                DevRpcs3PathText.Text = exePath ?? string.Empty;
+                DevRpcs3ApplyPatchButton.IsEnabled = false;
+                DevRpcs3RestoreButton.IsEnabled = hasBackup;
+                break;
+
+            default:
+                DevRpcs3StatusBadgeText.Text = _loc["DevRpcs3BadgeNotFound"];
+                DevRpcs3StatusBadgeText.Foreground = TextSecondaryBrush;
+                DevRpcs3PathText.Text = _loc["DevRpcs3NotFoundDesc"];
+                DevRpcs3ApplyPatchButton.IsEnabled = true;
+                DevRpcs3RestoreButton.IsEnabled = false;
+                break;
+        }
+    }
+
+    private void DevRpcs3ApplyPatchButton_Click(object sender, RoutedEventArgs e)
+    {
+        string? exePath = Rpcs3SdlPatcherService.DiscoverRpcs3ExecutablePath();
+        if (string.IsNullOrWhiteSpace(exePath))
+        {
+            exePath = PromptForRpcs3ExecutablePath();
+            if (string.IsNullOrWhiteSpace(exePath))
+                return;
+        }
+
+        if (Rpcs3SdlPatcherService.ApplyPatch(exePath, out string errorMsg))
+        {
+            RefreshRpcs3PatchStatusUi();
+            ShowToastNotification(
+                _loc["ToastRpcs3PatchedTitle"],
+                _loc["ToastRpcs3PatchedDesc"],
+                isError: false,
+                showHudOverlay: true);
+        }
+        else
+        {
+            RefreshRpcs3PatchStatusUi();
+            ShowToastNotification(
+                _loc["ToastRpcs3PatchErrorTitle"],
+                errorMsg,
+                isError: true,
+                showHudOverlay: true);
+        }
+    }
+
+    private void DevRpcs3RestoreButton_Click(object sender, RoutedEventArgs e)
+    {
+        string? exePath = Rpcs3SdlPatcherService.DiscoverRpcs3ExecutablePath();
+        if (string.IsNullOrWhiteSpace(exePath))
+            return;
+
+        if (Rpcs3SdlPatcherService.RestoreOriginal(exePath, out string errorMsg))
+        {
+            RefreshRpcs3PatchStatusUi();
+            ShowToastNotification(
+                _loc["ToastRpcs3RestoredTitle"],
+                _loc["ToastRpcs3RestoredDesc"],
+                isError: false,
+                showHudOverlay: true);
+        }
+        else
+        {
+            RefreshRpcs3PatchStatusUi();
+            ShowToastNotification(
+                _loc["ToastRpcs3PatchErrorTitle"],
+                errorMsg,
+                isError: true,
+                showHudOverlay: true);
+        }
+    }
+
+    private void DevRpcs3BrowseButton_Click(object sender, RoutedEventArgs e)
+    {
+        string? picked = PromptForRpcs3ExecutablePath();
+        if (!string.IsNullOrWhiteSpace(picked))
+        {
+            Rpcs3SdlPatcherService.CustomExePath = picked;
+            RefreshRpcs3PatchStatusUi();
+        }
+    }
+
+    private static string? PromptForRpcs3ExecutablePath()
+    {
+        var dlg = new OpenFileDialog
+        {
+            Title = "Select rpcs3.exe",
+            Filter = "RPCS3 Executable (rpcs3.exe)|rpcs3.exe|All Executables (*.exe)|*.exe",
+            CheckFileExists = true
+        };
+
+        return dlg.ShowDialog() == true ? dlg.FileName : null;
     }
 
     private void DevGyroMouseSpeedSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
