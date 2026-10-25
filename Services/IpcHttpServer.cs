@@ -105,6 +105,11 @@ public sealed class IpcHttpServer : IDisposable
         _settings.HudNotificationsEnabled = true;
         _settings.TabletopCalibrationGuard = true;
         _sensorService.TabletopCalibrationGuard = true;
+        _settings.GyroMouseEnabled = false;
+        _settings.GyroMouseAlwaysActive = false;
+        _settings.GyroMouseTriggerMask = 0x10000;
+        _settings.GyroMouseTriggerDisplay = "LT";
+        _settings.GyroMouseSpeed = 1.2f;
         SaveCurrentSettings();
     }
 
@@ -329,6 +334,11 @@ public sealed class IpcHttpServer : IDisposable
                             target.Sensitivity,
                             target.Deadzone);
                         _settings.ActiveProfileName = target.Name;
+                        _settings.GyroMouseEnabled = target.GyroMouseEnabled;
+                        _settings.GyroMouseAlwaysActive = target.GyroMouseAlwaysActive;
+                        _settings.GyroMouseTriggerMask = target.GyroMouseTriggerMask == 0 ? 0x10000u : target.GyroMouseTriggerMask;
+                        _settings.GyroMouseTriggerDisplay = string.IsNullOrWhiteSpace(target.GyroMouseTriggerDisplay) ? "LT" : target.GyroMouseTriggerDisplay;
+                        _settings.GyroMouseSpeed = target.GyroMouseSpeed <= 0.05f ? 1.2f : target.GyroMouseSpeed;
                         SaveCurrentSettings();
                         string json = BuildStatusJson($"Profile applied: {target.Name}");
                         await WriteHttpResponseAsync(stream, 200, "OK", json, cancellationToken);
@@ -364,6 +374,11 @@ public sealed class IpcHttpServer : IDisposable
 
                     ProfileManager.SaveProfile(profile);
                     _settings.ActiveProfileName = profile.Name;
+                    _settings.GyroMouseEnabled = profile.GyroMouseEnabled;
+                    _settings.GyroMouseAlwaysActive = profile.GyroMouseAlwaysActive;
+                    _settings.GyroMouseTriggerMask = profile.GyroMouseTriggerMask == 0 ? 0x10000u : profile.GyroMouseTriggerMask;
+                    _settings.GyroMouseTriggerDisplay = string.IsNullOrWhiteSpace(profile.GyroMouseTriggerDisplay) ? "LT" : profile.GyroMouseTriggerDisplay;
+                    _settings.GyroMouseSpeed = profile.GyroMouseSpeed <= 0.05f ? 1.2f : profile.GyroMouseSpeed;
                     SaveCurrentSettings();
                     string json = BuildStatusJson($"Profile saved: {profile.Name}");
                     await WriteHttpResponseAsync(stream, 200, "OK", json, cancellationToken);
@@ -514,7 +529,12 @@ public sealed class IpcHttpServer : IDisposable
             accZ = Math.Round(motion.AccZ, 3),
             biasX = Math.Round(bias.BiasX, 3),
             biasY = Math.Round(bias.BiasY, 3),
-            biasZ = Math.Round(bias.BiasZ, 3)
+            biasZ = Math.Round(bias.BiasZ, 3),
+            gyroMouseEnabled = _settings.GyroMouseEnabled,
+            gyroMouseAlwaysActive = _settings.GyroMouseAlwaysActive,
+            gyroMouseTriggerMask = _settings.GyroMouseTriggerMask,
+            gyroMouseTriggerDisplay = _settings.GyroMouseTriggerDisplay,
+            gyroMouseSpeed = Math.Round(_settings.GyroMouseSpeed, 2)
         };
 
         return JsonSerializer.Serialize(payload);

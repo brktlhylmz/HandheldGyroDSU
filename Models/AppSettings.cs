@@ -37,6 +37,11 @@ public sealed class AppSettings
     public float BiasX { get; set; }
     public float BiasY { get; set; }
     public float BiasZ { get; set; }
+    public bool GyroMouseEnabled { get; set; }
+    public bool GyroMouseAlwaysActive { get; set; }
+    public uint GyroMouseTriggerMask { get; set; } = 0x10000;
+    public string GyroMouseTriggerDisplay { get; set; } = "LT";
+    public float GyroMouseSpeed { get; set; } = 1.2f;
 
     public static string GetDefaultSystemLanguage()
     {
@@ -77,6 +82,12 @@ public sealed class AppSettings
                         loaded.Language = GetDefaultSystemLanguage();
                     if (loaded.Sensitivity <= 0.05f)
                         loaded.Sensitivity = 1.0f;
+                    if (loaded.GyroMouseSpeed <= 0.05f)
+                        loaded.GyroMouseSpeed = 1.2f;
+                    if (loaded.GyroMouseTriggerMask == 0)
+                        loaded.GyroMouseTriggerMask = 0x10000;
+                    if (string.IsNullOrWhiteSpace(loaded.GyroMouseTriggerDisplay))
+                        loaded.GyroMouseTriggerDisplay = "LT";
                     loaded.Deadzone = Math.Clamp(loaded.Deadzone, 0f, 5f);
                     if (loaded.TabletopCalibrationGuard &&
                         (MathF.Abs(loaded.BiasX) > 1.8f || MathF.Abs(loaded.BiasY) > 1.8f || MathF.Abs(loaded.BiasZ) > 1.8f))

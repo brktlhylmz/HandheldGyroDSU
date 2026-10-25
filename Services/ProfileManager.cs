@@ -36,45 +36,87 @@ public static class ProfileManager
         try
         {
             string dir = ProfilesDirectory;
-            if (Directory.GetFiles(dir, "*.json").Length > 0)
-                return;
-
-            // Seed built-in starter templates for major handheld configurations
-            SaveProfile(new HandheldProfile
+            if (Directory.GetFiles(dir, "*.json").Length == 0)
             {
-                Name = "Standard Landscape",
-                Author = "System",
-                Description = "Default orientation for ASUS ROG Ally, MSI Claw, and standard horizontal devices",
-                InvertX = false,
-                InvertY = true,
-                InvertZ = true,
-                SwapAxes = false,
-                UsePitchOffset = true
-            });
+                // Seed built-in starter templates for major handheld configurations
+                SaveProfile(new HandheldProfile
+                {
+                    Name = "Standard Landscape",
+                    Author = "System",
+                    Description = "Default orientation for ASUS ROG Ally, MSI Claw, and standard horizontal devices",
+                    InvertX = false,
+                    InvertY = true,
+                    InvertZ = true,
+                    SwapAxes = false,
+                    UsePitchOffset = true
+                });
 
-            SaveProfile(new HandheldProfile
-            {
-                Name = "Portrait Sensor (Legion Go)",
-                Author = "System",
-                Description = "Optimized for portrait-native sensor mounting (Lenovo Legion Go)",
-                InvertX = true,
-                InvertY = false,
-                InvertZ = true,
-                SwapAxes = true,
-                UsePitchOffset = true
-            });
+                SaveProfile(new HandheldProfile
+                {
+                    Name = "Portrait Sensor (Legion Go)",
+                    Author = "System",
+                    Description = "Optimized for portrait-native sensor mounting (Lenovo Legion Go)",
+                    InvertX = true,
+                    InvertY = false,
+                    InvertZ = true,
+                    SwapAxes = true,
+                    UsePitchOffset = true
+                });
 
-            SaveProfile(new HandheldProfile
+                SaveProfile(new HandheldProfile
+                {
+                    Name = "Flight & Racing (Inverted X)",
+                    Author = "System",
+                    Description = "Inverted pitch axis for flight simulator / flight yoke controls",
+                    InvertX = true,
+                    InvertY = true,
+                    InvertZ = true,
+                    SwapAxes = false,
+                    UsePitchOffset = true
+                });
+            }
+
+            string steamHoldPath = Path.Combine(dir, "Steam & PC (Hold Button).json");
+            if (!File.Exists(steamHoldPath))
             {
-                Name = "Flight & Racing (Inverted X)",
-                Author = "System",
-                Description = "Inverted pitch axis for flight simulator / flight yoke controls",
-                InvertX = true,
-                InvertY = true,
-                InvertZ = true,
-                SwapAxes = false,
-                UsePitchOffset = true
-            });
+                SaveProfile(new HandheldProfile
+                {
+                    Name = "Steam & PC (Hold Button)",
+                    Author = "System",
+                    Description = "Gyro-to-Mouse aiming activated while holding the assigned controller button (default: LT)",
+                    InvertX = false,
+                    InvertY = true,
+                    InvertZ = true,
+                    SwapAxes = false,
+                    UsePitchOffset = true,
+                    GyroMouseEnabled = true,
+                    GyroMouseAlwaysActive = false,
+                    GyroMouseTriggerMask = 0x10000,
+                    GyroMouseTriggerDisplay = "LT",
+                    GyroMouseSpeed = 1.2f
+                });
+            }
+
+            string steamAlwaysPath = Path.Combine(dir, "Steam & PC (Always Active).json");
+            if (!File.Exists(steamAlwaysPath))
+            {
+                SaveProfile(new HandheldProfile
+                {
+                    Name = "Steam & PC (Always Active)",
+                    Author = "System",
+                    Description = "Continuous 360° Gyro-to-Mouse free look for Steam & PC games",
+                    InvertX = false,
+                    InvertY = true,
+                    InvertZ = true,
+                    SwapAxes = false,
+                    UsePitchOffset = true,
+                    GyroMouseEnabled = true,
+                    GyroMouseAlwaysActive = true,
+                    GyroMouseTriggerMask = 0x10000,
+                    GyroMouseTriggerDisplay = "LT",
+                    GyroMouseSpeed = 1.2f
+                });
+            }
         }
         catch
         {
@@ -103,6 +145,18 @@ public static class ProfileManager
                         if (profile.Sensitivity <= 0.05f)
                         {
                             profile.Sensitivity = 1.0f;
+                        }
+                        if (profile.GyroMouseSpeed <= 0.05f)
+                        {
+                            profile.GyroMouseSpeed = 1.2f;
+                        }
+                        if (profile.GyroMouseTriggerMask == 0)
+                        {
+                            profile.GyroMouseTriggerMask = 0x10000;
+                        }
+                        if (string.IsNullOrWhiteSpace(profile.GyroMouseTriggerDisplay))
+                        {
+                            profile.GyroMouseTriggerDisplay = "LT";
                         }
                         profile.Deadzone = Math.Clamp(profile.Deadzone, 0f, 5f);
                         list.Add(profile);

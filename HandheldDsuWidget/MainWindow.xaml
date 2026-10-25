@@ -952,6 +952,24 @@
                                     <!-- Dynamic List of Emulator Rules -->
                                     <StackPanel x:Name="EmulatorRulesListPanel" />
 
+                                    <Border Style="{DynamicResource AppSubPanelStyle}" Padding="8,7" Margin="0,6,0,0">
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding [RunningAppsPickerLabel], Source={x:Static services:LocalizationService.Instance}}" Foreground="{DynamicResource BrushTextSecondary}" FontSize="9.5" FontWeight="SemiBold" Margin="0,0,0,5" />
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="5" />
+                                                    <ColumnDefinition Width="30" />
+                                                    <ColumnDefinition Width="5" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <ComboBox x:Name="RunningAppsComboBox" Grid.Column="0" Style="{DynamicResource AppComboBoxStyle}" DisplayMemberPath="ComboLabel" />
+                                                <Button x:Name="RefreshRunningAppsButton" Grid.Column="2" Style="{DynamicResource AppGhostButtonStyle}" Content="🔄" Height="28" Padding="0" FontSize="11" ToolTip="{Binding [RunningAppsRefreshTooltip], Source={x:Static services:LocalizationService.Instance}}" Click="RefreshRunningAppsButton_Click" />
+                                                <Button x:Name="AddRunningAppRuleButton" Grid.Column="4" Style="{DynamicResource AppPrimaryButtonStyle}" Content="{Binding [BtnAddRunningApp], Source={x:Static services:LocalizationService.Instance}}" Height="28" Padding="10,0" FontSize="10" Click="AddRunningAppRuleButton_Click" />
+                                            </Grid>
+                                        </StackPanel>
+                                    </Border>
+
                                     <!-- Browse & Select Emulator / Game (.exe) Button -->
                                     <Button x:Name="AddCustomExeRuleButton"
                                             Margin="0,8,0,0"
@@ -1717,10 +1735,18 @@
                                                 </Grid.ColumnDefinitions>
                                                 <TextBlock Grid.Column="0" Text="{Binding [DevGyroMouseTriggerLabel], Source={x:Static services:LocalizationService.Instance}}" Foreground="{DynamicResource BrushTextSecondary}" FontSize="10.5" VerticalAlignment="Center" />
                                                 <ComboBox x:Name="DevGyroMouseModeComboBox" Grid.Column="2" Style="{DynamicResource AppComboBoxStyle}" SelectedIndex="0" SelectionChanged="DevGyroMouseModeComboBox_SelectionChanged">
-                                                    <ComboBoxItem Tag="lt" Content="{Binding [DevGyroMouseModeHoldLT], Source={x:Static services:LocalizationService.Instance}}" />
-                                                    <ComboBoxItem Tag="lb" Content="{Binding [DevGyroMouseModeHoldLB], Source={x:Static services:LocalizationService.Instance}}" />
+                                                    <ComboBoxItem Tag="hold" Content="{Binding [DevGyroMouseModeHoldBtn], Source={x:Static services:LocalizationService.Instance}}" />
                                                     <ComboBoxItem Tag="always" Content="{Binding [DevGyroMouseModeAlways], Source={x:Static services:LocalizationService.Instance}}" />
                                                 </ComboBox>
+                                            </Grid>
+                                            <Grid x:Name="DevGyroMouseButtonRowGrid" Margin="0,0,0,8">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="8" />
+                                                    <ColumnDefinition Width="*" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Grid.Column="0" Text="{Binding [DevGyroMouseButtonLabel], Source={x:Static services:LocalizationService.Instance}}" Foreground="{DynamicResource BrushTextSecondary}" FontSize="10.5" VerticalAlignment="Center" />
+                                                <Button x:Name="DevGyroMouseBindButton" Grid.Column="2" Style="{DynamicResource AppSecondaryButtonStyle}" Content="🎯 LT" Height="27" FontSize="10" HorizontalContentAlignment="Center" Click="DevGyroMouseBindButton_Click" />
                                             </Grid>
                                             <Grid TextElement.Foreground="{DynamicResource BrushTextSecondary}">
                                                 <Grid.ColumnDefinitions>

@@ -96,6 +96,7 @@ public partial class MainWindow : Window
 
         _gamepadService = new GamepadNavigationService(this);
         _gyroMouseService = new GyroMouseService(_ipcClient, () => _windowHwnd != IntPtr.Zero && GetForegroundWindow() == _windowHwnd);
+        _gyroMouseService.TriggerButtonBound += OnGyroMouseTriggerButtonBound;
 
         LanguageComboBox.ItemsSource = _loc.AvailableLanguages;
         LanguageComboBox.SelectedValue = _loc.CurrentLanguage;
@@ -148,6 +149,7 @@ public partial class MainWindow : Window
             _loc.SetLanguage(status.Language);
             UpdateUiFromStatus(status);
             await RefreshProfilesAsync(status.ActiveProfileName);
+            _automationWatcher.SetBaseProfileName(status.ActiveProfileName);
 
             _suppressUiEvents = true;
             AutoControllerSwitchToggle.IsChecked = _automationWatcher.Config.AutoSwitchByController;
@@ -177,6 +179,10 @@ public partial class MainWindow : Window
         };
     }
 
+    public bool IsCapturingControllerButton =>
+        !string.IsNullOrWhiteSpace(_automationWatcher.RecordingHardwareId) ||
+        _gyroMouseService.IsListeningForTrigger;
+
     public IReadOnlyList<Control> GetActiveTabNavigableControls()
     {
         if (ControllersTabButton.IsChecked == true)
@@ -185,6 +191,9 @@ public partial class MainWindow : Window
             [
                 AutoControllerSwitchToggle,
                 AutoEmulatorSwitchToggle,
+                RunningAppsComboBox,
+                RefreshRunningAppsButton,
+                AddRunningAppRuleButton,
                 AddCustomExeRuleButton,
                 CalibrateButton
             ];
@@ -231,6 +240,7 @@ public partial class MainWindow : Window
                     DevTestHudButton,
                 DevGyroMouseToggle,
                 DevGyroMouseModeComboBox,
+                DevGyroMouseBindButton,
                 DevGyroMouseSpeedSlider,
                     CalibrateButton
                 ];
@@ -256,6 +266,7 @@ public partial class MainWindow : Window
                 DevTestHudButton,
                 DevGyroMouseToggle,
                 DevGyroMouseModeComboBox,
+                DevGyroMouseBindButton,
                 DevGyroMouseSpeedSlider,
                 CalibrateButton
             ];

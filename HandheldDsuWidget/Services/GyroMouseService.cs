@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -7,27 +8,40 @@ using HandheldDsuServer.Models;
 namespace HandheldDsuWidget.Services;
 
 /// <summary>
-/// Activation trigger mode for experimental Gyro-to-Mouse aiming.
-/// </summary>
-public enum GyroMouseActivationMode
-{
-    HoldLeftTrigger = 0,
-    HoldLeftShoulder = 1,
-    AlwaysOn = 2
-}
-
-/// <summary>
 /// High-frequency (250 Hz) driverless Gyro-to-Mouse translation service for PC and Steam games.
 /// Converts calibrated IMU angular velocity into sub-pixel accumulated relative Win32 mouse deltas
 /// without installing virtual controller drivers or modifying Steam files.
+/// Supports Always-Active mode or holding any user-assigned XInput button/trigger.
 /// </summary>
 public sealed class GyroMouseService : IDisposable
 {
+    public const uint MaskLeftTrigger = 0x10000;
+    public const uint MaskRightTrigger = 0x20000;
+
     private const int ERROR_SUCCESS = 0;
     private const uint INPUT_MOUSE = 0;
     private const uint MOUSEEVENTF_MOVE = 0x0001;
-    private const ushort XINPUT_GAMEPAD_LEFT_SHOULDER = 0x0100;
     private const byte TriggerThreshold = 45;
+
+    private static readonly (uint Bit, string Label)[] ButtonMap =
+    [
+        (MaskLeftTrigger, "LT"),
+        (MaskRightTrigger, "RT"),
+        (0x0100, "LB"),
+        (0x0200, "RB"),
+        (0x1000, "A"),
+        (0x2000, "B"),
+        (0x4000, "X"),
+        (0x8000, "Y"),
+        (0x0040, "LS"),
+        (0x0080, "RS"),
+        (0x0020, "Back"),
+        (0x0010, "Start"),
+        (0x0001, "D-Pad Up"),
+        (0x0002, "D-Pad Down"),
+        (0x0004, "D-Pad Left"),
+        (0x0008, "D-Pad Right")
+    ];
 
     [StructLayout(LayoutKind.Sequential)]
     private struct XINPUT_GAMEPAD
@@ -77,10 +91,19 @@ public sealed class GyroMouseService : IDisposable
     private Thread? _workerThread;
     private volatile bool _stopRequested;
     private volatile bool _isEnabled;
-    private volatile GyroMouseActivationMode _activationMode = GyroMouseActivationMode.HoldLeftTrigger;
+    private volatile bool _alwaysActive;
+    private uint _triggerMask = MaskLeftTrigger;
+    private string _triggerDisplay = "LT";
     private float _speedMultiplier = 1.2f;
     private double _remainderX;
     private double _remainderY;
+
+    private volatile bool _isListeningForTrigger;
+    private volatile bool _listenWaitRelease;
+    private uint _listenCandidateMask;
+    private long _listenPressStartTicks;
+
+    public event EventHandler<(uint Mask, string Display)>? TriggerButtonBound;
 
     public bool IsEnabled
     {
@@ -96,10 +119,22 @@ public sealed class GyroMouseService : IDisposable
         }
     }
 
-    public GyroMouseActivationMode ActivationMode
+    public bool AlwaysActive
     {
-        get => _activationMode;
-        set => _activationMode = value;
+        get => _alwaysActive;
+        set => _alwaysActive = value;
+    }
+
+    public uint TriggerMask
+    {
+        get => Volatile.Read(ref _triggerMask);
+        set => Volatile.Write(ref _triggerMask, value == 0 ? MaskLeftTrigger : value);
+    }
+
+    public string TriggerDisplay
+    {
+        get => _triggerDisplay;
+        set => _triggerDisplay = string.IsNullOrWhiteSpace(value) ? "LT" : value;
     }
 
     public double SpeedMultiplier
@@ -108,10 +143,26 @@ public sealed class GyroMouseService : IDisposable
         set => Volatile.Write(ref _speedMultiplier, (float)Math.Clamp(value, 0.2, 4.0));
     }
 
+    public bool IsListeningForTrigger => _isListeningForTrigger;
+
     public GyroMouseService(DsuIpcClient ipcClient, Func<bool> isAppWindowFocused)
     {
         _ipcClient = ipcClient;
         _isAppWindowFocused = isAppWindowFocused;
+    }
+
+    public void StartListeningForTrigger()
+    {
+        _listenCandidateMask = 0;
+        _listenPressStartTicks = 0;
+        _listenWaitRelease = true;
+        _isListeningForTrigger = true;
+    }
+
+    public void CancelListeningForTrigger()
+    {
+        _isListeningForTrigger = false;
+        _listenCandidateMask = 0;
     }
 
     public void Start()
@@ -142,6 +193,12 @@ public sealed class GyroMouseService : IDisposable
             long nowTicks = Stopwatch.GetTimestamp();
             double dtSeconds = Math.Clamp((nowTicks - prevTicks) / (double)Stopwatch.Frequency, 0.001, 0.050);
             prevTicks = nowTicks;
+
+            if (_isListeningForTrigger)
+            {
+                PollTriggerBindingCapture(nowTicks);
+                continue;
+            }
 
             if (!_isEnabled)
                 continue;
@@ -182,13 +239,58 @@ public sealed class GyroMouseService : IDisposable
         }
     }
 
+    private void PollTriggerBindingCapture(long nowTicks)
+    {
+        uint activeMask = ReadAnyControllerMask();
+
+        if (_listenWaitRelease)
+        {
+            if (activeMask == 0)
+            {
+                _listenWaitRelease = false;
+                _listenCandidateMask = 0;
+                _listenPressStartTicks = 0;
+            }
+            return;
+        }
+
+        if (activeMask != 0)
+        {
+            if (_listenCandidateMask == 0)
+            {
+                _listenPressStartTicks = nowTicks;
+            }
+            _listenCandidateMask |= activeMask;
+
+            double heldMs = ((nowTicks - _listenPressStartTicks) * 1000.0) / Stopwatch.Frequency;
+            if (heldMs >= 180.0)
+            {
+                FinalizeCapturedTrigger(_listenCandidateMask);
+            }
+        }
+        else if (_listenCandidateMask != 0)
+        {
+            FinalizeCapturedTrigger(_listenCandidateMask);
+        }
+    }
+
+    private void FinalizeCapturedTrigger(uint capturedMask)
+    {
+        _isListeningForTrigger = false;
+        _listenCandidateMask = 0;
+
+        string display = FormatTriggerMask(capturedMask);
+        Volatile.Write(ref _triggerMask, capturedMask);
+        _triggerDisplay = display;
+
+        TriggerButtonBound?.Invoke(this, (capturedMask, display));
+    }
+
     private bool ShouldTranslateMotionNow()
     {
-        GyroMouseActivationMode mode = _activationMode;
-
-        if (mode == GyroMouseActivationMode.AlwaysOn)
+        if (_alwaysActive)
         {
-            // Safety guard: pause Always-On mouse movement while the user is actively interacting
+            // Safety guard: pause Always-Active mouse movement while the user is actively interacting
             // with the HandheldGyroDSU window itself so the cursor never runs away in settings.
             try
             {
@@ -202,20 +304,18 @@ public sealed class GyroMouseService : IDisposable
             return true;
         }
 
+        uint requiredMask = Volatile.Read(ref _triggerMask);
+        if (requiredMask == 0)
+            requiredMask = MaskLeftTrigger;
+
         for (uint i = 0; i < 4; i++)
         {
             try
             {
                 if (XInputGetState(i, out XINPUT_STATE state) == ERROR_SUCCESS)
                 {
-                    if (mode == GyroMouseActivationMode.HoldLeftTrigger &&
-                        state.Gamepad.bLeftTrigger >= TriggerThreshold)
-                    {
-                        return true;
-                    }
-
-                    if (mode == GyroMouseActivationMode.HoldLeftShoulder &&
-                        (state.Gamepad.wButtons & XINPUT_GAMEPAD_LEFT_SHOULDER) != 0)
+                    uint currentMask = ReadCombinedMask(in state.Gamepad);
+                    if ((currentMask & requiredMask) == requiredMask)
                     {
                         return true;
                     }
@@ -228,6 +328,54 @@ public sealed class GyroMouseService : IDisposable
         }
 
         return false;
+    }
+
+    private static uint ReadAnyControllerMask()
+    {
+        for (uint i = 0; i < 4; i++)
+        {
+            try
+            {
+                if (XInputGetState(i, out XINPUT_STATE state) == ERROR_SUCCESS)
+                {
+                    uint mask = ReadCombinedMask(in state.Gamepad);
+                    if (mask != 0)
+                        return mask;
+                }
+            }
+            catch
+            {
+                break;
+            }
+        }
+        return 0;
+    }
+
+    private static uint ReadCombinedMask(in XINPUT_GAMEPAD pad)
+    {
+        uint mask = pad.wButtons;
+        if (pad.bLeftTrigger >= TriggerThreshold)
+            mask |= MaskLeftTrigger;
+        if (pad.bRightTrigger >= TriggerThreshold)
+            mask |= MaskRightTrigger;
+        return mask;
+    }
+
+    public static string FormatTriggerMask(uint mask)
+    {
+        if (mask == 0)
+            return "LT";
+
+        var names = new List<string>(2);
+        foreach (var (bit, label) in ButtonMap)
+        {
+            if ((mask & bit) != 0)
+            {
+                names.Add(label);
+            }
+        }
+
+        return names.Count > 0 ? string.Join(" + ", names) : "LT";
     }
 
     private static void SendRelativeMouseMove(int dx, int dy)

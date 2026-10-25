@@ -50,4 +50,19 @@ public sealed class HandheldProfile
 
     [JsonPropertyName("recenterHotkeyDisplay")]
     public string? RecenterHotkeyDisplay { get; set; }
+
+    [JsonPropertyName("gyroMouseEnabled")]
+    public bool GyroMouseEnabled { get; set; }
+
+    [JsonPropertyName("gyroMouseAlwaysActive")]
+    public bool GyroMouseAlwaysActive { get; set; }
+
+    [JsonPropertyName("gyroMouseTriggerMask")]
+    public uint GyroMouseTriggerMask { get; set; } = 0x10000;
+
+    [JsonPropertyName("gyroMouseTriggerDisplay")]
+    public string GyroMouseTriggerDisplay { get; set; } = "LT";
+
+    [JsonPropertyName("gyroMouseSpeed")]
+    public float GyroMouseSpeed { get; set; } = 1.2f;
 }
