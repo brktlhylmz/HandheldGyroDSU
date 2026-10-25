@@ -316,6 +316,81 @@ public partial class MainWindow
             showHudOverlay: true);
     }
 
+    private void SyncGyroMouseFromStatus(DsuStatusDto status)
+    {
+        if (_gyroMouseService is null || _gyroMouseService.IsListeningForTrigger)
+            return;
+
+        _gyroMouseService.IsEnabled = status.GyroMouseEnabled;
+        _gyroMouseService.AlwaysActive = status.GyroMouseAlwaysActive;
+        _gyroMouseService.TriggerMask = status.GyroMouseTriggerMask == 0 ? GyroMouseService.MaskLeftTrigger : status.GyroMouseTriggerMask;
+        _gyroMouseService.TriggerDisplay = string.IsNullOrWhiteSpace(status.GyroMouseTriggerDisplay) ? "LT" : status.GyroMouseTriggerDisplay;
+        _gyroMouseService.SpeedMultiplier = status.GyroMouseSpeed <= 0.05 ? 1.2 : status.GyroMouseSpeed;
+    }
+
+    private void UpdateGyroMouseUiControls(DsuStatusDto status)
+    {
+        if (DevGyroMouseToggle is null || _gyroMouseService is null)
+            return;
+
+        DevGyroMouseToggle.IsChecked = status.GyroMouseEnabled;
+        if (!DevGyroMouseModeComboBox.IsDropDownOpen)
+        {
+            DevGyroMouseModeComboBox.SelectedIndex = status.GyroMouseAlwaysActive ? 1 : 0;
+        }
+
+        if (DevGyroMouseButtonRowGrid is not null)
+        {
+            DevGyroMouseButtonRowGrid.Opacity = status.GyroMouseAlwaysActive ? 0.55 : 1.0;
+        }
+
+        if (DevGyroMouseBindButton is not null)
+        {
+            bool listening = _gyroMouseService.IsListeningForTrigger;
+            string btnDisplay = string.IsNullOrWhiteSpace(status.GyroMouseTriggerDisplay) ? "LT" : status.GyroMouseTriggerDisplay;
+            DevGyroMouseBindButton.Content = listening
+                ? _loc["DevGyroMouseBindListening"]
+                : _loc.Format("DevGyroMouseBindBtnFormat", btnDisplay);
+            DevGyroMouseBindButton.Style = (Style)FindResource(listening ? "AppPrimaryButtonStyle" : "AppSecondaryButtonStyle");
+        }
+
+        if (!DevGyroMouseSpeedSlider.IsMouseCaptureWithin)
+        {
+            double clampedSpeed = Math.Clamp(status.GyroMouseSpeed <= 0.05 ? 1.2 : status.GyroMouseSpeed, 0.2, 3.5);
+            DevGyroMouseSpeedSlider.Value = clampedSpeed;
+            if (DevGyroMouseSpeedValueText is not null)
+            {
+                DevGyroMouseSpeedValueText.Text = FormattableString.Invariant($"{clampedSpeed:0.0}x");
+            }
+        }
+    }
+
+    private async void PersistAndSyncGyroMouseSettingsAsync()
+    {
+        if (_gyroMouseService is null)
+            return;
+
+        DsuStatusDto status = _ipcClient.UpdateGyroMouseSettings(
+            _gyroMouseService.IsEnabled,
+            _gyroMouseService.AlwaysActive,
+            _gyroMouseService.TriggerMask,
+            _gyroMouseService.TriggerDisplay,
+            (float)Math.Round(_gyroMouseService.SpeedMultiplier, 1));
+
+        if (ProfileComboBox.SelectedItem is HandheldProfile selected && !IsCoreOrientationPreset(selected))
+        {
+            selected.GyroMouseEnabled = status.GyroMouseEnabled;
+            selected.GyroMouseAlwaysActive = status.GyroMouseAlwaysActive;
+            selected.GyroMouseTriggerMask = status.GyroMouseTriggerMask;
+            selected.GyroMouseTriggerDisplay = status.GyroMouseTriggerDisplay;
+            selected.GyroMouseSpeed = (float)status.GyroMouseSpeed;
+            status = await _ipcClient.SaveProfileAsync(selected);
+            UpdateSelectedProfileDetails(selected);
+        }
+
+        UpdateUiFromStatus(status);
+    }
+
     private void DevGyroMouseToggle_Click(object sender, RoutedEventArgs e)
     {
         if (_suppressUiEvents)
@@ -323,6 +398,7 @@ public partial class MainWindow
 
         bool enabled = DevGyroMouseToggle.IsChecked == true;
         _gyroMouseService.IsEnabled = enabled;
+        PersistAndSyncGyroMouseSettingsAsync();
         ShowToastNotification(
             enabled ? _loc["ToastDevGyroMouseOnTitle"] : _loc["ToastDevGyroMouseOffTitle"],
             enabled ? _loc["ToastDevGyroMouseOnDesc"] : _loc["ToastDevGyroMouseOffDesc"],
@@ -332,16 +408,47 @@ public partial class MainWindow
 
     private void DevGyroMouseModeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (_gyroMouseService is null || DevGyroMouseModeComboBox.SelectedItem is not ComboBoxItem item)
+        if (_suppressUiEvents || _gyroMouseService is null || DevGyroMouseModeComboBox.SelectedItem is not ComboBoxItem item)
             return;
 
-        string tag = (item.Tag as string) ?? "lt";
-        _gyroMouseService.ActivationMode = tag switch
+        string tag = (item.Tag as string) ?? "hold";
+        _gyroMouseService.AlwaysActive = string.Equals(tag, "always", StringComparison.OrdinalIgnoreCase);
+        PersistAndSyncGyroMouseSettingsAsync();
+    }
+
+    private void DevGyroMouseBindButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_gyroMouseService is null)
+            return;
+
+        if (_gyroMouseService.IsListeningForTrigger)
         {
-            "lb" => GyroMouseActivationMode.HoldLeftShoulder,
-            "always" => GyroMouseActivationMode.AlwaysOn,
-            _ => GyroMouseActivationMode.HoldLeftTrigger
-        };
+            _gyroMouseService.CancelListeningForTrigger();
+        }
+        else
+        {
+            _gyroMouseService.StartListeningForTrigger();
+        }
+
+        if (_lastStatus is not null)
+        {
+            _suppressUiEvents = true;
+            UpdateGyroMouseUiControls(_lastStatus);
+            _suppressUiEvents = false;
+        }
+    }
+
+    private void OnGyroMouseTriggerButtonBound(object? sender, (uint Mask, string Display) e)
+    {
+        Dispatcher.BeginInvoke(() =>
+        {
+            PersistAndSyncGyroMouseSettingsAsync();
+            ShowToastNotification(
+                _loc["ToastGyroMouseButtonBoundTitle"],
+                _loc.Format("ToastGyroMouseButtonBoundDescFormat", e.Display),
+                isError: false,
+                showHudOverlay: true);
+        });
     }
 
     private void DevGyroMouseSpeedSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
@@ -354,6 +461,10 @@ public partial class MainWindow
         if (_gyroMouseService is not null)
         {
             _gyroMouseService.SpeedMultiplier = e.NewValue;
+            if (!_suppressUiEvents && IsLoaded)
+            {
+                PersistAndSyncGyroMouseSettingsAsync();
+            }
         }
     }
 }

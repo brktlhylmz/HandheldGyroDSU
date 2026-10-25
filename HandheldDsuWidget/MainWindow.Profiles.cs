@@ -33,6 +33,7 @@ public partial class MainWindow
             && profile.InvertZ == status.InvertZ
             && profile.SwapAxes == status.SwapAxes
             && profile.UsePitchOffset == status.UsePitchOffset
+            && profile.GyroMouseEnabled == status.GyroMouseEnabled
             && Math.Abs(profile.Sensitivity - status.Sensitivity) <= 0.04f
             && Math.Abs(profile.Deadzone - status.Deadzone) <= 0.04f;
     }
@@ -70,6 +71,13 @@ public partial class MainWindow
         }
     }
 
+    private static bool IsCoreOrientationPreset(HandheldProfile profile)
+    {
+        return string.Equals(profile.Name, "Standard Landscape", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(profile.Name, "Portrait Sensor (Legion Go)", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(profile.Name, "Flight & Racing (Inverted X)", StringComparison.OrdinalIgnoreCase);
+    }
+
     private static bool IsSystemPreset(HandheldProfile profile)
     {
         return string.Equals(profile.Author, "System", StringComparison.OrdinalIgnoreCase)
@@ -86,6 +94,13 @@ public partial class MainWindow
         if (profile.SwapAxes) tags.Add("SWAP X⇄Y");
         if (Math.Abs(profile.Sensitivity - 1.0f) > 0.04f) tags.Add(FormattableString.Invariant($"{profile.Sensitivity:0.0}x"));
         if (profile.Deadzone > 0.04f) tags.Add(FormattableString.Invariant($"DZ {profile.Deadzone:0.0}°/s"));
+        if (profile.GyroMouseEnabled)
+        {
+            string mouseMode = profile.GyroMouseAlwaysActive
+                ? "MOUSE: ALWAYS"
+                : $"MOUSE: [{(string.IsNullOrWhiteSpace(profile.GyroMouseTriggerDisplay) ? "LT" : profile.GyroMouseTriggerDisplay)}]";
+            tags.Add(mouseMode);
+        }
 
         return tags.Count > 0
             ? string.Join("  •  ", tags)
@@ -151,6 +166,7 @@ public partial class MainWindow
             return;
 
         DsuStatusDto status = await _ipcClient.ApplyProfileAsync(selected.Name);
+        _automationWatcher.SetBaseProfileName(selected.Name);
         UpdateUiFromStatus(status);
         ShowProfileStatus(_loc.Format("ProfileAppliedFormat", selected.Name));
     }
@@ -209,7 +225,12 @@ public partial class MainWindow
             SwapAxes = SwapAxesToggle.IsChecked == true,
             UsePitchOffset = PitchOffsetToggle.IsChecked == true,
             Sensitivity = (float)Math.Round(SensitivitySlider.Value, 1),
-            Deadzone = (float)Math.Round(DeadzoneSlider.Value, 1)
+            Deadzone = (float)Math.Round(DeadzoneSlider.Value, 1),
+            GyroMouseEnabled = _gyroMouseService.IsEnabled,
+            GyroMouseAlwaysActive = _gyroMouseService.AlwaysActive,
+            GyroMouseTriggerMask = _gyroMouseService.TriggerMask,
+            GyroMouseTriggerDisplay = _gyroMouseService.TriggerDisplay,
+            GyroMouseSpeed = (float)Math.Round(_gyroMouseService.SpeedMultiplier, 1)
         };
 
         SaveProfileButton.IsEnabled = false;
@@ -241,7 +262,12 @@ public partial class MainWindow
                 SwapAxes = SwapAxesToggle.IsChecked == true,
                 UsePitchOffset = PitchOffsetToggle.IsChecked == true,
                 Sensitivity = (float)Math.Round(SensitivitySlider.Value, 1),
-                Deadzone = (float)Math.Round(DeadzoneSlider.Value, 1)
+                Deadzone = (float)Math.Round(DeadzoneSlider.Value, 1),
+            GyroMouseEnabled = _gyroMouseService.IsEnabled,
+            GyroMouseAlwaysActive = _gyroMouseService.AlwaysActive,
+            GyroMouseTriggerMask = _gyroMouseService.TriggerMask,
+            GyroMouseTriggerDisplay = _gyroMouseService.TriggerDisplay,
+            GyroMouseSpeed = (float)Math.Round(_gyroMouseService.SpeedMultiplier, 1)
             };
         }
 

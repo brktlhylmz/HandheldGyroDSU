@@ -67,6 +67,54 @@ public partial class MainWindow
         BrowseAndAddExeRule();
     }
 
+    private void RefreshRunningAppsButton_Click(object sender, RoutedEventArgs e)
+    {
+        RefreshRunningAppsList(forceRefresh: true);
+    }
+
+    private void AddRunningAppRuleButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (RunningAppsComboBox?.SelectedItem is not ControllerAndAppWatcherService.RunningAppEntry entry)
+            return;
+
+        string activeProfile = _lastStatus?.ActiveProfileName ?? "Standard Landscape";
+        _automationWatcher.AddOrUpdateEmulatorRule(
+            processName: entry.ProcessName,
+            displayName: entry.DisplayName,
+            profileName: activeProfile,
+            isEnabled: true);
+
+        RenderControllersAndRulesUi();
+        ShowToastNotification(_loc["ToastEmulatorRuleAddedTitle"], $"{entry.DisplayName} ({entry.ProcessName}.exe) → {activeProfile}");
+    }
+
+    private void RefreshRunningAppsList(bool forceRefresh = false)
+    {
+        if (RunningAppsComboBox is null)
+            return;
+
+        if (!forceRefresh && RunningAppsComboBox.IsDropDownOpen)
+            return;
+
+        string? prevProc = (RunningAppsComboBox.SelectedItem as ControllerAndAppWatcherService.RunningAppEntry)?.ProcessName;
+        IReadOnlyList<ControllerAndAppWatcherService.RunningAppEntry> apps = _automationWatcher.GetRunningApplications();
+        RunningAppsComboBox.ItemsSource = apps;
+
+        if (apps.Count > 0)
+        {
+            var match = prevProc is not null
+                ? apps.FirstOrDefault(a => string.Equals(a.ProcessName, prevProc, StringComparison.OrdinalIgnoreCase))
+                : null;
+            RunningAppsComboBox.SelectedItem = match ?? apps[0];
+            AddRunningAppRuleButton.IsEnabled = true;
+        }
+        else
+        {
+            RunningAppsComboBox.SelectedIndex = -1;
+            AddRunningAppRuleButton.IsEnabled = false;
+        }
+    }
+
     private void BrowseAndAddExeRule()
     {
         string emuDeckDir = Path.Combine(
@@ -157,6 +205,7 @@ public partial class MainWindow
             }
 
             ControllersListPanel.Children.Clear();
+            RefreshRunningAppsList();
 
         foreach (KnownControllerConfig ctrl in controllers)
         {
@@ -401,6 +450,7 @@ public partial class MainWindow
 
                     if (ctrl.IsConnected)
                     {
+                        _automationWatcher.SetBaseProfileName(selectedProf.Name);
                         DsuStatusDto status = await _ipcClient.ApplyProfileAsync(selectedProf.Name);
                         UpdateUiFromStatus(status);
                         ShowToastNotification(
