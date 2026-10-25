@@ -227,6 +227,21 @@
   "ToastUpdateAvailableDesc": "Open Settings to install the new version with one click",
   "ToastUpdateUpToDateTitle": "✓ APPLICATION UP TO DATE",
   "ToastUpdateCheckFailedTitle": "UPDATE CHECK FAILED",
+  "DevRpcs3PatchTitle": "RPCS3 Handheld SDL Gyro & Axis Patcher",
+  "DevRpcs3PatchDesc": "Fixes RPCS3's SDL_Init main-thread sensor & landscape axis flags so built-in handheld motion works natively in SIXAXIS games without virtual controller drivers",
+  "DevRpcs3BadgePatched": "✓ PATCHED & ACTIVE",
+  "DevRpcs3BadgeUnpatched": "UNPATCHED",
+  "DevRpcs3BadgeUnsupported": "UNSUPPORTED BUILD",
+  "DevRpcs3BadgeNotFound": "NOT DETECTED",
+  "DevRpcs3NotFoundDesc": "RPCS3 executable not detected automatically • Click Browse to select rpcs3.exe",
+  "BtnDevRpcs3ApplyPatch": "⚡ APPLY SDL GYRO PATCH",
+  "BtnDevRpcs3Restore": "RESTORE ORIGINAL",
+  "BtnDevRpcs3Browse": "BROWSE...",
+  "ToastRpcs3PatchedTitle": "⚡ RPCS3 SDL GYRO PATCH APPLIED",
+  "ToastRpcs3PatchedDesc": "SDL_Init flags (0x1B020) & Player 1 SDL handler configured • Backup saved as rpcs3.exe.bak",
+  "ToastRpcs3RestoredTitle": "↩️ RPCS3 ORIGINAL BINARY RESTORED",
+  "ToastRpcs3RestoredDesc": "Restored unpatched rpcs3.exe from backup",
+  "ToastRpcs3PatchErrorTitle": "RPCS3 PATCH FAILED",
 
   "GamepadHint": "[D-PAD] Navigate   [A] Toggle/Select   [Y] Calibrate   [LB/RB] Switch Tab"
 }

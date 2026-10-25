@@ -124,6 +124,7 @@ public partial class MainWindow : Window
                 UpdateUiFromStatus(_lastStatus);
             }
             RenderControllersAndRulesUi();
+            RefreshRpcs3PatchStatusUi();
         };
 
         _pollTimer = new DispatcherTimer
@@ -144,6 +145,7 @@ public partial class MainWindow : Window
                 UpdateUiFromStatus(resumedStatus);
                 _automationWatcher.ScanControllers(resumedStatus.ServerPort, resumedStatus.SecondaryPort);
                 RenderControllersAndRulesUi();
+            RefreshRpcs3PatchStatusUi();
             };
         };
 
@@ -163,6 +165,7 @@ public partial class MainWindow : Window
             if (GameBarOverlayToggle.Parent is FrameworkElement gbGrid && gbGrid.Parent is Panel sStack) { int idx = sStack.Children.IndexOf(gbGrid); gbGrid.Visibility = Visibility.Collapsed; if (idx > 0 && sStack.Children[idx - 1] is FrameworkElement div) div.Visibility = Visibility.Collapsed; }
             _automationWatcher.Start();
             RenderControllersAndRulesUi();
+            RefreshRpcs3PatchStatusUi();
 
             _pollTimer.Start();
             _gamepadService.Start();
@@ -255,6 +258,9 @@ public partial class MainWindow : Window
                     DevSyntheticWaveToggle,
                     DevLoopbackClientToggle,
                     DevTestHudButton,
+                DevRpcs3ApplyPatchButton,
+                DevRpcs3RestoreButton,
+                DevRpcs3BrowseButton,
                 DevGyroMouseToggle,
                 DevGyroMouseModeComboBox,
                 DevGyroMouseBindButton,
@@ -281,6 +287,9 @@ public partial class MainWindow : Window
                 DevSyntheticWaveToggle,
                 DevLoopbackClientToggle,
                 DevTestHudButton,
+                DevRpcs3ApplyPatchButton,
+                DevRpcs3RestoreButton,
+                DevRpcs3BrowseButton,
                 DevGyroMouseToggle,
                 DevGyroMouseModeComboBox,
                 DevGyroMouseBindButton,
@@ -349,6 +358,12 @@ public partial class MainWindow : Window
         if (ControllersTabButton.IsChecked == true || ProfilesTabButton.IsChecked == true)
         {
             RenderControllersAndRulesUi();
+            RefreshRpcs3PatchStatusUi();
+        }
+
+        if (SettingsTabButton.IsChecked == true)
+        {
+            RefreshRpcs3PatchStatusUi();
         }
 
         MainScrollViewer?.ScrollToTop();
