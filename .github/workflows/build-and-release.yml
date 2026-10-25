@@ -18,6 +18,8 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup .NET 10.0 SDK
         uses: actions/setup-dotnet@v4
@@ -49,7 +51,11 @@ jobs:
           "tag=$tag" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
           "title=$title" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
           "prerelease=$prerelease" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          $headSha = (git rev-parse HEAD).Trim()
+          $masterSha = (git rev-parse origin/master 2>$null).Trim()
+          $skipRelease = if ($isBeta -and $headSha -eq $masterSha) { "true" } else { "false" }
           "make_latest=$makeLatest" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          "skip_release=$skipRelease" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
 
       - name: Restore Dependencies
         run: dotnet restore .\HandheldGyroDSU.sln
@@ -140,7 +146,7 @@ jobs:
             publish/SHA256SUMS.txt
 
       - name: Publish Automatic Release (Stable on Master / Beta Pre-Release on Dev)
-        if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev')
+        if: github.event_name == 'push' && steps.meta.outputs.skip_release != 'true' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev')
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.meta.outputs.tag }}
