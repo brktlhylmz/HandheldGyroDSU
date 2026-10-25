@@ -958,15 +958,13 @@
                                             <Grid>
                                                 <Grid.ColumnDefinitions>
                                                     <ColumnDefinition Width="*" />
-                                                    <ColumnDefinition Width="5" />
+                                                    <ColumnDefinition Width="6" />
                                                     <ColumnDefinition Width="30" />
-                                                    <ColumnDefinition Width="5" />
-                                                    <ColumnDefinition Width="Auto" />
                                                 </Grid.ColumnDefinitions>
                                                 <ComboBox x:Name="RunningAppsComboBox" Grid.Column="0" Style="{DynamicResource AppComboBoxStyle}" DisplayMemberPath="ComboLabel" />
-                                                <Button x:Name="RefreshRunningAppsButton" Grid.Column="2" Style="{DynamicResource AppGhostButtonStyle}" Content="🔄" Height="28" Padding="0" FontSize="11" ToolTip="{Binding [RunningAppsRefreshTooltip], Source={x:Static services:LocalizationService.Instance}}" Click="RefreshRunningAppsButton_Click" />
-                                                <Button x:Name="AddRunningAppRuleButton" Grid.Column="4" Style="{DynamicResource AppPrimaryButtonStyle}" Content="{Binding [BtnAddRunningApp], Source={x:Static services:LocalizationService.Instance}}" Height="28" Padding="10,0" FontSize="10" Click="AddRunningAppRuleButton_Click" />
+                                                <Button x:Name="RefreshRunningAppsButton" Grid.Column="2" Style="{DynamicResource AppGhostButtonStyle}" Content="🔄" Height="30" Padding="0" FontSize="11" ToolTip="{Binding [RunningAppsRefreshTooltip], Source={x:Static services:LocalizationService.Instance}}" Click="RefreshRunningAppsButton_Click" />
                                             </Grid>
+                                            <Button x:Name="AddRunningAppRuleButton" Margin="0,6,0,0" Style="{DynamicResource AppSecondaryButtonStyle}" Content="{Binding [BtnAddRunningApp], Source={x:Static services:LocalizationService.Instance}}" Height="30" Padding="10,0" FontSize="10.5" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Click="AddRunningAppRuleButton_Click" />
                                         </StackPanel>
                                     </Border>
 
@@ -1746,7 +1744,7 @@
                                                     <ColumnDefinition Width="*" />
                                                 </Grid.ColumnDefinitions>
                                                 <TextBlock Grid.Column="0" Text="{Binding [DevGyroMouseButtonLabel], Source={x:Static services:LocalizationService.Instance}}" Foreground="{DynamicResource BrushTextSecondary}" FontSize="10.5" VerticalAlignment="Center" />
-                                                <Button x:Name="DevGyroMouseBindButton" Grid.Column="2" Style="{DynamicResource AppSecondaryButtonStyle}" Content="🎯 LT" Height="27" FontSize="10" HorizontalContentAlignment="Center" Click="DevGyroMouseBindButton_Click" />
+                                                <Button x:Name="DevGyroMouseBindButton" Grid.Column="2" Style="{DynamicResource AppSecondaryButtonStyle}" Content="🎯 [LT]" Height="28" Padding="8,0" FontSize="10.5" HorizontalContentAlignment="Center" Click="DevGyroMouseBindButton_Click" />
                                             </Grid>
                                             <Grid TextElement.Foreground="{DynamicResource BrushTextSecondary}">
                                                 <Grid.ColumnDefinitions>

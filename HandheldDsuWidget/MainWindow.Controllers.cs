@@ -504,6 +504,7 @@ public partial class MainWindow
                 Content = hotkeyBtnText,
                 Style = (Style)FindResource(isRecordingThis ? "AppPrimaryButtonStyle" : "AppSecondaryButtonStyle"),
                 Height = 26,
+                Padding = new Thickness(8, 0, 8, 0),
                 FontSize = 10,
                 HorizontalContentAlignment = HorizontalAlignment.Center
             };
