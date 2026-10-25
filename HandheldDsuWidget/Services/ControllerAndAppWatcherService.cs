@@ -943,8 +943,8 @@ public sealed class ControllerAndAppWatcherService : IDisposable
     {
         string extensionLine = sideways ? "Extension = None" : "Extension = Nunchuk";
         string sidewaysLine = sideways
-            ? $"Options/Sideways Wiimote = True{Environment.NewLine}Options/Upright Wiimote = False"
-            : $"Options/Sideways Wiimote = False{Environment.NewLine}Options/Upright Wiimote = False";
+            ? $"Options/Sideways Wiimote = True{Environment.NewLine}Options/Upright Wiimote = False{Environment.NewLine}Hotkeys/Upright Toggle = `Thumb L`"
+            : $"Options/Sideways Wiimote = False{Environment.NewLine}Options/Upright Wiimote = False{Environment.NewLine}Hotkeys/Sideways Toggle = `Thumb L`{Environment.NewLine}Hotkeys/Upright Toggle = `Thumb L`";
 
         string btnA = sideways ? "`Button Y`" : "`Button A`";
         string btnB = sideways ? "`Button B`|`Trigger R`|`Shoulder R`" : "`Button B`";

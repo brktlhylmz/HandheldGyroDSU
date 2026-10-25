@@ -65,7 +65,7 @@ public sealed class DeviceProfile
         // Apply per-axis inversions:
         // - InvertX ("Invert Pitch (X)") inverts both Pitch gyro (gx) and Pitch gravity (ay -> AccZ)
         // - InvertY ("Invert Roll (Y)") inverts both Roll gyro (gy) and Roll gravity (ax -> AccX)
-        // - InvertZ ("Invert Yaw (Z)") inverts both Yaw gyro (gz) and Vertical gravity (az -> AccY)
+        // - InvertZ ("Invert Yaw (Z)") inverts only Yaw gyro (gz); vertical gravity (az -> AccY) stays -1G
         if (InvertX)
         {
             ay = -ay;
@@ -80,7 +80,6 @@ public sealed class DeviceProfile
 
         if (InvertZ)
         {
-            az = -az;
             gz = -gz;
         }
 
@@ -91,7 +90,7 @@ public sealed class DeviceProfile
         // Roll  = rotation around Y-axis (paired with X-axis gravity -> AccX)
         return new MotionData(
             AccX: -ax,
-            AccY: -az,
+            AccY: az,
             AccZ: -ay,
             GyroPitch: -gx,
             GyroYaw: gz,
