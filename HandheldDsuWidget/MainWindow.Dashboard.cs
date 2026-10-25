@@ -44,6 +44,7 @@ public partial class MainWindow
             if (isWindowHiddenOrMinimized)
             {
                 _lastStatus = status;
+                SyncGyroMouseFromStatus(status);
             }
             else
             {
@@ -169,6 +170,8 @@ public partial class MainWindow
             _loopbackTester.UpdateTargetPorts(status.ServerPort, status.SecondaryPort, status.IsSecondaryClusterActive);
             DevLoopbackStatusText.Text = _loopbackTester.GetDiagnosticSummary();
             DevSimClearButton.IsEnabled = _automationWatcher.SimulatedControllerCount > 0;
+            SyncGyroMouseFromStatus(status);
+            UpdateGyroMouseUiControls(status);
 
             // 3. Axis orientation switches, sensitivity/deadzone sliders, and active badge highlights
             PitchOffsetToggle.IsChecked = status.UsePitchOffset;

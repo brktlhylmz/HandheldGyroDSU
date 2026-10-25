@@ -952,6 +952,22 @@
                                     <!-- Dynamic List of Emulator Rules -->
                                     <StackPanel x:Name="EmulatorRulesListPanel" />
 
+                                    <Border Style="{DynamicResource AppSubPanelStyle}" Padding="8,7" Margin="0,6,0,0">
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding [RunningAppsPickerLabel], Source={x:Static services:LocalizationService.Instance}}" Foreground="{DynamicResource BrushTextSecondary}" FontSize="9.5" FontWeight="SemiBold" Margin="0,0,0,5" />
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="6" />
+                                                    <ColumnDefinition Width="30" />
+                                                </Grid.ColumnDefinitions>
+                                                <ComboBox x:Name="RunningAppsComboBox" Grid.Column="0" Style="{DynamicResource AppComboBoxStyle}" DisplayMemberPath="ComboLabel" />
+                                                <Button x:Name="RefreshRunningAppsButton" Grid.Column="2" Style="{DynamicResource AppGhostButtonStyle}" Content="🔄" Height="30" Padding="0" FontSize="11" ToolTip="{Binding [RunningAppsRefreshTooltip], Source={x:Static services:LocalizationService.Instance}}" Click="RefreshRunningAppsButton_Click" />
+                                            </Grid>
+                                            <Button x:Name="AddRunningAppRuleButton" Margin="0,6,0,0" Style="{DynamicResource AppSecondaryButtonStyle}" Content="{Binding [BtnAddRunningApp], Source={x:Static services:LocalizationService.Instance}}" Height="30" Padding="10,0" FontSize="10.5" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Click="AddRunningAppRuleButton_Click" />
+                                        </StackPanel>
+                                    </Border>
+
                                     <!-- Browse & Select Emulator / Game (.exe) Button -->
                                     <Button x:Name="AddCustomExeRuleButton"
                                             Margin="0,8,0,0"
@@ -1054,6 +1070,60 @@
                                                    FontSize="9.5"
                                                    TextWrapping="Wrap"
                                                    Margin="1,5,0,0" />
+                                    </StackPanel>
+
+                                    <Border Style="{DynamicResource AppRowDividerStyle}" Margin="0,10,0,10" />
+
+                                    <!-- 1b. Per-Profile Gyro-to-Mouse (PC / Steam Aim) Configuration -->
+                                    <StackPanel Margin="0,0,0,4">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,10,0">
+                                                <TextBlock Text="{Binding [DevGyroMouseTitle], Source={x:Static services:LocalizationService.Instance}}" Foreground="{DynamicResource BrushTextPrimary}" FontWeight="SemiBold" FontSize="11.5" />
+                                                <TextBlock Text="{Binding [DevGyroMouseDesc], Source={x:Static services:LocalizationService.Instance}}" Foreground="{DynamicResource BrushTextSecondary}" FontSize="9.5" TextWrapping="Wrap" Margin="0,2,0,0" />
+                                            </StackPanel>
+                                            <CheckBox x:Name="DevGyroMouseToggle" Grid.Column="1" Style="{DynamicResource AppToggleSwitchStyle}" IsChecked="False" VerticalAlignment="Center" Click="DevGyroMouseToggle_Click" />
+                                        </Grid>
+                                        <Border Style="{DynamicResource AppSubPanelStyle}" Padding="10,8" Margin="0,8,0,0">
+                                            <StackPanel>
+                                                <Grid Margin="0,0,0,8">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="8" />
+                                                        <ColumnDefinition Width="*" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Grid.Column="0" Text="{Binding [DevGyroMouseTriggerLabel], Source={x:Static services:LocalizationService.Instance}}" Foreground="{DynamicResource BrushTextSecondary}" FontSize="10.5" VerticalAlignment="Center" />
+                                                    <ComboBox x:Name="DevGyroMouseModeComboBox" Grid.Column="2" Style="{DynamicResource AppComboBoxStyle}" SelectedIndex="0" SelectionChanged="DevGyroMouseModeComboBox_SelectionChanged">
+                                                        <ComboBoxItem Tag="hold" Content="{Binding [DevGyroMouseModeHoldBtn], Source={x:Static services:LocalizationService.Instance}}" />
+                                                        <ComboBoxItem Tag="always" Content="{Binding [DevGyroMouseModeAlways], Source={x:Static services:LocalizationService.Instance}}" />
+                                                    </ComboBox>
+                                                </Grid>
+                                                <Grid x:Name="DevGyroMouseButtonRowGrid" Margin="0,0,0,8">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="8" />
+                                                        <ColumnDefinition Width="*" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Grid.Column="0" Text="{Binding [DevGyroMouseButtonLabel], Source={x:Static services:LocalizationService.Instance}}" Foreground="{DynamicResource BrushTextSecondary}" FontSize="10.5" VerticalAlignment="Center" />
+                                                    <Button x:Name="DevGyroMouseBindButton" Grid.Column="2" Style="{DynamicResource AppSecondaryButtonStyle}" Content="🎯 [LT]" Height="28" Padding="8,0" FontSize="10.5" HorizontalContentAlignment="Center" Click="DevGyroMouseBindButton_Click" />
+                                                </Grid>
+                                                <Grid TextElement.Foreground="{DynamicResource BrushTextSecondary}">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="10" />
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="8" />
+                                                        <ColumnDefinition Width="38" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Grid.Column="0" Text="{Binding [DevGyroMouseSpeedLabel], Source={x:Static services:LocalizationService.Instance}}" Foreground="{DynamicResource BrushTextSecondary}" FontSize="10.5" VerticalAlignment="Center" />
+                                                    <Slider x:Name="DevGyroMouseSpeedSlider" Grid.Column="2" Minimum="0.2" Maximum="3.5" Value="1.2" TickFrequency="0.1" IsSnapToTickEnabled="True" VerticalAlignment="Center" ValueChanged="DevGyroMouseSpeedSlider_ValueChanged" />
+                                                    <TextBlock x:Name="DevGyroMouseSpeedValueText" Grid.Column="4" Text="1.2x" Foreground="{DynamicResource BrushTelemetryReadout}" FontFamily="{DynamicResource FontMonospace}" FontSize="10.5" FontWeight="SemiBold" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                                                </Grid>
+                                            </StackPanel>
+                                        </Border>
                                     </StackPanel>
 
                                     <Border Style="{DynamicResource AppRowDividerStyle}" Margin="0,10,0,10" />
@@ -1732,7 +1802,8 @@
                                                 Height="30"
                                                 Padding="10,0"
                                                 VerticalAlignment="Center"
-                                                Click="DevTestHudButton_Click" />
+                                                Click="DevTestHudButton_Click" /></Grid>
+                                    <Grid Visibility="Collapsed">
                                     </Grid>
                                 </StackPanel>
                             </Border>

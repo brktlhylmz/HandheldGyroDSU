@@ -39,6 +39,10 @@ public partial class MainWindow : Window
     private readonly UpdateService _updateService = new();
     private GitHubReleaseInfo? _pendingUpdateRelease;
     private readonly GamepadNavigationService _gamepadService;
+    private readonly GyroMouseService _gyroMouseService;
+    private IntPtr _windowHwnd;
+    [DllImport("user32.dll")]
+    private static extern IntPtr GetForegroundWindow();
     private readonly LocalizationService _loc = LocalizationService.Instance;
     private readonly DispatcherTimer _pollTimer;
     private readonly bool _startedMinimized;
@@ -95,6 +99,8 @@ public partial class MainWindow : Window
         CurrentVersionBadgeText.Text = $"v{UpdateService.GetCurrentVersion()}";
 
         _gamepadService = new GamepadNavigationService(this);
+        _gyroMouseService = new GyroMouseService(_ipcClient, () => _windowHwnd != IntPtr.Zero && GetForegroundWindow() == _windowHwnd);
+        _gyroMouseService.TriggerButtonBound += OnGyroMouseTriggerButtonBound;
 
         LanguageComboBox.ItemsSource = _loc.AvailableLanguages;
         LanguageComboBox.SelectedValue = _loc.CurrentLanguage;
@@ -128,6 +134,7 @@ public partial class MainWindow : Window
 
         SourceInitialized += (_, _) =>
         {
+            _windowHwnd = new WindowInteropHelper(this).Handle;
             _trayService.Initialize(this, _loc["TrayTooltip"]);
             _trayService.TrayLeftClicked += (_, _) => ToggleWindowVisibility();
             _trayService.TrayRightClicked += (_, _) => ShowTrayContextMenu();
@@ -146,6 +153,7 @@ public partial class MainWindow : Window
             _loc.SetLanguage(status.Language);
             UpdateUiFromStatus(status);
             await RefreshProfilesAsync(status.ActiveProfileName);
+            _automationWatcher.SetBaseProfileName(status.ActiveProfileName);
 
             _suppressUiEvents = true;
             AutoControllerSwitchToggle.IsChecked = _automationWatcher.Config.AutoSwitchByController;
@@ -158,9 +166,13 @@ public partial class MainWindow : Window
 
             _pollTimer.Start();
             _gamepadService.Start();
+
 #if !DEBUG
             _ = CheckForUpdatesInternalAsync(silentIfUpToDate: true);
 #endif
+
+
+            _gyroMouseService.Start();
         };
 
         Closed += (_, _) =>
@@ -170,11 +182,16 @@ public partial class MainWindow : Window
             _automationWatcher.Dispose();
             _hudToastService.Dispose();
             _gamepadService.Dispose();
+            _gyroMouseService.Dispose();
             _pollTimer.Stop();
             _trayService.Dispose();
             _ipcClient.Dispose();
         };
     }
+
+    public bool IsCapturingControllerButton =>
+        !string.IsNullOrWhiteSpace(_automationWatcher.RecordingHardwareId) ||
+        _gyroMouseService.IsListeningForTrigger;
 
     public IReadOnlyList<Control> GetActiveTabNavigableControls()
     {
@@ -184,6 +201,9 @@ public partial class MainWindow : Window
             [
                 AutoControllerSwitchToggle,
                 AutoEmulatorSwitchToggle,
+                RunningAppsComboBox,
+                RefreshRunningAppsButton,
+                AddRunningAppRuleButton,
                 AddCustomExeRuleButton,
                 CalibrateButton
             ];
@@ -195,6 +215,10 @@ public partial class MainWindow : Window
             [
                 ProfileComboBox,
                 DeleteProfileButton,
+                DevGyroMouseToggle,
+                DevGyroMouseModeComboBox,
+                DevGyroMouseBindButton,
+                DevGyroMouseSpeedSlider,
                 NewProfileNameTextBox,
                 SaveProfileButton,
                 ImportProfileButton,
@@ -231,6 +255,10 @@ public partial class MainWindow : Window
                     DevSyntheticWaveToggle,
                     DevLoopbackClientToggle,
                     DevTestHudButton,
+                DevGyroMouseToggle,
+                DevGyroMouseModeComboBox,
+                DevGyroMouseBindButton,
+                DevGyroMouseSpeedSlider,
                     CalibrateButton
                 ];
             }
@@ -253,6 +281,10 @@ public partial class MainWindow : Window
                 DevSyntheticWaveToggle,
                 DevLoopbackClientToggle,
                 DevTestHudButton,
+                DevGyroMouseToggle,
+                DevGyroMouseModeComboBox,
+                DevGyroMouseBindButton,
+                DevGyroMouseSpeedSlider,
                 CalibrateButton
             ];
         }

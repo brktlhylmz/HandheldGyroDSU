@@ -233,6 +233,7 @@
         <Setter Property="Foreground" Value="{DynamicResource BrushTextOnAccent}" />
         <Setter Property="BorderBrush" Value="{DynamicResource BrushAccentPrimaryHover}" />
         <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Padding" Value="14,6" />
         <Setter Property="FontWeight" Value="Bold" />
         <Setter Property="FontSize" Value="12" />
         <Setter Property="Cursor" Value="Hand" />

@@ -131,6 +131,21 @@ public sealed class DsuStatusDto
 
     [JsonPropertyName("biasZ")]
     public double BiasZ { get; set; }
+
+    [JsonPropertyName("gyroMouseEnabled")]
+    public bool GyroMouseEnabled { get; set; }
+
+    [JsonPropertyName("gyroMouseAlwaysActive")]
+    public bool GyroMouseAlwaysActive { get; set; }
+
+    [JsonPropertyName("gyroMouseTriggerMask")]
+    public uint GyroMouseTriggerMask { get; set; } = 0x10000;
+
+    [JsonPropertyName("gyroMouseTriggerDisplay")]
+    public string GyroMouseTriggerDisplay { get; set; } = "LT";
+
+    [JsonPropertyName("gyroMouseSpeed")]
+    public double GyroMouseSpeed { get; set; } = 1.2;
 }
 
 /// <summary>
@@ -207,6 +222,23 @@ public sealed class DsuIpcClient : IDisposable
         }
     }
 
+    /// <summary>
+    /// Reads the latest processed IMU sample directly from the embedded sensor engine at high frequency
+    /// without HTTP serialization overhead.
+    /// </summary>
+    public bool TryGetLiveMotionSample(out MotionData motion)
+    {
+        EnsureEmbeddedEngineStarted();
+        if (_embeddedSensor is not null)
+        {
+            motion = _embeddedSensor.GetProcessedMotionData();
+            return true;
+        }
+
+        motion = default;
+        return false;
+    }
+
     private DsuStatusDto BuildEmbeddedStatusDto(string? customMessage = null)
     {
         EnsureEmbeddedEngineStarted();
@@ -256,7 +288,12 @@ public sealed class DsuIpcClient : IDisposable
             AccZ = Math.Round(motion.AccZ, 3),
             BiasX = Math.Round(bias.BiasX, 3),
             BiasY = Math.Round(bias.BiasY, 3),
-            BiasZ = Math.Round(bias.BiasZ, 3)
+            BiasZ = Math.Round(bias.BiasZ, 3),
+            GyroMouseEnabled = _embeddedSettings?.GyroMouseEnabled ?? false,
+            GyroMouseAlwaysActive = _embeddedSettings?.GyroMouseAlwaysActive ?? false,
+            GyroMouseTriggerMask = _embeddedSettings?.GyroMouseTriggerMask ?? 0x10000u,
+            GyroMouseTriggerDisplay = _embeddedSettings?.GyroMouseTriggerDisplay ?? "LT",
+            GyroMouseSpeed = Math.Round(_embeddedSettings?.GyroMouseSpeed ?? 1.2f, 2)
         };
     }
 
@@ -494,9 +531,34 @@ public sealed class DsuIpcClient : IDisposable
             if (_embeddedSettings is not null)
             {
                 _embeddedSettings.ActiveProfileName = target.Name;
+                _embeddedSettings.GyroMouseEnabled = target.GyroMouseEnabled;
+                _embeddedSettings.GyroMouseAlwaysActive = target.GyroMouseAlwaysActive;
+                _embeddedSettings.GyroMouseTriggerMask = target.GyroMouseTriggerMask == 0 ? 0x10000u : target.GyroMouseTriggerMask;
+                _embeddedSettings.GyroMouseTriggerDisplay = string.IsNullOrWhiteSpace(target.GyroMouseTriggerDisplay) ? "LT" : target.GyroMouseTriggerDisplay;
+                _embeddedSettings.GyroMouseSpeed = target.GyroMouseSpeed <= 0.05f ? 1.2f : target.GyroMouseSpeed;
             }
             _embeddedIpcServer?.SaveCurrentSettings();
         }
+        return BuildEmbeddedStatusDto();
+    }
+
+    public DsuStatusDto UpdateGyroMouseSettings(
+        bool enabled,
+        bool alwaysActive,
+        uint triggerMask,
+        string triggerDisplay,
+        float speed)
+    {
+        EnsureEmbeddedEngineStarted();
+        if (_embeddedSettings is not null)
+        {
+            _embeddedSettings.GyroMouseEnabled = enabled;
+            _embeddedSettings.GyroMouseAlwaysActive = alwaysActive;
+            _embeddedSettings.GyroMouseTriggerMask = triggerMask == 0 ? 0x10000u : triggerMask;
+            _embeddedSettings.GyroMouseTriggerDisplay = string.IsNullOrWhiteSpace(triggerDisplay) ? "LT" : triggerDisplay;
+            _embeddedSettings.GyroMouseSpeed = Math.Clamp(speed, 0.2f, 4.0f);
+        }
+        _embeddedIpcServer?.SaveCurrentSettings();
         return BuildEmbeddedStatusDto();
     }
 
@@ -516,6 +578,11 @@ public sealed class DsuIpcClient : IDisposable
         if (_embeddedSettings is not null)
         {
             _embeddedSettings.ActiveProfileName = profile.Name;
+            _embeddedSettings.GyroMouseEnabled = profile.GyroMouseEnabled;
+            _embeddedSettings.GyroMouseAlwaysActive = profile.GyroMouseAlwaysActive;
+            _embeddedSettings.GyroMouseTriggerMask = profile.GyroMouseTriggerMask == 0 ? 0x10000u : profile.GyroMouseTriggerMask;
+            _embeddedSettings.GyroMouseTriggerDisplay = string.IsNullOrWhiteSpace(profile.GyroMouseTriggerDisplay) ? "LT" : profile.GyroMouseTriggerDisplay;
+            _embeddedSettings.GyroMouseSpeed = profile.GyroMouseSpeed <= 0.05f ? 1.2f : profile.GyroMouseSpeed;
         }
         _embeddedIpcServer?.SaveCurrentSettings();
         return BuildEmbeddedStatusDto();

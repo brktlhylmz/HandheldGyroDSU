@@ -55,6 +55,9 @@ public sealed class ControllerAndAppWatcherService : IDisposable
     private readonly List<(string HwId, string DisplayName, string DefaultProfile)> _simulatedControllers = [];
     private AutomationConfig _config;
     private string _lastDetectedEmulatorProcess = string.Empty;
+    private string _baseProfileName = "Standard Landscape";
+    private string? _activeRuleProcessName;
+    private string? _activeRuleDisplayName;
     private HashSet<string> _previousConnectedHwIds = [];
     private bool _isInitialScan = true;
     private bool _isScanning;
@@ -521,8 +524,175 @@ public sealed class ControllerAndAppWatcherService : IDisposable
         return orderedSnapshot;
     }
 
+    public void SetBaseProfileName(string? profileName)
+    {
+        if (string.IsNullOrWhiteSpace(profileName))
+            return;
+
+        if (_activeRuleProcessName is null)
+        {
+            _baseProfileName = profileName;
+        }
+    }
+
+    public string ResolveFallbackControllerProfile()
+    {
+        lock (_syncLock)
+        {
+            var primaryConnected = _config.Controllers
+                .Where(c => c.IsConnected && !string.IsNullOrWhiteSpace(c.AssignedProfileName))
+                .OrderBy(c => c.AssignedPlayerIndex)
+                .FirstOrDefault();
+
+            if (primaryConnected is not null)
+            {
+                return primaryConnected.AssignedProfileName;
+            }
+        }
+
+        return !string.IsNullOrWhiteSpace(_baseProfileName) ? _baseProfileName : "Standard Landscape";
+    }
+
+    public sealed record RunningAppEntry(string ProcessName, string DisplayName, string ComboLabel);
+
+    private static readonly HashSet<string> ExcludedRunningProcessNames = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "explorer",
+        "applicationframehost",
+        "textinputhost",
+        "searchhost",
+        "startmenuexperiencehost",
+        "shellexperiencehost",
+        "systemsettings",
+        "taskmgr",
+        "handheldgyrodsu",
+        "handhelddsuwidget",
+        "handhelddsuserver",
+        "svchost",
+        "dwm",
+        "csrss",
+        "conhost",
+        "powershell",
+        "pwsh",
+        "cmd",
+        "steamwebhelper",
+        "epicwebhelper",
+        "crashhandler",
+        "crashhandler64"
+    };
+
+    public IReadOnlyList<RunningAppEntry> GetRunningApplications()
+    {
+        var results = new List<RunningAppEntry>();
+        var seenProc = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        try
+        {
+            foreach (Process p in Process.GetProcesses())
+            {
+                using (p)
+                {
+                    try
+                    {
+                        if (p.MainWindowHandle == IntPtr.Zero)
+                            continue;
+
+                        string procName = (p.ProcessName ?? string.Empty).Trim();
+                        if (string.IsNullOrWhiteSpace(procName) || ExcludedRunningProcessNames.Contains(procName))
+                            continue;
+
+                        string windowTitle = (p.MainWindowTitle ?? string.Empty).Trim();
+                        if (string.IsNullOrWhiteSpace(windowTitle))
+                            continue;
+
+                        string lowerProc = procName.ToLowerInvariant();
+                        if (!seenProc.Add(lowerProc))
+                            continue;
+
+                        string friendly = AutomationConfig.ResolveFriendlyProcessDisplayName(lowerProc);
+                        string displayName = !string.Equals(friendly, lowerProc, StringComparison.OrdinalIgnoreCase)
+                            ? friendly
+                            : (windowTitle.Length > 38 ? windowTitle[..38].Trim() + "…" : windowTitle);
+
+                        results.Add(new RunningAppEntry(
+                            lowerProc,
+                            displayName,
+                            $"{displayName} ({lowerProc}.exe)"));
+                    }
+                    catch
+                    {
+                        // Ignore inaccessible processes
+                    }
+                }
+            }
+        }
+        catch
+        {
+            // Ignore process enumeration errors
+        }
+
+        return results.OrderBy(r => r.DisplayName, StringComparer.OrdinalIgnoreCase).ToList();
+    }
+
+    private static bool IsProcessStillRunning(string processNamePattern)
+    {
+        try
+        {
+            foreach (Process p in Process.GetProcesses())
+            {
+                using (p)
+                {
+                    try
+                    {
+                        if (p.ProcessName.Contains(processNamePattern, StringComparison.OrdinalIgnoreCase))
+                        {
+                            return true;
+                        }
+                    }
+                    catch
+                    {
+                        // Ignore inaccessible processes
+                    }
+                }
+            }
+        }
+        catch
+        {
+            // Ignore process enumeration errors
+        }
+        return false;
+    }
+
+    private void CheckActiveRuleProcessExit()
+    {
+        if (_activeRuleProcessName is null)
+            return;
+
+        bool stillRunning = _config.AutoSwitchByEmulator && IsProcessStillRunning(_activeRuleProcessName);
+        if (!stillRunning)
+        {
+            string closedDisplay = _activeRuleDisplayName ?? _activeRuleProcessName;
+            _activeRuleProcessName = null;
+            _activeRuleDisplayName = null;
+            _lastDetectedEmulatorProcess = string.Empty;
+
+            string fallbackProfile = ResolveFallbackControllerProfile();
+            int connectedCount = _config.Controllers.Count(c => c.IsConnected);
+            var loc = LocalizationService.Instance;
+            AutomationNotification?.Invoke(
+                this,
+                (
+                    loc.Format("ToastEmulatorClosedTitleFormat", closedDisplay),
+                    loc.Format("ToastEmulatorClosedSubFormat", fallbackProfile),
+                    fallbackProfile,
+                    connectedCount
+                ));
+        }
+    }
+
     private void CheckForegroundEmulator()
     {
+        CheckActiveRuleProcessExit();
         if (!_config.AutoSwitchByEmulator)
             return;
 
@@ -549,7 +719,8 @@ public sealed class ControllerAndAppWatcherService : IDisposable
                 _ = Task.Run(() => EnsureDolphinDsuConfigured());
             }
 
-            if (!_config.AutoSwitchByEmulator)
+            CheckActiveRuleProcessExit();
+        if (!_config.AutoSwitchByEmulator)
                 return;
 
             var matchedRule = _config.EmulatorRules.FirstOrDefault(r =>
@@ -557,6 +728,8 @@ public sealed class ControllerAndAppWatcherService : IDisposable
 
             if (matchedRule is not null)
             {
+                _activeRuleProcessName = matchedRule.ProcessName;
+                _activeRuleDisplayName = matchedRule.DisplayName;
                 int connectedCount = _config.Controllers.Count(c => c.IsConnected);
                 var loc = LocalizationService.Instance;
                 AutomationNotification?.Invoke(

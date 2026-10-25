@@ -86,7 +86,7 @@ public sealed class GamepadNavigationService : IDisposable
     private void OnTimerTick(object? sender, EventArgs e)
     {
         // Only process controller input when the widget window is visible and focused in foreground
-        if (!_window.IsVisible || !_window.IsActive)
+        if (!_window.IsVisible || !_window.IsActive || _window.IsCapturingControllerButton)
         {
             _prevButtons = 0;
             _prevNavDir = 0;
