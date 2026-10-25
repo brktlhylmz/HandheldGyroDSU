@@ -158,7 +158,9 @@ public partial class MainWindow : Window
 
             _pollTimer.Start();
             _gamepadService.Start();
+#if !DEBUG
             _ = CheckForUpdatesInternalAsync(silentIfUpToDate: true);
+#endif
         };
 
         Closed += (_, _) =>
