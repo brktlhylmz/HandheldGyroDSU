@@ -10,7 +10,7 @@
     <AssemblyName>HandheldGyroDSU</AssemblyName>
     <Product>HandheldGyroDSU</Product>
     <Title>HandheldGyroDSU</Title>
-    <Version>1.0.0</Version>
+    <Version>1.0.32</Version>
     <Description>Zero-config Cemuhook DSU motion server and Xbox Game Bar companion overlay for Windows handhelds and motion controllers.</Description>
     <ApplicationIcon>Assets\app.ico</ApplicationIcon>
     <NoWarn>$(NoWarn);NU1701;NETSDK1206</NoWarn>
