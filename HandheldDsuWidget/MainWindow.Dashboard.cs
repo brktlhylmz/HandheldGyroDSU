@@ -160,6 +160,10 @@ public partial class MainWindow
             GameBarOverlayToggle.IsChecked = status.GameBarOverlayEnabled;
             HudNotificationsToggle.IsChecked = status.HudNotificationsEnabled;
             TabletopCalibrationGuardToggle.IsChecked = status.TabletopCalibrationGuard;
+            if (!UpdateChannelComboBox.IsDropDownOpen)
+            {
+                UpdateChannelComboBox.SelectedValue = string.Equals(status.UpdateChannel, "beta", StringComparison.OrdinalIgnoreCase) ? "beta" : "stable";
+            }
             DevSyntheticWaveToggle.IsChecked = status.IsSyntheticWaveEnabled;
             DevLoopbackClientToggle.IsChecked = _loopbackTester.IsRunning;
             _loopbackTester.UpdateTargetPorts(status.ServerPort, status.SecondaryPort, status.IsSecondaryClusterActive);

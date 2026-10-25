@@ -1472,6 +1472,45 @@
                                 </StackPanel>
                             </Border>
 
+                            <!-- Settings Card 3b: Software Updates & Release Channel -->
+                            <Border Style="{DynamicResource AppCardStyle}" Margin="0,0,0,10">
+                                <StackPanel>
+                                    <Grid Margin="0,0,0,8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                                            <Border Width="3" Height="12" Background="{DynamicResource BrushAccentPrimary}" Margin="0,0,7,0" />
+                                            <TextBlock Text="{Binding [SectionSoftwareUpdates], Source={x:Static services:LocalizationService.Instance}}" Style="{DynamicResource AppSectionHeaderStyle}" />
+                                        </StackPanel>
+                                        <TextBlock x:Name="CurrentVersionBadgeText" Grid.Column="1" Text="v1.0.0" FontFamily="{DynamicResource FontMonospace}" Foreground="{DynamicResource BrushTelemetryReadout}" FontSize="10" FontWeight="Bold" VerticalAlignment="Center" />
+                                    </Grid>
+
+                                    <Grid Margin="0,0,0,8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="168" />
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,10,0">
+                                            <TextBlock Text="{Binding [UpdateChannelTitle], Source={x:Static services:LocalizationService.Instance}}" Foreground="{DynamicResource BrushTextPrimary}" FontWeight="SemiBold" FontSize="11.5" />
+                                            <TextBlock Text="{Binding [UpdateChannelDesc], Source={x:Static services:LocalizationService.Instance}}" Foreground="{DynamicResource BrushTextSecondary}" FontSize="9.5" TextWrapping="Wrap" Margin="0,2,0,0" />
+                                        </StackPanel>
+                                        <ComboBox x:Name="UpdateChannelComboBox" Grid.Column="1" Style="{DynamicResource AppComboBoxStyle}" SelectedValuePath="Tag" SelectedIndex="0" SelectionChanged="UpdateChannelComboBox_SelectionChanged">
+                                            <ComboBoxItem Tag="stable" Content="{Binding [UpdateChannelStable], Source={x:Static services:LocalizationService.Instance}}" />
+                                            <ComboBoxItem Tag="beta" Content="{Binding [UpdateChannelBeta], Source={x:Static services:LocalizationService.Instance}}" />
+                                        </ComboBox>
+                                    </Grid>
+
+                                    <Border Style="{DynamicResource AppSubPanelStyle}" Padding="8,6" Margin="0,0,0,8">
+                                        <TextBlock x:Name="UpdateStatusText" Text="{Binding [UpdateStatusIdle], Source={x:Static services:LocalizationService.Instance}}" Foreground="{DynamicResource BrushTextSecondary}" FontFamily="{DynamicResource FontMonospace}" FontSize="9.5" HorizontalAlignment="Center" TextWrapping="Wrap" />
+                                    </Border>
+
+                                    <Button x:Name="CheckUpdateButton" Style="{DynamicResource AppSecondaryButtonStyle}" Content="{Binding [BtnCheckUpdates], Source={x:Static services:LocalizationService.Instance}}" Height="30" Padding="10,0" FontSize="10.5" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Click="CheckUpdateButton_Click" />
+                                    <Button x:Name="InstallUpdateButton" Visibility="Collapsed" Margin="0,6,0,0" Style="{DynamicResource AppPrimaryButtonStyle}" Content="{Binding [BtnInstallUpdate], Source={x:Static services:LocalizationService.Instance}}" Height="30" Padding="10,0" FontSize="10.5" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Click="InstallUpdateButton_Click" />
+                                </StackPanel>
+                            </Border>
+
                             <!-- Settings Card 4: Data & Maintenance Shortcuts -->
                             <Border Style="{DynamicResource AppCardStyle}" Margin="0,0,0,10">
                                 <StackPanel>

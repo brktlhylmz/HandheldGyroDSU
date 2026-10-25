@@ -311,4 +311,107 @@ public partial class MainWindow
             isError: false,
             showHudOverlay: true);
     }
+
+    private async void UpdateChannelComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_suppressUiEvents || !IsLoaded || UpdateChannelComboBox.SelectedItem is not ComboBoxItem item)
+            return;
+
+        string channel = (item.Tag as string) ?? "stable";
+        DsuStatusDto status = await _ipcClient.UpdatePreferencesAsync(updateChannel: channel);
+        UpdateUiFromStatus(status);
+        await CheckForUpdatesInternalAsync(silentIfUpToDate: false);
+    }
+
+    private async void CheckUpdateButton_Click(object sender, RoutedEventArgs e)
+    {
+        await CheckForUpdatesInternalAsync(silentIfUpToDate: false);
+    }
+
+    private async Task CheckForUpdatesInternalAsync(bool silentIfUpToDate)
+    {
+        if (CheckUpdateButton is null || UpdateStatusText is null)
+            return;
+
+        CheckUpdateButton.IsEnabled = false;
+        UpdateStatusText.Text = _loc["UpdateStatusChecking"];
+        UpdateStatusText.Foreground = TextSecondaryBrush;
+
+        try
+        {
+            string channel = (_lastStatus?.UpdateChannel ?? (UpdateChannelComboBox.SelectedValue as string) ?? "stable");
+            UpdateCheckResult result = await _updateService.CheckForUpdatesAsync(channel);
+
+            if (!string.IsNullOrWhiteSpace(result.ErrorMessage))
+            {
+                _pendingUpdateRelease = null;
+                InstallUpdateButton.Visibility = Visibility.Collapsed;
+                UpdateStatusText.Text = _loc.Format("UpdateStatusErrorFormat", result.ErrorMessage);
+                UpdateStatusText.Foreground = StatusOfflineBrush;
+                if (!silentIfUpToDate)
+                {
+                    ShowToastNotification(_loc["ToastUpdateCheckFailedTitle"], result.ErrorMessage, isError: true);
+                }
+                return;
+            }
+
+            if (result.IsUpdateAvailable && result.Release is not null)
+            {
+                _pendingUpdateRelease = result.Release;
+                InstallUpdateButton.Visibility = Visibility.Visible;
+                InstallUpdateButton.Content = _loc.Format("BtnInstallUpdateFormat", result.LatestVersion);
+                UpdateStatusText.Text = _loc.Format("UpdateStatusAvailableFormat", result.LatestVersion, result.CurrentVersion);
+                UpdateStatusText.Foreground = StatusOnlineBrush;
+
+                ShowToastNotification(
+                    _loc.Format("ToastUpdateAvailableTitleFormat", result.LatestVersion),
+                    _loc["ToastUpdateAvailableDesc"],
+                    isError: false,
+                    showHudOverlay: false);
+            }
+            else
+            {
+                _pendingUpdateRelease = null;
+                InstallUpdateButton.Visibility = Visibility.Collapsed;
+                UpdateStatusText.Text = _loc.Format("UpdateStatusUpToDateFormat", result.CurrentVersion);
+                UpdateStatusText.Foreground = TextSecondaryBrush;
+
+                if (!silentIfUpToDate)
+                {
+                    ShowToastNotification(
+                        _loc["ToastUpdateUpToDateTitle"],
+                        _loc.Format("UpdateStatusUpToDateFormat", result.CurrentVersion));
+                }
+            }
+        }
+        finally
+        {
+            CheckUpdateButton.IsEnabled = true;
+        }
+    }
+
+    private async void InstallUpdateButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_pendingUpdateRelease is null)
+            return;
+
+        InstallUpdateButton.IsEnabled = false;
+        CheckUpdateButton.IsEnabled = false;
+
+        var progress = new Progress<int>(pct =>
+        {
+            UpdateStatusText.Text = _loc.Format("UpdateStatusDownloadingFormat", pct);
+            UpdateStatusText.Foreground = AccentPrimaryBrush;
+        });
+
+        var (success, err) = await _updateService.DownloadAndApplyUpdateAsync(_pendingUpdateRelease, progress);
+        if (!success)
+        {
+            InstallUpdateButton.IsEnabled = true;
+            CheckUpdateButton.IsEnabled = true;
+            UpdateStatusText.Text = _loc.Format("UpdateStatusErrorFormat", err ?? "Update failed");
+            UpdateStatusText.Foreground = StatusOfflineBrush;
+            ShowToastNotification(_loc["ToastUpdateCheckFailedTitle"], err ?? "Update failed", isError: true);
+        }
+    }
 }
