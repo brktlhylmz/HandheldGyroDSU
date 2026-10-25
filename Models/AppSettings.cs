@@ -15,6 +15,7 @@ public sealed class AppSettings
     public bool IsSecondaryClusterActive { get; set; }
     public int ActiveSlot { get; set; }
     public string Language { get; set; } = GetDefaultSystemLanguage();
+    public string UpdateChannel { get; set; } = "stable";
     public string ActiveProfileName { get; set; } = "Standard Landscape";
     public bool AutoSwitchProfiles { get; set; } = true;
     public bool IsStreamingEnabled { get; set; } = true;
@@ -75,6 +76,8 @@ public sealed class AppSettings
                         loaded.SecondaryUdpPort = 26762;
                     if (string.IsNullOrWhiteSpace(loaded.Language))
                         loaded.Language = GetDefaultSystemLanguage();
+                    if (string.IsNullOrWhiteSpace(loaded.UpdateChannel))
+                        loaded.UpdateChannel = "stable";
                     if (loaded.Sensitivity <= 0.05f)
                         loaded.Sensitivity = 1.0f;
                     loaded.Deadzone = Math.Clamp(loaded.Deadzone, 0f, 5f);

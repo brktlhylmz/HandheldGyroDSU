@@ -61,7 +61,8 @@ public sealed class IpcHttpServer : IDisposable
         bool? syntheticWaveEnabled = null,
         bool? rebindSensors = null,
         bool? forwardGamepadInputs = null,
-        bool? tabletopCalibrationGuard = null)
+        bool? tabletopCalibrationGuard = null,
+        string? updateChannel = null)
     {
         if (closeToTray.HasValue)
             _settings.CloseToTray = closeToTray.Value;
@@ -82,6 +83,12 @@ public sealed class IpcHttpServer : IDisposable
         {
             _sensorService.TabletopCalibrationGuard = tabletopCalibrationGuard.Value;
             _settings.TabletopCalibrationGuard = tabletopCalibrationGuard.Value;
+        }
+        if (!string.IsNullOrWhiteSpace(updateChannel))
+        {
+            _settings.UpdateChannel = string.Equals(updateChannel.Trim(), "beta", StringComparison.OrdinalIgnoreCase)
+                ? "beta"
+                : "stable";
         }
         SaveCurrentSettings();
     }
@@ -104,6 +111,7 @@ public sealed class IpcHttpServer : IDisposable
         _settings.GameBarOverlayEnabled = true;
         _settings.HudNotificationsEnabled = true;
         _settings.TabletopCalibrationGuard = true;
+        _settings.UpdateChannel = "stable";
         _sensorService.TabletopCalibrationGuard = true;
         SaveCurrentSettings();
     }
@@ -422,7 +430,8 @@ public sealed class IpcHttpServer : IDisposable
                     bool? rebind = ExtractBooleanParameter(query, body, "rebindSensors");
                     bool? forwardPad = ExtractBooleanParameter(query, body, "forwardGamepadInputs");
                     bool? calibGuard = ExtractBooleanParameter(query, body, "tabletopCalibrationGuard");
-                    SetPreferences(closeTray, gameBar, hudNotif, synthWave, rebind, forwardPad, calibGuard);
+                    string? updChan = ExtractStringParameter(query, body, "updateChannel", "channel");
+                    SetPreferences(closeTray, gameBar, hudNotif, synthWave, rebind, forwardPad, calibGuard, updChan);
                     string json = BuildStatusJson("Preferences updated");
                     await WriteHttpResponseAsync(stream, 200, "OK", json, cancellationToken);
                 }
@@ -479,6 +488,7 @@ public sealed class IpcHttpServer : IDisposable
         {
             message = message ?? "OK",
             language = _settings.Language,
+            updateChannel = _settings.UpdateChannel,
             activeProfileName = _settings.ActiveProfileName,
             serverPort = _udpServer.Port,
             activeSlot = (int)_udpServer.ActiveSlot,

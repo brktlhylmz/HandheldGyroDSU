@@ -21,6 +21,9 @@ public sealed class DsuStatusDto
     [JsonPropertyName("language")]
     public string Language { get; set; } = "en";
 
+    [JsonPropertyName("updateChannel")]
+    public string UpdateChannel { get; set; } = "stable";
+
     [JsonPropertyName("activeProfileName")]
     public string ActiveProfileName { get; set; } = "Standard Landscape";
 
@@ -217,6 +220,7 @@ public sealed class DsuIpcClient : IDisposable
         {
             Message = customMessage ?? "OK",
             Language = _embeddedSettings?.Language ?? "en",
+            UpdateChannel = _embeddedSettings?.UpdateChannel ?? "stable",
             ActiveProfileName = _embeddedSettings?.ActiveProfileName ?? "Standard Landscape",
             ServerPort = _embeddedUdpServer.Port,
             ActiveSlot = _embeddedUdpServer.ActiveSlot,
@@ -586,6 +590,7 @@ public sealed class DsuIpcClient : IDisposable
         bool? rebindSensors = null,
         bool? forwardGamepadInputs = null,
         bool? tabletopCalibrationGuard = null,
+        string? updateChannel = null,
         CancellationToken cancellationToken = default)
     {
         if (!_usingEmbeddedEngine)
@@ -598,7 +603,8 @@ public sealed class DsuIpcClient : IDisposable
                 syntheticWaveEnabled,
                 rebindSensors,
                 forwardGamepadInputs,
-                tabletopCalibrationGuard
+                tabletopCalibrationGuard,
+                updateChannel
             });
             DsuStatusDto? remote = await PostJsonAsync("/preferences", payload, cancellationToken);
             if (remote is not null)
@@ -614,7 +620,8 @@ public sealed class DsuIpcClient : IDisposable
             syntheticWaveEnabled,
             rebindSensors,
             forwardGamepadInputs,
-            tabletopCalibrationGuard);
+            tabletopCalibrationGuard,
+            updateChannel);
         return BuildEmbeddedStatusDto();
     }
 

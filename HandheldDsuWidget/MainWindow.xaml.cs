@@ -36,6 +36,8 @@ public partial class MainWindow : Window
     private readonly HudToastService _hudToastService = new();
     private readonly ControllerAndAppWatcherService _automationWatcher = new();
     private readonly DsuLoopbackTesterService _loopbackTester = new();
+    private readonly UpdateService _updateService = new();
+    private GitHubReleaseInfo? _pendingUpdateRelease;
     private readonly GamepadNavigationService _gamepadService;
     private readonly LocalizationService _loc = LocalizationService.Instance;
     private readonly DispatcherTimer _pollTimer;
@@ -88,7 +90,9 @@ public partial class MainWindow : Window
     public MainWindow(bool startMinimized)
     {
         _startedMinimized = startMinimized;
+        UpdateService.CleanupOldUpdateFiles();
         InitializeComponent();
+        CurrentVersionBadgeText.Text = $"v{UpdateService.GetCurrentVersion()}";
 
         _gamepadService = new GamepadNavigationService(this);
 
@@ -154,12 +158,13 @@ public partial class MainWindow : Window
 
             _pollTimer.Start();
             _gamepadService.Start();
+            _ = CheckForUpdatesInternalAsync(silentIfUpToDate: true);
         };
 
         Closed += (_, _) =>
         {
             _snackbarTimer?.Stop();
-            _gameBarAdapter.Dispose(); _loopbackTester.Dispose();
+            _gameBarAdapter.Dispose(); _loopbackTester.Dispose(); _updateService.Dispose();
             _automationWatcher.Dispose();
             _hudToastService.Dispose();
             _gamepadService.Dispose();
@@ -213,6 +218,9 @@ public partial class MainWindow : Window
                     GameBarOverlayToggle,
                     HudNotificationsToggle,
                     TabletopCalibrationGuardToggle,
+                    UpdateChannelComboBox,
+                    CheckUpdateButton,
+                    InstallUpdateButton,
                     OpenDataFolderButton,
                     ResetAllSettingsButton,
                     DevSimControllerComboBox,
