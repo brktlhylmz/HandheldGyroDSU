@@ -51,6 +51,7 @@ public sealed class UpdateService : IDisposable
 
     public static string GetCurrentVersion()
     {
+        string asmVersion = "1.0.0";
         try
         {
             Assembly? asm = Assembly.GetEntryAssembly() ?? Assembly.GetExecutingAssembly();
@@ -59,13 +60,15 @@ public sealed class UpdateService : IDisposable
             {
                 int plusIdx = infoVer.IndexOf('+');
                 string clean = plusIdx >= 0 ? infoVer[..plusIdx] : infoVer;
-                return clean.TrimStart('v', 'V').Trim();
+                asmVersion = clean.TrimStart('v', 'V').Trim();
             }
-
-            Version? ver = asm.GetName().Version;
-            if (ver is not null)
+            else
             {
-                return $"{ver.Major}.{ver.Minor}.{Math.Max(0, ver.Build)}";
+                Version? ver = asm.GetName().Version;
+                if (ver is not null)
+                {
+                    asmVersion = $"{ver.Major}.{ver.Minor}.{Math.Max(0, ver.Build)}";
+                }
             }
         }
         catch
@@ -73,7 +76,25 @@ public sealed class UpdateService : IDisposable
             // Ignore reflection errors
         }
 
-        return "1.0.0";
+        try
+        {
+            string tagFile = Path.Combine(AppContext.BaseDirectory, "version.tag");
+            if (File.Exists(tagFile))
+            {
+                string tagVer = File.ReadAllText(tagFile).Trim().TrimStart('v', 'V');
+                if (!string.IsNullOrWhiteSpace(tagVer) &&
+                    IsRemoteVersionNewer(asmVersion, tagVer, tagVer.Contains("-beta", StringComparison.OrdinalIgnoreCase)))
+                {
+                    return tagVer;
+                }
+            }
+        }
+        catch
+        {
+            // Ignore tag file read errors
+        }
+
+        return asmVersion;
     }
 
     /// <summary>
@@ -287,6 +308,15 @@ public sealed class UpdateService : IDisposable
             }
 
             progress?.Report(100);
+
+            try
+            {
+                File.WriteAllText(Path.Combine(baseDir, "version.tag"), release.TagName.TrimStart('v', 'V').Trim());
+            }
+            catch
+            {
+                // Ignore version tag stamp errors
+            }
 
             try
             {
