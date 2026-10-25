@@ -37,6 +37,10 @@ public partial class MainWindow : Window
     private readonly ControllerAndAppWatcherService _automationWatcher = new();
     private readonly DsuLoopbackTesterService _loopbackTester = new();
     private readonly GamepadNavigationService _gamepadService;
+    private readonly GyroMouseService _gyroMouseService;
+    private IntPtr _windowHwnd;
+    [DllImport("user32.dll")]
+    private static extern IntPtr GetForegroundWindow();
     private readonly LocalizationService _loc = LocalizationService.Instance;
     private readonly DispatcherTimer _pollTimer;
     private readonly bool _startedMinimized;
@@ -91,6 +95,7 @@ public partial class MainWindow : Window
         InitializeComponent();
 
         _gamepadService = new GamepadNavigationService(this);
+        _gyroMouseService = new GyroMouseService(_ipcClient, () => _windowHwnd != IntPtr.Zero && GetForegroundWindow() == _windowHwnd);
 
         LanguageComboBox.ItemsSource = _loc.AvailableLanguages;
         LanguageComboBox.SelectedValue = _loc.CurrentLanguage;
@@ -124,6 +129,7 @@ public partial class MainWindow : Window
 
         SourceInitialized += (_, _) =>
         {
+            _windowHwnd = new WindowInteropHelper(this).Handle;
             _trayService.Initialize(this, _loc["TrayTooltip"]);
             _trayService.TrayLeftClicked += (_, _) => ToggleWindowVisibility();
             _trayService.TrayRightClicked += (_, _) => ShowTrayContextMenu();
@@ -154,6 +160,7 @@ public partial class MainWindow : Window
 
             _pollTimer.Start();
             _gamepadService.Start();
+            _gyroMouseService.Start();
         };
 
         Closed += (_, _) =>
@@ -163,6 +170,7 @@ public partial class MainWindow : Window
             _automationWatcher.Dispose();
             _hudToastService.Dispose();
             _gamepadService.Dispose();
+            _gyroMouseService.Dispose();
             _pollTimer.Stop();
             _trayService.Dispose();
             _ipcClient.Dispose();
@@ -221,6 +229,9 @@ public partial class MainWindow : Window
                     DevSyntheticWaveToggle,
                     DevLoopbackClientToggle,
                     DevTestHudButton,
+                DevGyroMouseToggle,
+                DevGyroMouseModeComboBox,
+                DevGyroMouseSpeedSlider,
                     CalibrateButton
                 ];
             }
@@ -243,6 +254,9 @@ public partial class MainWindow : Window
                 DevSyntheticWaveToggle,
                 DevLoopbackClientToggle,
                 DevTestHudButton,
+                DevGyroMouseToggle,
+                DevGyroMouseModeComboBox,
+                DevGyroMouseSpeedSlider,
                 CalibrateButton
             ];
         }

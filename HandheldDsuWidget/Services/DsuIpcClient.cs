@@ -204,6 +204,23 @@ public sealed class DsuIpcClient : IDisposable
         }
     }
 
+    /// <summary>
+    /// Reads the latest processed IMU sample directly from the embedded sensor engine at high frequency
+    /// without HTTP serialization overhead.
+    /// </summary>
+    public bool TryGetLiveMotionSample(out MotionData motion)
+    {
+        EnsureEmbeddedEngineStarted();
+        if (_embeddedSensor is not null)
+        {
+            motion = _embeddedSensor.GetProcessedMotionData();
+            return true;
+        }
+
+        motion = default;
+        return false;
+    }
+
     private DsuStatusDto BuildEmbeddedStatusDto(string? customMessage = null)
     {
         EnsureEmbeddedEngineStarted();
