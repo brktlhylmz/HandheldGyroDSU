@@ -36,57 +36,58 @@ public static class ProfileManager
         try
         {
             string dir = ProfilesDirectory;
-            if (Directory.GetFiles(dir, "*.json").Length == 0)
-            {
-                // Seed built-in starter templates for major handheld configurations
-                SaveProfile(new HandheldProfile
+            EnsureSystemPreset(
+                dir,
+                new HandheldProfile
                 {
                     Name = "Standard Landscape",
                     Author = "System",
                     Description = "Default orientation for ASUS ROG Ally, MSI Claw, and standard horizontal devices",
                     InvertX = false,
-                    InvertY = true,
-                    InvertZ = true,
+                    InvertY = false,
+                    InvertZ = false,
                     SwapAxes = false,
                     UsePitchOffset = true
                 });
 
-                SaveProfile(new HandheldProfile
+            EnsureSystemPreset(
+                dir,
+                new HandheldProfile
                 {
                     Name = "Portrait Sensor (Legion Go)",
                     Author = "System",
                     Description = "Optimized for portrait-native sensor mounting (Lenovo Legion Go)",
                     InvertX = true,
                     InvertY = false,
-                    InvertZ = true,
+                    InvertZ = false,
                     SwapAxes = true,
                     UsePitchOffset = true
                 });
 
-                SaveProfile(new HandheldProfile
+            EnsureSystemPreset(
+                dir,
+                new HandheldProfile
                 {
                     Name = "Flight & Racing (Inverted X)",
                     Author = "System",
                     Description = "Inverted pitch axis for flight simulator / flight yoke controls",
                     InvertX = true,
-                    InvertY = true,
-                    InvertZ = true,
+                    InvertY = false,
+                    InvertZ = false,
                     SwapAxes = false,
                     UsePitchOffset = true
                 });
-            }
 
-            string steamHoldPath = Path.Combine(dir, "Steam & PC (Hold Button).json");
-            if (!File.Exists(steamHoldPath))
-            {
-                SaveProfile(new HandheldProfile
+            EnsureSystemPreset(
+                dir,
+                new HandheldProfile
                 {
                     Name = "Steam & PC (Hold Button)",
                     Author = "System",
                     Description = "Gyro-to-Mouse aiming activated while holding the assigned controller button (default: LT)",
                     InvertX = false,
-                    InvertY = true,
-                    InvertZ = true,
+                    InvertY = false,
+                    InvertZ = false,
                     SwapAxes = false,
                     UsePitchOffset = true,
                     GyroMouseEnabled = true,
@@ -94,20 +95,19 @@ public static class ProfileManager
                     GyroMouseTriggerMask = 0x10000,
                     GyroMouseTriggerDisplay = "LT",
                     GyroMouseSpeed = 1.2f
-                });
-            }
+                },
+                preserveUserMouseBindings: true);
 
-            string steamAlwaysPath = Path.Combine(dir, "Steam & PC (Always Active).json");
-            if (!File.Exists(steamAlwaysPath))
-            {
-                SaveProfile(new HandheldProfile
+            EnsureSystemPreset(
+                dir,
+                new HandheldProfile
                 {
                     Name = "Steam & PC (Always Active)",
                     Author = "System",
                     Description = "Continuous 360° Gyro-to-Mouse free look for Steam & PC games",
                     InvertX = false,
-                    InvertY = true,
-                    InvertZ = true,
+                    InvertY = false,
+                    InvertZ = false,
                     SwapAxes = false,
                     UsePitchOffset = true,
                     GyroMouseEnabled = true,
@@ -115,12 +115,52 @@ public static class ProfileManager
                     GyroMouseTriggerMask = 0x10000,
                     GyroMouseTriggerDisplay = "LT",
                     GyroMouseSpeed = 1.2f
-                });
-            }
+                },
+                preserveUserMouseBindings: true);
         }
         catch
         {
             // Ignore seeding errors
+        }
+    }
+
+    private static void EnsureSystemPreset(string dir, HandheldProfile template, bool preserveUserMouseBindings = false)
+    {
+        string path = Path.Combine(dir, $"{template.Name}.json");
+        if (!File.Exists(path))
+        {
+            SaveProfile(template);
+            return;
+        }
+
+        try
+        {
+            string json = File.ReadAllText(path);
+            HandheldProfile? existing = JsonSerializer.Deserialize<HandheldProfile>(json, JsonOptions);
+            if (existing is null)
+            {
+                SaveProfile(template);
+                return;
+            }
+
+            if (preserveUserMouseBindings)
+            {
+                template.GyroMouseTriggerMask = existing.GyroMouseTriggerMask == 0 ? template.GyroMouseTriggerMask : existing.GyroMouseTriggerMask;
+                template.GyroMouseTriggerDisplay = string.IsNullOrWhiteSpace(existing.GyroMouseTriggerDisplay) ? template.GyroMouseTriggerDisplay : existing.GyroMouseTriggerDisplay;
+                template.GyroMouseSpeed = existing.GyroMouseSpeed <= 0.05f ? template.GyroMouseSpeed : existing.GyroMouseSpeed;
+            }
+
+            if (existing.InvertX != template.InvertX ||
+                existing.InvertY != template.InvertY ||
+                existing.InvertZ != template.InvertZ ||
+                existing.SwapAxes != template.SwapAxes)
+            {
+                SaveProfile(template);
+            }
+        }
+        catch
+        {
+            // Ignore read/write errors on existing preset
         }
     }
 

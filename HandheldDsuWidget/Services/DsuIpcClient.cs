@@ -82,10 +82,10 @@ public sealed class DsuStatusDto
     public bool InvertX { get; set; }
 
     [JsonPropertyName("invertY")]
-    public bool InvertY { get; set; } = true;
+    public bool InvertY { get; set; }
 
     [JsonPropertyName("invertZ")]
-    public bool InvertZ { get; set; } = true;
+    public bool InvertZ { get; set; }
 
     [JsonPropertyName("swapAxes")]
     public bool SwapAxes { get; set; }
@@ -184,6 +184,7 @@ public sealed class DsuIpcClient : IDisposable
                 return;
 
             _embeddedCts = new CancellationTokenSource();
+            ProfileManager.EnsureDefaultProfiles();
             _embeddedSettings = AppSettings.Load();
             _embeddedSettings.StartWithWindows = StartupManager.IsStartupEnabled();
 
