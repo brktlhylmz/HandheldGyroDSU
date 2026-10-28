@@ -39,6 +39,10 @@ project.assets.json
 *.appx
 *.appxbundle
 widget_error.log
+ally-screen.png
+ally-debug.log
+launch-debug.cmd
+capture-screen.ps1
 
 # OS-generated files
 .DS_Store

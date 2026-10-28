@@ -26,9 +26,10 @@ public sealed class AppSettings
     public bool HudNotificationsEnabled { get; set; } = true;
     public bool TabletopCalibrationGuard { get; set; } = true;
     public bool InvertX { get; set; } = false;
-    public bool InvertY { get; set; } = true;
-    public bool InvertZ { get; set; } = true;
+    public bool InvertY { get; set; } = false;
+    public bool InvertZ { get; set; } = false;
     public bool SwapAxes { get; set; } = false;
+    public int AxisSchemaVersion { get; set; }
     public bool UsePitchOffset { get; set; } = true;
     public float Sensitivity { get; set; } = 1.0f;
     public float Deadzone { get; set; } = 0.0f;
@@ -99,6 +100,32 @@ public sealed class AppSettings
                         loaded.BiasY = Math.Clamp(loaded.BiasY, -0.5f, 0.5f);
                         loaded.BiasZ = Math.Clamp(loaded.BiasZ, -0.5f, 0.5f);
                     }
+                    if (loaded.AxisSchemaVersion < 2)
+                    {
+                        if (string.Equals(loaded.ActiveProfileName, "Flight & Racing (Inverted X)", StringComparison.OrdinalIgnoreCase))
+                        {
+                            loaded.InvertX = true;
+                            loaded.InvertY = false;
+                            loaded.InvertZ = false;
+                            loaded.SwapAxes = false;
+                        }
+                        else if (string.Equals(loaded.ActiveProfileName, "Portrait Sensor (Legion Go)", StringComparison.OrdinalIgnoreCase))
+                        {
+                            loaded.InvertX = true;
+                            loaded.InvertY = false;
+                            loaded.InvertZ = false;
+                            loaded.SwapAxes = true;
+                        }
+                        else
+                        {
+                            loaded.InvertX = false;
+                            loaded.InvertY = false;
+                            loaded.InvertZ = false;
+                            loaded.SwapAxes = false;
+                        }
+                        loaded.AxisSchemaVersion = 2;
+                        loaded.Save();
+                    }
                     return loaded;
                 }
             }
@@ -108,7 +135,7 @@ public sealed class AppSettings
             // Return default settings if the configuration file is missing or corrupted
         }
 
-        return new AppSettings();
+        return new AppSettings { AxisSchemaVersion = 2 };
     }
 
     public void Save()

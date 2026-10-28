@@ -13,8 +13,8 @@ public sealed class DeviceProfile
 
     public DeviceProfile(
         bool invertX = false,
-        bool invertY = true,
-        bool invertZ = true,
+        bool invertY = false,
+        bool invertZ = false,
         bool swapAxes = false)
     {
         InvertX = invertX;
@@ -25,16 +25,16 @@ public sealed class DeviceProfile
 
     public static DeviceProfile CreateDefault() => new(
         invertX: false,
-        invertY: true,
-        invertZ: true,
+        invertY: false,
+        invertZ: false,
         swapAxes: false
     );
 
     public void ResetToDefaults()
     {
         InvertX = false;
-        InvertY = true;
-        InvertZ = true;
+        InvertY = false;
+        InvertZ = false;
         SwapAxes = false;
     }
 
@@ -62,39 +62,49 @@ public sealed class DeviceProfile
             (gx, gy) = (gy, gx);
         }
 
-        // Apply per-axis inversions:
-        // - InvertX ("Invert Pitch (X)") inverts both Pitch gyro (gx) and Pitch gravity (ay -> AccZ)
-        // - InvertY ("Invert Roll (Y)") inverts both Roll gyro (gy) and Roll gravity (ax -> AccX)
-        // - InvertZ ("Invert Yaw (Z)") inverts only Yaw gyro (gz); vertical gravity (az -> AccY) stays -1G
+        // Base mapping from WinRT landscape sensor coordinates (+X Right, +Y Up, +Z Out of screen)
+        // into Cemuhook DSU v1001 standard coordinates:
+        // - AccX      : -ax (Tilting right yields rawAccX > 0 -> DSU AccX < 0 / Accel Right > 0)
+        // - AccY      : +az (Resting flat gravity is -1.0G -> DSU AccY = -1.0G / Accel Up > 0)
+        // - AccZ      : +ay (Tilting nose up yields rawAccY < 0 -> DSU AccZ < 0 / Accel Forward > 0)
+        // - GyroPitch : +gx (Pitching nose up yields rawGyroX > 0 -> DSU GyroPitch > 0)
+        // - GyroYaw   : +gz (Turning left CCW yields rawGyroZ > 0 -> DSU GyroYaw > 0)
+        // - GyroRoll  : +gy (Rolling right CW yields rawGyroY > 0 -> DSU GyroRoll > 0)
+        float dsuAccX = -ax;
+        float dsuAccY = az;
+        float dsuAccZ = ay;
+        float dsuPitch = gx;
+        float dsuYaw = gz;
+        float dsuRoll = gy;
+
+        // Apply user-configured per-axis inversions symmetrically to paired gyro + gravity axes:
+        // - InvertX ("Invert Pitch (X)") inverts both Pitch gyro and Pitch gravity (AccZ)
+        // - InvertY ("Invert Roll (Y)") inverts both Roll gyro and Roll gravity (AccX)
+        // - InvertZ ("Invert Yaw (Z)") inverts only Yaw gyro; vertical gravity (AccY = -1G) is preserved
         if (InvertX)
         {
-            ay = -ay;
-            gx = -gx;
+            dsuPitch = -dsuPitch;
+            dsuAccZ = -dsuAccZ;
         }
 
         if (InvertY)
         {
-            ax = -ax;
-            gy = -gy;
+            dsuRoll = -dsuRoll;
+            dsuAccX = -dsuAccX;
         }
 
         if (InvertZ)
         {
-            gz = -gz;
+            dsuYaw = -dsuYaw;
         }
 
-        // Cemuhook DSU standard coordinate mapping:
-        // AccY resting gravity is -1.0G (so Dolphin's Accel Up = -AccY * 9.81 = +9.81 m/s^2)
-        // Pitch = rotation around X-axis (paired with Y-axis gravity -> AccZ)
-        // Yaw   = rotation around Z-axis
-        // Roll  = rotation around Y-axis (paired with X-axis gravity -> AccX)
         return new MotionData(
-            AccX: -ax,
-            AccY: az,
-            AccZ: -ay,
-            GyroPitch: -gx,
-            GyroYaw: gz,
-            GyroRoll: gy,
+            AccX: dsuAccX,
+            AccY: dsuAccY,
+            AccZ: dsuAccZ,
+            GyroPitch: dsuPitch,
+            GyroYaw: dsuYaw,
+            GyroRoll: dsuRoll,
             TimestampUs: timestampUs
         );
     }

@@ -22,10 +22,10 @@ public sealed class HandheldProfile
     public bool InvertX { get; set; }
 
     [JsonPropertyName("invertY")]
-    public bool InvertY { get; set; } = true;
+    public bool InvertY { get; set; }
 
     [JsonPropertyName("invertZ")]
-    public bool InvertZ { get; set; } = true;
+    public bool InvertZ { get; set; }
 
     [JsonPropertyName("swapAxes")]
     public bool SwapAxes { get; set; }
