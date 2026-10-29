@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using HandheldDsuServer.Models;
+using HandheldDsuServer.Services.Platform;
 using Windows.Devices.Sensors;
 
 namespace HandheldDsuServer.Services;
@@ -11,7 +12,7 @@ namespace HandheldDsuServer.Services;
 /// Manages internal WinRT IMU sensors (Gyrometer + Accelerometer),
 /// providing high-frequency event-driven sampling, drift bias calibration, and resting pitch compensation.
 /// </summary>
-public sealed class SensorService : IDisposable
+public sealed class SensorService : IImuSensorBackend, IDisposable
 {
     private readonly object _lock = new();
     private DeviceProfile _activeProfile;
@@ -60,6 +61,7 @@ public sealed class SensorService : IDisposable
     public int SensorRecoveryCount => Volatile.Read(ref _sensorRecoveryCount);
 
     public void RequestSensorRebind() => _rebindRequested = true;
+    void IImuSensorBackend.RequestRebind() => RequestSensorRebind();
 
     /// <summary>
     /// Immediately sets the current holding attitude as the new 0-degree resting reference
