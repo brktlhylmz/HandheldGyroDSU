@@ -42,13 +42,24 @@ Every commit pushed to `master` is automatically built and published to [GitHub 
 
 ---
 
-## 🎬 Live Gameplay Demo (Cemu — *Splatoon* on ASUS ROG Ally)
+## 🎬 Live Gameplay Demos (ASUS ROG Ally)
 
+### 1. Cemu — *Splatoon* (Gyro Aiming + Real-Time Telemetry)
 > *Live gyro aiming in **Cemu (Splatoon)** alongside **HandheldGyroDSU** real-time telemetry:*
 
 https://github.com/user-attachments/assets/6d894e63-4da2-45ef-b621-844247db87f9
 
-*🎥 Raw video file in repository: [docs/demo/cemu-splatoon-demo.mp4](docs/demo/cemu-splatoon-demo.mp4)*
+*🎥 Video file in repository: [docs/demo/cemu-splatoon-demo.mp4](docs/demo/cemu-splatoon-demo.mp4)*
+
+### 2. Dolphin — *Mario Kart Wii* (Wii Wheel Sideways Tilt Steering)
+> *Native Wii Wheel tilt steering & motion controls in **Dolphin (Mario Kart Wii)** using the `HandheldGyroDSU_Sideways` profile:*
+
+*🎥 **[▶️ Watch / Download Mario Kart Wii Gameplay Demo (`docs/demo/dolphin-mario-kart-wii-demo.mp4`)](docs/demo/dolphin-mario-kart-wii-demo.mp4)***
+
+### 3. Dolphin — *Super Mario Galaxy 2* (Star Pointer `IMUIR` & 6-Axis Motion)
+> *Native Wii Remote `IMUIR` Star Pointer aiming, Spin Attack, and motion controls in **Dolphin (Super Mario Galaxy 2)** using the `HandheldGyroDSU_Xbox` profile:*
+
+*🎥 **[▶️ Watch / Download Super Mario Galaxy 2 Gameplay Demo (`docs/demo/dolphin-super-mario-galaxy-2-demo.mp4`)](docs/demo/dolphin-super-mario-galaxy-2-demo.mp4)***
 
 ---
 
@@ -105,7 +116,7 @@ https://github.com/user-attachments/assets/6d894e63-4da2-45ef-b621-844247db87f9
 | :--- | :--- | :---: | :--- | :--- |
 | **Eden** (`eden.exe`) | Nintendo Switch | ✅ **Tested** | *Splatoon 2* | `CemuhookUDP` (`127.0.0.1:26760` + `26762` for Pads 5–8) |
 | **Cemu** (`cemu.exe`) | Wii U | ✅ **Tested** | *Splatoon* | `DSUController` (`127.0.0.1:26760`) |
-| **Dolphin** (`dolphin.exe`) | Wii / GameCube | ✅ **Tested** | *Super Mario Galaxy*, *Mario Kart Wii* | **One-Click Installer** (`DSUClient/0/HandheldGyroDSU`, `R3` Recenter, `L3` Upright Toggle) |
+| **Dolphin** (`dolphin.exe`) | Wii / GameCube | ✅ **Tested** | *Super Mario Galaxy 1 & 2*, *Mario Kart Wii* | **One-Click Installer** (`DSUClient/0/HandheldGyroDSU`, `R3` Recenter, `L3` Upright Toggle) |
 | **RPCS3** (`rpcs3.exe`) | PlayStation 3 | ✅ **Tested** | *SIXAXIS Motion Titles* | **One-Click SDL Gyro Patcher** (`Settings` tab) |
 | **Yuzu / Sudachi / Citron** | Nintendo Switch | ⚪ *Untested (Protocol Compatible)* | *Community testing welcome* | `CemuhookUDP` (`127.0.0.1:26760`) |
 | **Ryujinx** (`ryujinx.exe`) | Nintendo Switch | ⚪ *Untested (Protocol Compatible)* | *Community testing welcome* | Native CemuHook Motion (`127.0.0.1:26760`, Slot `0..3`) |

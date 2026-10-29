@@ -52,6 +52,10 @@ HandheldGyroDSU includes a built-in **Dolphin DSU & Motion Profile Installer** t
 | **Toggle Upright Wii Remote** | **Left Stick Click (`L3`)** | `L3` | Toggles **Upright Wii Remote** orientation (essential for *Super Mario Galaxy* Manta Ray surfing & Rolling Ball stages) |
 | **Shake Wii Remote (X/Y/Z)** | **Left Bumper (`LB`)** | `L1` | Performs Wii Remote Spin / Shake attack |
 
+### 🎬 Dolphin Gameplay Demo Videos (ASUS ROG Ally)
+- 🏎️ **Mario Kart Wii (`HandheldGyroDSU_Sideways` Wii Wheel Tilt Steering)**: **[`docs/demo/dolphin-mario-kart-wii-demo.mp4`](demo/dolphin-mario-kart-wii-demo.mp4)**
+- 🌟 **Super Mario Galaxy 2 (`HandheldGyroDSU_Xbox` Star Pointer & Motion Controls)**: **[`docs/demo/dolphin-super-mario-galaxy-2-demo.mp4`](demo/dolphin-super-mario-galaxy-2-demo.mp4)**
+
 ---
 
 ## 🌟 2. Super Mario Galaxy 1 & 2 — Recommended Controls
