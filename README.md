@@ -54,12 +54,16 @@ https://github.com/user-attachments/assets/6d894e63-4da2-45ef-b621-844247db87f9
 ### 2. Dolphin — *Mario Kart Wii* (Wii Wheel Sideways Tilt Steering)
 > *Native Wii Wheel tilt steering & motion controls in **Dolphin (Mario Kart Wii)** using the `HandheldGyroDSU_Sideways` profile:*
 
-*🎥 **[▶️ Watch / Download Mario Kart Wii Gameplay Demo (`docs/demo/dolphin-mario-kart-wii-demo.mp4`)](docs/demo/dolphin-mario-kart-wii-demo.mp4)***
+https://github.com/user-attachments/assets/581cc2e7-eff7-46ef-9cee-580662061e09
+
+*🎥 Video file in repository: [docs/demo/dolphin-mario-kart-wii-demo.mp4](docs/demo/dolphin-mario-kart-wii-demo.mp4)*
 
 ### 3. Dolphin — *Super Mario Galaxy 2* (Star Pointer `IMUIR` & 6-Axis Motion)
 > *Native Wii Remote `IMUIR` Star Pointer aiming, Spin Attack, and motion controls in **Dolphin (Super Mario Galaxy 2)** using the `HandheldGyroDSU_Xbox` profile:*
 
-*🎥 **[▶️ Watch / Download Super Mario Galaxy 2 Gameplay Demo (`docs/demo/dolphin-super-mario-galaxy-2-demo.mp4`)](docs/demo/dolphin-super-mario-galaxy-2-demo.mp4)***
+https://github.com/user-attachments/assets/6183fe55-b7c5-4668-9fc1-a9a66d448140
+
+*🎥 Video file in repository: [docs/demo/dolphin-super-mario-galaxy-2-demo.mp4](docs/demo/dolphin-super-mario-galaxy-2-demo.mp4)*
 
 ---
 

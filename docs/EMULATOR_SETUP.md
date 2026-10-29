@@ -53,8 +53,18 @@ HandheldGyroDSU includes a built-in **Dolphin DSU & Motion Profile Installer** t
 | **Shake Wii Remote (X/Y/Z)** | **Left Bumper (`LB`)** | `L1` | Performs Wii Remote Spin / Shake attack |
 
 ### 🎬 Dolphin Gameplay Demo Videos (ASUS ROG Ally)
-- 🏎️ **Mario Kart Wii (`HandheldGyroDSU_Sideways` Wii Wheel Tilt Steering)**: **[`docs/demo/dolphin-mario-kart-wii-demo.mp4`](demo/dolphin-mario-kart-wii-demo.mp4)**
-- 🌟 **Super Mario Galaxy 2 (`HandheldGyroDSU_Xbox` Star Pointer & Motion Controls)**: **[`docs/demo/dolphin-super-mario-galaxy-2-demo.mp4`](demo/dolphin-super-mario-galaxy-2-demo.mp4)**
+
+#### 🏎️ Mario Kart Wii (`HandheldGyroDSU_Sideways` Wii Wheel Tilt Steering)
+
+https://github.com/user-attachments/assets/581cc2e7-eff7-46ef-9cee-580662061e09
+
+*🎥 Raw file: [docs/demo/dolphin-mario-kart-wii-demo.mp4](demo/dolphin-mario-kart-wii-demo.mp4)*
+
+#### 🌟 Super Mario Galaxy 2 (`HandheldGyroDSU_Xbox` Star Pointer & Motion Controls)
+
+https://github.com/user-attachments/assets/6183fe55-b7c5-4668-9fc1-a9a66d448140
+
+*🎥 Raw file: [docs/demo/dolphin-super-mario-galaxy-2-demo.mp4](demo/dolphin-super-mario-galaxy-2-demo.mp4)*
 
 ---
 
