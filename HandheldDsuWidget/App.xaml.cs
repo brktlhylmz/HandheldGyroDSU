@@ -9,6 +9,7 @@ using System.Windows;
 using System.Windows.Interop;
 using System.Windows.Media;
 using HandheldDsuServer.Models;
+using HandheldDsuServer.Services;
 
 namespace HandheldDsuWidget;
 
