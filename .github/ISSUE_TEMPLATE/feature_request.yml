@@ -1,5 +1,5 @@
 name: Feature Request / Hardware Support
-description: Suggest a new feature, emulator profile preset, or controller VID:PID signature.
+description: Suggest a new feature, emulator integration, or controller hardware support.
 title: "[Feature]: "
 labels: ["enhancement"]
 body:
@@ -8,19 +8,38 @@ body:
     attributes:
       label: Request Category
       options:
-        - New Handheld / Controller Hardware Support (VID:PID)
-        - Emulator Auto-Config Preset
-        - Gyro / Sensor Filtering Enhancement
-        - UI / Overlay / Game Bar Improvement
-        - New Language Translation (Locales/*.json)
+        - New Handheld / Motion Controller Hardware (VID:PID)
+        - Multi-Gyro / Split Controller Feature
+        - Emulator Integration & Motion Protocol
+        - Gyro / Sensor Filtering & Aiming Improvement
+        - UI / Overlay / Game Bar / Tray Enhancement
+        - Localization / New Language (Locales/*.json)
     validations:
       required: true
 
   - type: textarea
     id: summary
     attributes:
-      label: Feature Description
-      description: Describe the feature or hardware device you would like to see supported.
-      placeholder: "For controller requests, please include the USB/Bluetooth Vendor ID and Product ID (e.g., VID_054C&PID_0CE6) if known."
+      label: Summary
+      description: A clear, concise summary of the requested feature or capability.
+      placeholder: "Briefly explain what you would like to be added or changed..."
     validations:
       required: true
+
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Motivation & Use Case
+      description: Why is this feature needed? What problem does it solve or what games does it enable?
+      placeholder: "Explain the gameplay or UX scenario (e.g. playing Wii games with detached Legion Go controllers)..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: technical_details
+    attributes:
+      label: Proposed Implementation & Hardware Details (Optional)
+      description: Include any relevant hardware VID:PID, protocol details, or architectural ideas if known.
+      placeholder: "For controller requests, include USB/BT VID:PID (e.g. VID_17EF&PID_6182) and HID report details if known."
+    validations:
+      required: false
