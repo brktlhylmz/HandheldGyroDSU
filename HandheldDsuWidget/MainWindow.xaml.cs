@@ -39,6 +39,9 @@ public partial class MainWindow : Window
     private readonly DsuLoopbackTesterService _loopbackTester = new();
     private readonly UpdateService _updateService = new();
     private GitHubReleaseInfo? _pendingUpdateRelease;
+    private bool _isUpdateCheckInProgress;
+    private string? _lastAutoAttemptedVersion;
+    private DateTime _lastUpdateCheckTime = DateTime.MinValue;
     private readonly GamepadNavigationService _gamepadService;
     private readonly GyroMouseService _gyroMouseService;
     private IntPtr _windowHwnd;

@@ -402,9 +402,15 @@ public partial class MainWindow
 
     private async Task CheckForUpdatesInternalAsync(bool silentIfUpToDate)
     {
-        if (CheckUpdateButton is null || UpdateStatusText is null)
+        if (CheckUpdateButton is null || UpdateStatusText is null || _isUpdateCheckInProgress)
             return;
 
+        // Throttle silent background checks to prevent frequent GitHub API and asset polling
+        if (silentIfUpToDate && (DateTime.UtcNow - _lastUpdateCheckTime).TotalMinutes < 45)
+            return;
+
+        _isUpdateCheckInProgress = true;
+        _lastUpdateCheckTime = DateTime.UtcNow;
         CheckUpdateButton.IsEnabled = false;
         UpdateStatusText.Text = _loc["UpdateStatusChecking"];
         UpdateStatusText.Foreground = TextSecondaryBrush;
@@ -438,6 +444,14 @@ public partial class MainWindow
                 bool autoUpdate = _lastStatus?.AutoUpdateEnabled ?? true;
                 if (autoUpdate)
                 {
+                    // Guard against repeated download loops for the same version within a single app session
+                    if (string.Equals(_lastAutoAttemptedVersion, result.LatestVersion, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return;
+                    }
+
+                    _lastAutoAttemptedVersion = result.LatestVersion;
+
                     ShowToastNotification(
                         _loc["ToastAutoUpdatingTitle"],
                         _loc.Format("ToastAutoUpdatingDesc", result.LatestVersion),
@@ -488,6 +502,7 @@ public partial class MainWindow
         }
         finally
         {
+            _isUpdateCheckInProgress = false;
             CheckUpdateButton.IsEnabled = true;
         }
     }
