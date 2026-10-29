@@ -100,6 +100,7 @@ public partial class App : Application
         // (Steam gameoverlayrenderer64.dll, AMD Adrenalin, Armoury Crate) from hooking a D3D9 swapchain
         // and causing 0xc0000005 access violations when switching between emulators.
         RenderOptions.ProcessRenderMode = RenderMode.SoftwareOnly;
+        AppLogger.Info("HandheldGyroDSU starting up...");
 
         DispatcherUnhandledException += (_, args) =>
         {
@@ -134,6 +135,8 @@ public partial class App : Application
                 Shutdown(0);
                 return;
             }
+
+            CleanupOldUpdateFiles();
 
             bool startMinimized = e.Args.Any(a =>
                 string.Equals(a, "--minimized", StringComparison.OrdinalIgnoreCase) ||
@@ -191,6 +194,30 @@ public partial class App : Application
         {
             LogCrashException("OnStartup", ex);
             Shutdown(1);
+        }
+    }
+
+    private static void CleanupOldUpdateFiles()
+    {
+        try
+        {
+            string baseDir = AppContext.BaseDirectory;
+            string[] oldFiles = Directory.GetFiles(baseDir, "*.old", SearchOption.TopDirectoryOnly);
+            foreach (string file in oldFiles)
+            {
+                try
+                {
+                    File.Delete(file);
+                }
+                catch
+                {
+                    // File might still be locked temporarily, skip and clean next time
+                }
+            }
+        }
+        catch
+        {
+            // Ignore scan errors
         }
     }
 

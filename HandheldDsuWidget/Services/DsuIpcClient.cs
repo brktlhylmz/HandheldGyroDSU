@@ -24,6 +24,12 @@ public sealed class DsuStatusDto
     [JsonPropertyName("updateChannel")]
     public string UpdateChannel { get; set; } = "stable";
 
+    [JsonPropertyName("autoUpdateEnabled")]
+    public bool AutoUpdateEnabled { get; set; } = true;
+
+    [JsonPropertyName("autoUpdatePromptShown")]
+    public bool AutoUpdatePromptShown { get; set; }
+
     [JsonPropertyName("activeProfileName")]
     public string ActiveProfileName { get; set; } = "Standard Landscape";
 
@@ -254,6 +260,8 @@ public sealed class DsuIpcClient : IDisposable
             Message = customMessage ?? "OK",
             Language = _embeddedSettings?.Language ?? "en",
             UpdateChannel = _embeddedSettings?.UpdateChannel ?? "stable",
+            AutoUpdateEnabled = _embeddedSettings?.AutoUpdateEnabled ?? true,
+            AutoUpdatePromptShown = _embeddedSettings?.AutoUpdatePromptShown ?? false,
             ActiveProfileName = _embeddedSettings?.ActiveProfileName ?? "Standard Landscape",
             ServerPort = _embeddedUdpServer.Port,
             ActiveSlot = _embeddedUdpServer.ActiveSlot,
@@ -659,6 +667,8 @@ public sealed class DsuIpcClient : IDisposable
         bool? forwardGamepadInputs = null,
         bool? tabletopCalibrationGuard = null,
         string? updateChannel = null,
+        bool? autoUpdateEnabled = null,
+        bool? autoUpdatePromptShown = null,
         CancellationToken cancellationToken = default)
     {
         if (!_usingEmbeddedEngine)
@@ -672,7 +682,9 @@ public sealed class DsuIpcClient : IDisposable
                 rebindSensors,
                 forwardGamepadInputs,
                 tabletopCalibrationGuard,
-                updateChannel
+                updateChannel,
+                autoUpdateEnabled,
+                autoUpdatePromptShown
             });
             DsuStatusDto? remote = await PostJsonAsync("/preferences", payload, cancellationToken);
             if (remote is not null)
@@ -689,7 +701,9 @@ public sealed class DsuIpcClient : IDisposable
             rebindSensors,
             forwardGamepadInputs,
             tabletopCalibrationGuard,
-            updateChannel);
+            updateChannel,
+            autoUpdateEnabled,
+            autoUpdatePromptShown);
         return BuildEmbeddedStatusDto();
     }
 

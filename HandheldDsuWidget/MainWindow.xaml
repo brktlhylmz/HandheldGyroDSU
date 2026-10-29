@@ -1572,6 +1572,18 @@
                                         </ComboBox>
                                     </Grid>
 
+                                    <Grid Margin="0,0,0,8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,10,0">
+                                            <TextBlock Text="{Binding [AutoUpdateTitle], Source={x:Static services:LocalizationService.Instance}}" Foreground="{DynamicResource BrushTextPrimary}" FontWeight="SemiBold" FontSize="11.5" />
+                                            <TextBlock Text="{Binding [AutoUpdateDesc], Source={x:Static services:LocalizationService.Instance}}" Foreground="{DynamicResource BrushTextSecondary}" FontSize="9.5" TextWrapping="Wrap" Margin="0,2,0,0" />
+                                        </StackPanel>
+                                        <CheckBox x:Name="AutoUpdateToggle" Grid.Column="1" Style="{DynamicResource AppToggleSwitchStyle}" VerticalAlignment="Center" Click="AutoUpdateToggle_Click" />
+                                    </Grid>
+
                                     <Border Style="{DynamicResource AppSubPanelStyle}" Padding="8,6" Margin="0,0,0,8">
                                         <TextBlock x:Name="UpdateStatusText" Text="{Binding [UpdateStatusIdle], Source={x:Static services:LocalizationService.Instance}}" Foreground="{DynamicResource BrushTextSecondary}" FontFamily="{DynamicResource FontMonospace}" FontSize="9.5" HorizontalAlignment="Center" TextWrapping="Wrap" />
                                     </Border>
@@ -1599,7 +1611,9 @@
                                     <Grid>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="8" />
+                                            <ColumnDefinition Width="6" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="6" />
                                             <ColumnDefinition Width="*" />
                                         </Grid.ColumnDefinitions>
 
@@ -1608,7 +1622,7 @@
                                                 Style="{DynamicResource AppGhostButtonStyle}"
                                                 FontSize="10"
                                                 Height="32"
-                                                Padding="8,0"
+                                                Padding="6,0"
                                                 Click="OpenDataFolderButton_Click">
                                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                                 <Path Data="{DynamicResource IconFolder}"
@@ -1623,13 +1637,27 @@
                                             </StackPanel>
                                         </Button>
 
-                                        <Button x:Name="ResetAllSettingsButton"
+                                        <Button x:Name="OpenLogsButton"
                                                 Grid.Column="2"
+                                                Style="{DynamicResource AppGhostButtonStyle}"
+                                                FontSize="10"
+                                                Height="32"
+                                                Padding="6,0"
+                                                Click="OpenLogsButton_Click">
+                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                <TextBlock Text="📄" Margin="0,0,5,0" VerticalAlignment="Center" FontSize="11" />
+                                                <TextBlock Text="{Binding [BtnOpenLogs], Source={x:Static services:LocalizationService.Instance}}"
+                                                           VerticalAlignment="Center" />
+                                            </StackPanel>
+                                        </Button>
+
+                                        <Button x:Name="ResetAllSettingsButton"
+                                                Grid.Column="4"
                                                 Style="{DynamicResource AppGhostButtonStyle}"
                                                 Foreground="{DynamicResource BrushStatusOffline}"
                                                 FontSize="10"
                                                 Height="32"
-                                                Padding="8,0"
+                                                Padding="6,0"
                                                 Click="ResetAllSettingsButton_Click">
                                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                                 <Path Data="{DynamicResource IconReset}"
@@ -1994,6 +2022,7 @@
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
 
                         <Border x:Name="AppSnackbarAccentBar"
@@ -2015,6 +2044,17 @@
                                        TextWrapping="Wrap"
                                        Margin="0,1,0,0" />
                         </StackPanel>
+
+                        <Button x:Name="AppSnackbarActionBtn"
+                                Grid.Column="2"
+                                Visibility="Collapsed"
+                                Margin="10,0,0,0"
+                                Padding="10,4"
+                                FontSize="9.5"
+                                FontWeight="Bold"
+                                Style="{DynamicResource AppPrimaryButtonStyle}"
+                                Content="{Binding [BtnViewChangelog], Source={x:Static services:LocalizationService.Instance}}"
+                                Click="AppSnackbarActionBtn_Click" />
                     </Grid>
                 </Border>
             </Grid>

@@ -16,6 +16,8 @@ public sealed class AppSettings
     public int ActiveSlot { get; set; }
     public string Language { get; set; } = GetDefaultSystemLanguage();
     public string UpdateChannel { get; set; } = "stable";
+    public bool AutoUpdateEnabled { get; set; } = true;
+    public bool AutoUpdatePromptShown { get; set; } = false;
     public string ActiveProfileName { get; set; } = "Standard Landscape";
     public bool AutoSwitchProfiles { get; set; } = true;
     public bool IsStreamingEnabled { get; set; } = true;

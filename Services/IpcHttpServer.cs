@@ -62,7 +62,9 @@ public sealed class IpcHttpServer : IDisposable
         bool? rebindSensors = null,
         bool? forwardGamepadInputs = null,
         bool? tabletopCalibrationGuard = null,
-        string? updateChannel = null)
+        string? updateChannel = null,
+        bool? autoUpdateEnabled = null,
+        bool? autoUpdatePromptShown = null)
     {
         if (closeToTray.HasValue)
             _settings.CloseToTray = closeToTray.Value;
@@ -90,6 +92,10 @@ public sealed class IpcHttpServer : IDisposable
                 ? "beta"
                 : "stable";
         }
+        if (autoUpdateEnabled.HasValue)
+            _settings.AutoUpdateEnabled = autoUpdateEnabled.Value;
+        if (autoUpdatePromptShown.HasValue)
+            _settings.AutoUpdatePromptShown = autoUpdatePromptShown.Value;
         SaveCurrentSettings();
     }
 
@@ -112,6 +118,7 @@ public sealed class IpcHttpServer : IDisposable
         _settings.HudNotificationsEnabled = true;
         _settings.TabletopCalibrationGuard = true;
         _settings.UpdateChannel = "stable";
+        _settings.AutoUpdateEnabled = true;
         _sensorService.TabletopCalibrationGuard = true;
         _settings.GyroMouseEnabled = false;
         _settings.GyroMouseAlwaysActive = false;
@@ -446,7 +453,9 @@ public sealed class IpcHttpServer : IDisposable
                     bool? forwardPad = ExtractBooleanParameter(query, body, "forwardGamepadInputs");
                     bool? calibGuard = ExtractBooleanParameter(query, body, "tabletopCalibrationGuard");
                     string? updChan = ExtractStringParameter(query, body, "updateChannel", "channel");
-                    SetPreferences(closeTray, gameBar, hudNotif, synthWave, rebind, forwardPad, calibGuard, updChan);
+                    bool? autoUpd = ExtractBooleanParameter(query, body, "autoUpdateEnabled");
+                    bool? autoUpdPrompt = ExtractBooleanParameter(query, body, "autoUpdatePromptShown");
+                    SetPreferences(closeTray, gameBar, hudNotif, synthWave, rebind, forwardPad, calibGuard, updChan, autoUpd, autoUpdPrompt);
                     string json = BuildStatusJson("Preferences updated");
                     await WriteHttpResponseAsync(stream, 200, "OK", json, cancellationToken);
                 }
@@ -504,6 +513,8 @@ public sealed class IpcHttpServer : IDisposable
             message = message ?? "OK",
             language = _settings.Language,
             updateChannel = _settings.UpdateChannel,
+            autoUpdateEnabled = _settings.AutoUpdateEnabled,
+            autoUpdatePromptShown = _settings.AutoUpdatePromptShown,
             activeProfileName = _settings.ActiveProfileName,
             serverPort = _udpServer.Port,
             activeSlot = (int)_udpServer.ActiveSlot,

@@ -73,6 +73,6 @@ body:
   - type: textarea
     id: logs
     attributes:
-      label: Crash Log / Diagnostic Output (Optional)
-      description: If applicable, paste any relevant entries from `%LocalAppData%\HandheldDsu\crash.log`.
+      label: Diagnostic & Crash Logs (Optional)
+      description: If applicable, paste relevant entries from `%LocalAppData%\HandheldDsu\app.log` or `%LocalAppData%\HandheldDsu\crash.log`.
       render: text

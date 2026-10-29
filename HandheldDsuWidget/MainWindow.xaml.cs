@@ -45,10 +45,12 @@ public partial class MainWindow : Window
     private static extern IntPtr GetForegroundWindow();
     private readonly LocalizationService _loc = LocalizationService.Instance;
     private readonly DispatcherTimer _pollTimer;
+    private readonly DispatcherTimer _autoUpdateTimer;
     private readonly bool _startedMinimized;
 
     private List<HandheldProfile> _profiles = [];
     private DispatcherTimer? _snackbarTimer;
+    private string? _currentSnackbarActionUrl;
     private ContextMenu? _trayContextMenu;
     private bool _suppressUiEvents;
     private bool _isPollBusy;
@@ -57,6 +59,7 @@ public partial class MainWindow : Window
     private DsuStatusDto? _lastStatus;
     private int _lastSyncedServerPort = -1;
     private int _lastSyncedSecondaryPort = -1;
+    private string? _lastTrayTip;
     private double _radarX;
     private double _radarY;
     private double _radarRoll;
@@ -134,6 +137,18 @@ public partial class MainWindow : Window
         };
         _pollTimer.Tick += PollTimer_Tick;
 
+        _autoUpdateTimer = new DispatcherTimer
+        {
+            Interval = TimeSpan.FromHours(1)
+        };
+        _autoUpdateTimer.Tick += async (_, _) =>
+        {
+            if (_lastStatus?.AutoUpdateEnabled == true)
+            {
+                await CheckForUpdatesInternalAsync(silentIfUpToDate: true);
+            }
+        };
+
         SourceInitialized += (_, _) =>
         {
             _windowHwnd = new WindowInteropHelper(this).Handle;
@@ -171,12 +186,38 @@ public partial class MainWindow : Window
             RefreshDolphinConfigStatusUi();
 
             _pollTimer.Start();
+            _autoUpdateTimer.Start();
             _gamepadService.Start();
+
+            // Check if application was just relaunched after an update
+            string[] launchArgs = Environment.GetCommandLineArgs();
+            for (int i = 0; i < launchArgs.Length; i++)
+            {
+                if (string.Equals(launchArgs[i], "--just-updated", StringComparison.OrdinalIgnoreCase))
+                {
+                    string updatedVersion = (i + 1 < launchArgs.Length) ? launchArgs[i + 1] : "latest";
+                    string? releaseUrl = (i + 2 < launchArgs.Length) ? launchArgs[i + 2] : null;
+                    if (string.IsNullOrWhiteSpace(releaseUrl))
+                    {
+                        releaseUrl = "https://github.com/brktlhylmz/HandheldGyroDSU/releases";
+                    }
+
+                    ShowToastNotification(
+                        _loc.Format("ToastUpdateInstalledTitleFormat", updatedVersion.TrimStart('v', 'V')),
+                        _loc["ToastUpdateInstalledDesc"],
+                        isError: false,
+                        showHudOverlay: true,
+                        actionUrl: releaseUrl);
+                    break;
+                }
+            }
+
+            // Prompt user about automatic updates on first launch
+            await CheckAndPromptAutoUpdateAsync(status);
 
 #if !DEBUG
             _ = CheckForUpdatesInternalAsync(silentIfUpToDate: true);
 #endif
-
 
             _gyroMouseService.Start();
         };
@@ -184,6 +225,7 @@ public partial class MainWindow : Window
         Closed += (_, _) =>
         {
             _snackbarTimer?.Stop();
+            _autoUpdateTimer.Stop();
             _gameBarAdapter.Dispose(); _loopbackTester.Dispose(); _updateService.Dispose();
             _automationWatcher.Dispose();
             _hudToastService.Dispose();
@@ -251,9 +293,11 @@ public partial class MainWindow : Window
                     HudNotificationsToggle,
                     TabletopCalibrationGuardToggle,
                     UpdateChannelComboBox,
+                    AutoUpdateToggle,
                     CheckUpdateButton,
                     InstallUpdateButton,
                     OpenDataFolderButton,
+                    OpenLogsButton,
                     ResetAllSettingsButton,
                     DevSimControllerComboBox,
                     DevSimInjectButton,
@@ -284,7 +328,13 @@ public partial class MainWindow : Window
                 CloseToTrayToggle,
                 GameBarOverlayToggle,
                 HudNotificationsToggle,
+                TabletopCalibrationGuardToggle,
+                UpdateChannelComboBox,
+                AutoUpdateToggle,
+                CheckUpdateButton,
+                InstallUpdateButton,
                 OpenDataFolderButton,
+                OpenLogsButton,
                 ResetAllSettingsButton,
                 DevSimControllerComboBox,
                 DevSimInjectButton,
@@ -377,13 +427,31 @@ public partial class MainWindow : Window
         MainScrollViewer?.ScrollToTop();
     }
 
-    public void ShowToastNotification(string title, string subtitle, bool isError = false, bool showHudOverlay = false)
+    public void ShowToastNotification(
+        string title,
+        string subtitle,
+        bool isError = false,
+        bool showHudOverlay = false,
+        string? actionUrl = null)
     {
         Brush accent = isError ? StatusOfflineBrush : StatusOnlineBrush;
         AppSnackbarAccentBar.Background = accent;
         AppSnackbarBorder.BorderBrush = accent;
         AppSnackbarTitleText.Text = title;
         AppSnackbarMessageText.Text = subtitle;
+
+        _currentSnackbarActionUrl = actionUrl;
+        if (!string.IsNullOrWhiteSpace(actionUrl))
+        {
+            AppSnackbarActionBtn.Visibility = Visibility.Visible;
+            AppSnackbarBorder.IsHitTestVisible = true;
+        }
+        else
+        {
+            AppSnackbarActionBtn.Visibility = Visibility.Collapsed;
+            AppSnackbarBorder.IsHitTestVisible = false;
+        }
+
         AppSnackbarBorder.Visibility = Visibility.Visible;
 
         var fadeIn = new DoubleAnimation(0.0, 1.0, TimeSpan.FromMilliseconds(180))
@@ -399,7 +467,8 @@ public partial class MainWindow : Window
         AppSnackbarTranslate.BeginAnimation(TranslateTransform.YProperty, slideUp);
 
         _snackbarTimer?.Stop();
-        _snackbarTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2.8) };
+        double displaySeconds = !string.IsNullOrWhiteSpace(actionUrl) ? 6.5 : 2.8;
+        _snackbarTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(displaySeconds) };
         _snackbarTimer.Tick += (_, _) =>
         {
             _snackbarTimer?.Stop();
@@ -410,6 +479,9 @@ public partial class MainWindow : Window
             fadeOut.Completed += (_, _) =>
             {
                 AppSnackbarBorder.Visibility = Visibility.Collapsed;
+                AppSnackbarActionBtn.Visibility = Visibility.Collapsed;
+                AppSnackbarBorder.IsHitTestVisible = false;
+                _currentSnackbarActionUrl = null;
             };
             AppSnackbarBorder.BeginAnimation(OpacityProperty, fadeOut);
         };
@@ -419,6 +491,21 @@ public partial class MainWindow : Window
             (!IsVisible || WindowState == WindowState.Minimized || showHudOverlay))
         {
             _hudToastService.ShowHudToast(title, subtitle, isError);
+        }
+    }
+
+    private void AppSnackbarActionBtn_Click(object sender, RoutedEventArgs e)
+    {
+        if (!string.IsNullOrWhiteSpace(_currentSnackbarActionUrl))
+        {
+            try
+            {
+                Process.Start(new ProcessStartInfo(_currentSnackbarActionUrl) { UseShellExecute = true });
+            }
+            catch
+            {
+                // Ignore browser launch errors
+            }
         }
     }
 

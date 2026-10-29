@@ -209,6 +209,41 @@ public partial class MainWindow
         }
     }
 
+    private void OpenLogsButton_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            string logPath = AppLogger.LogFilePath;
+            if (!File.Exists(logPath))
+            {
+                // Ensure directory and empty file exist before launching
+                AppLogger.Info("Log file initialized by user.");
+            }
+
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = logPath,
+                UseShellExecute = true
+            });
+        }
+        catch
+        {
+            // Fall back to opening the containing directory
+            try
+            {
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = AppSettings.DataDirectoryPath,
+                    UseShellExecute = true
+                });
+            }
+            catch
+            {
+                // Ignore shell launch errors
+            }
+        }
+    }
+
     private async void ResetAllSettingsButton_Click(object sender, RoutedEventArgs e)
     {
         ResetAllSettingsButton.IsEnabled = false;
@@ -329,6 +364,35 @@ public partial class MainWindow
         await CheckForUpdatesInternalAsync(silentIfUpToDate: false);
     }
 
+    private async void AutoUpdateToggle_Click(object sender, RoutedEventArgs e)
+    {
+        if (_suppressUiEvents || !IsLoaded)
+            return;
+
+        bool targetState = AutoUpdateToggle.IsChecked == true;
+        DsuStatusDto status = await _ipcClient.UpdatePreferencesAsync(autoUpdateEnabled: targetState);
+        UpdateUiFromStatus(status);
+    }
+
+    public async Task CheckAndPromptAutoUpdateAsync(DsuStatusDto status)
+    {
+        if (status.AutoUpdatePromptShown)
+            return;
+
+        MessageBoxResult choice = MessageBox.Show(
+            this,
+            _loc["AutoUpdatePromptBody"],
+            _loc["AutoUpdatePromptTitle"],
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Question);
+
+        bool enableAutoUpdate = (choice == MessageBoxResult.Yes);
+        DsuStatusDto updated = await _ipcClient.UpdatePreferencesAsync(
+            autoUpdateEnabled: enableAutoUpdate,
+            autoUpdatePromptShown: true);
+        UpdateUiFromStatus(updated);
+    }
+
     private async void CheckUpdateButton_Click(object sender, RoutedEventArgs e)
     {
         await CheckForUpdatesInternalAsync(silentIfUpToDate: false);
@@ -368,6 +432,36 @@ public partial class MainWindow
                 InstallUpdateButton.Content = _loc.Format("BtnInstallUpdateFormat", result.LatestVersion);
                 UpdateStatusText.Text = _loc.Format("UpdateStatusAvailableFormat", result.LatestVersion, result.CurrentVersion);
                 UpdateStatusText.Foreground = StatusOnlineBrush;
+
+                bool autoUpdate = _lastStatus?.AutoUpdateEnabled ?? true;
+                if (autoUpdate)
+                {
+                    ShowToastNotification(
+                        _loc["ToastAutoUpdatingTitle"],
+                        _loc.Format("ToastAutoUpdatingDesc", result.LatestVersion),
+                        isError: false,
+                        showHudOverlay: true);
+
+                    InstallUpdateButton.IsEnabled = false;
+                    CheckUpdateButton.IsEnabled = false;
+
+                    var progress = new Progress<int>(pct =>
+                    {
+                        UpdateStatusText.Text = _loc.Format("UpdateStatusDownloadingFormat", pct);
+                        UpdateStatusText.Foreground = AccentPrimaryBrush;
+                    });
+
+                    var (success, err) = await _updateService.DownloadAndApplyUpdateAsync(_pendingUpdateRelease, progress);
+                    if (!success)
+                    {
+                        InstallUpdateButton.IsEnabled = true;
+                        CheckUpdateButton.IsEnabled = true;
+                        UpdateStatusText.Text = _loc.Format("UpdateStatusErrorFormat", err ?? "Update failed");
+                        UpdateStatusText.Foreground = StatusOfflineBrush;
+                        ShowToastNotification(_loc["ToastUpdateCheckFailedTitle"], err ?? "Update failed", isError: true, showHudOverlay: true);
+                    }
+                    return;
+                }
 
                 ShowToastNotification(
                     _loc.Format("ToastUpdateAvailableTitleFormat", result.LatestVersion),

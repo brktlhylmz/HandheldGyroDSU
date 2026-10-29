@@ -139,6 +139,10 @@ public static class Program
         _ = await calResp.Content.ReadAsStringAsync(cts.Token);
         Console.WriteLine("[TEST] POST /calibrate succeeded.");
 
+        // 5. Localization Key Parity Test (en.json vs tr.json)
+        VerifyLocalesParity();
+        Console.WriteLine("[TEST] Localization Key Parity verified successfully.");
+
         cts.Cancel();
         try
         {
@@ -170,5 +174,48 @@ public static class Program
         uint crc = Crc32.Compute(span);
         BinaryPrimitives.WriteUInt32LittleEndian(span.Slice(8, 4), crc);
         return packet;
+    }
+
+    private static void VerifyLocalesParity()
+    {
+        string[] searchPaths =
+        [
+            Path.Combine(AppContext.BaseDirectory, "HandheldDsuWidget", "Locales"),
+            Path.Combine(AppContext.BaseDirectory, "Locales"),
+            Path.Combine(AppContext.BaseDirectory, "..", "HandheldDsuWidget", "Locales"),
+            Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "HandheldDsuWidget", "Locales")
+        ];
+
+        string? localesDir = searchPaths.FirstOrDefault(p => File.Exists(Path.Combine(p, "en.json")) && File.Exists(Path.Combine(p, "tr.json")));
+        if (localesDir is null)
+        {
+            Console.WriteLine("[TEST] Locales directory not found in test output, skipping parity check.");
+            return;
+        }
+
+        string enJson = File.ReadAllText(Path.Combine(localesDir, "en.json"));
+        string trJson = File.ReadAllText(Path.Combine(localesDir, "tr.json"));
+
+        using var enDoc = JsonDocument.Parse(enJson);
+        using var trDoc = JsonDocument.Parse(trJson);
+
+        var enKeys = enDoc.RootElement.EnumerateObject().Select(p => p.Name).ToHashSet();
+        var trKeys = trDoc.RootElement.EnumerateObject().Select(p => p.Name).ToHashSet();
+
+        var missingInTr = enKeys.Except(trKeys).ToList();
+        var missingInEn = trKeys.Except(enKeys).ToList();
+
+        if (missingInTr.Count > 0 || missingInEn.Count > 0)
+        {
+            var sb = new StringBuilder("Localization key mismatch detected:\n");
+            if (missingInTr.Count > 0)
+                sb.AppendLine($"  Missing in tr.json: {string.Join(", ", missingInTr)}");
+            if (missingInEn.Count > 0)
+                sb.AppendLine($"  Missing in en.json: {string.Join(", ", missingInEn)}");
+
+            throw new InvalidOperationException(sb.ToString());
+        }
+
+        Console.WriteLine($"[TEST] Locales verified: {enKeys.Count} keys match 100% between en.json and tr.json.");
     }
 }

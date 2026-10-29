@@ -141,6 +141,18 @@ public partial class MainWindow
                     : _loc["StatusReadyBadge"];
             }
 
+            string currentTrayTip = !status.IsStreamingEnabled
+                ? $"HandheldGyroDSU • Paused (Port {status.ServerPort})"
+                : status.IsEmulatorConnected
+                    ? $"HandheldGyroDSU • Active (Port {status.ServerPort})"
+                    : $"HandheldGyroDSU • Ready (Port {status.ServerPort})";
+
+            if (!string.Equals(_lastTrayTip, currentTrayTip, StringComparison.Ordinal))
+            {
+                _lastTrayTip = currentTrayTip;
+                _trayService.UpdateTooltip(currentTrayTip);
+            }
+
             // 2. DSU stream, Full Gamepad Forwarding, and Start with Windows switches
             GyroStreamToggle.IsChecked = status.IsStreamingEnabled;
             GyroToggleSubtitle.Text = status.IsStreamingEnabled
@@ -165,6 +177,7 @@ public partial class MainWindow
             {
                 UpdateChannelComboBox.SelectedValue = string.Equals(status.UpdateChannel, "beta", StringComparison.OrdinalIgnoreCase) ? "beta" : "stable";
             }
+            AutoUpdateToggle.IsChecked = status.AutoUpdateEnabled;
             DevSyntheticWaveToggle.IsChecked = status.IsSyntheticWaveEnabled;
             DevLoopbackClientToggle.IsChecked = _loopbackTester.IsRunning;
             _loopbackTester.UpdateTargetPorts(status.ServerPort, status.SecondaryPort, status.IsSecondaryClusterActive);

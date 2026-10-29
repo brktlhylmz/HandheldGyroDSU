@@ -328,12 +328,22 @@ public sealed class UpdateService : IDisposable
             }
 
             // Relaunch the newly updated executable and close the current instance
-            Process.Start(new ProcessStartInfo
+            var startInfo = new ProcessStartInfo
             {
                 FileName = processPath,
                 WorkingDirectory = baseDir,
                 UseShellExecute = true
-            });
+            };
+            if (!string.IsNullOrWhiteSpace(release.TagName))
+            {
+                startInfo.ArgumentList.Add("--just-updated");
+                startInfo.ArgumentList.Add(release.TagName);
+                if (!string.IsNullOrWhiteSpace(release.HtmlUrl))
+                {
+                    startInfo.ArgumentList.Add(release.HtmlUrl);
+                }
+            }
+            Process.Start(startInfo);
 
             Application.Current?.Dispatcher.Invoke(() =>
             {
