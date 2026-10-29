@@ -17,12 +17,12 @@
 [![Protocol](https://img.shields.io/badge/Protocol-Cemuhook%20DSU%20v1001-00B0FF)](https://v1993.github.io/cemuhook-protocol/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**HandheldGyroDSU** is a lightweight, zero-configuration **Cemuhook DSU (`v1001`) motion server** and **desktop / in-game HUD companion** built to bring native gyro aiming and motion controls to **Dolphin**, **Cemu**, and **Nintendo Switch emulators** (**Eden**, **Yuzu**, **Sudachi**, **Ryujinx**) on Windows handheld gaming PCs (**ASUS ROG Ally / Ally X**, **Lenovo Legion Go**, **MSI Claw**, **Ayaneo**, **GPD**) and motion-capable controllers.
+**HandheldGyroDSU** is a lightweight, zero-configuration **Cemuhook DSU (`v1001`) motion server**, **emulator configurator**, and **desktop / in-game HUD companion** built to bring native gyro aiming and motion controls to **Dolphin**, **RPCS3**, **Cemu**, **Nintendo Switch emulators** (**Eden**, **Yuzu**, **Sudachi**, **Citron**, **Ryujinx**), and **PC / Steam games** on Windows handheld gaming PCs (**ASUS ROG Ally / Ally X**, **Lenovo Legion Go**, **MSI Claw**, **Ayaneo**, **GPD**) and motion-capable controllers.
 
 ### Why HandheldGyroDSU?
 On Windows handhelds, trying to use gyro in emulators often means fighting between **ASUS Armoury Crate**, **Steam Input**, and **Handheld Companion**—resulting in virtual controller conflicts, `HidHide` issues, double inputs, or broken desktop/gamepad mode switching. **HandheldGyroDSU** solves this by reading your handheld's built-in Windows `Gyrometer` and `Accelerometer` directly and streaming native Cemuhook DSU motion data to your emulators **without installing virtual gamepad drivers or hijacking your controls**.
 
-It bridges internal Windows WinRT Inertial Measurement Units (`Gyrometer` + `Accelerometer`) and connected gamepads directly to **Dolphin**, **Cemu**, **Eden**, **Yuzu**, **Sudachi**, and **Ryujinx** with sub-4ms latency—available as both a **lightweight Portable `.zip` archive** and a **Self-Contained Single-File `.exe`**.
+It bridges internal Windows WinRT Inertial Measurement Units (`Gyrometer` + `Accelerometer`) and connected gamepads directly to **Dolphin**, **RPCS3**, **Cemu**, **Eden**, **Yuzu**, **Sudachi**, **Ryujinx**, and **PC games** with sub-4ms latency—available as both a **lightweight Portable `.zip` archive** and a **Self-Contained Single-File `.exe`**.
 
 > [!NOTE]
 > **Active Development & Continuous Release (`master`):** This repository uses a rolling release workflow. Every push to the `master` branch automatically runs the Cemuhook DSU `v1001` protocol self-test suite on GitHub Actions and publishes a fresh **`v1.0.<build>`** release with updated `.zip` and `.exe` binaries.
@@ -52,13 +52,20 @@ https://github.com/user-attachments/assets/6d894e63-4da2-45ef-b621-844247db87f9
 
 ---
 
+## 📚 Documentation & Guides
+
+- 📘 **[Complete Emulator Setup Guide (`docs/EMULATOR_SETUP.md`)](docs/EMULATOR_SETUP.md)** — Step-by-step instructions for **Dolphin** (One-Click Installer & *Super Mario Galaxy* controls), **RPCS3** (Handheld SDL Gyro Patcher), **Cemu**, **Eden / Yuzu / Sudachi**, **Ryujinx**, and **PC / Steam Games** (Gyro-to-Mouse).
+- 🛠️ **[Troubleshooting & FAQ (`docs/TROUBLESHOOTING.md`)](docs/TROUBLESHOOTING.md)** — Fixing Armoury Crate / Steam Input conflicts, *Super Mario Galaxy* Upright (`L3`) vs Pointer (`R3`) modes, EmuDeck Dolphin paths, and Tabletop Calibration Guard.
+
+---
+
 ## 📸 Screenshots
 
 | **Dashboard (Live Gyro Telemetry & Radar)** | **Controllers (Custom Names, Hotkeys & Auto-Switch)** |
 | :---: | :---: |
 | ![Dashboard](docs/screenshots/dashboard.png) | ![Controllers](docs/screenshots/controllers.png) |
-| **Profiles (Presets & JSON Import / Export)** | **Settings (Multi-Port Cluster, Calibration Guard & Tray)** |
-| ![Profiles](docs/screenshots/profiles.png) | ![Settings](docs/screenshots/settings.png) |
+| **Profiles (Per-Profile Gyro-to-Mouse & Presets)** | **Settings (Dolphin & RPCS3 One-Click Configurators)** |
+| ![Profiles](docs/screenshots/profiles.png) | ![Emulator Configurators](docs/screenshots/emulator-tools.png) |
 
 ---
 
@@ -66,7 +73,16 @@ https://github.com/user-attachments/assets/6d894e63-4da2-45ef-b621-844247db87f9
 
 - **🚫 Zero Controller Conflicts & Direct IMU Streaming**:
   - Polls hardware `Windows.Devices.Sensors.Gyrometer` and `Accelerometer` at a 4 ms interval (`250 Hz`) with stack-allocated `Span<byte>` Cemuhook DSU `v1001` UDP packet serialization and IEEE 802.3 CRC32 verification.
-  - Optional **Full Gamepad Input Forwarding**: Embeds live XInput buttons, D-Pad, dual analog sticks, and analog triggers (`L2`/`R2`) directly into the DSU packet stream alongside motion data.
+  - **Full Gamepad Input Forwarding (Enabled by Default)**: Embeds live XInput buttons (`Cross`, `Circle`, `Square`, `Triangle`, `L1`, `R1`, `Share`, `Options`, `L3`, `R3`), D-Pad, dual analog sticks, and analog triggers (`L2`/`R2`) directly into the DSU packet stream alongside motion data so emulators can bind `DSUClient/0/HandheldGyroDSU` as a single unified controller.
+- **🐬 One-Click Dolphin DSU & Motion Profile Installer (`Settings`)**:
+  - Auto-detects standard (`%AppData%\Dolphin Emulator\Config`), Documents, and **EmuDeck** Dolphin installations—or lets you pick any portable `Dolphin.exe` via **`BROWSE...`**.
+  - Configures `DSUClient.ini` (`[Server] Entries = HandheldGyroDSU:127.0.0.1:26760;`), sets `Device = DSUClient/0/HandheldGyroDSU` in `WiimoteNew.ini` and `GCPadNew.ini`, maps native DSU PlayStation button names (`Cross`/`Circle`/`Square`/`Triangle`), binds **`R3`** to `IMUIR/Recenter`, and binds **`L3`** to `Hotkeys/Upright Toggle` (for *Super Mario Galaxy* Star Ball & Manta Ray surfing).
+  - Automatically prompts to enable **Forward Full Controller (Buttons + Sticks + Gyro)** if it is currently turned off when installing Dolphin profiles.
+- **🎮 One-Click RPCS3 Handheld SDL Gyro & Axis Patcher (`Settings`)**:
+  - Solves why built-in handheld motion fails in RPCS3's `SDL` pad handler: dynamically patches `rpcs3.exe`'s main-thread `SDL_Init` flags from `0x00013000` to **`0x0001B020`**—adding both `SDL_INIT_SENSOR (0x8000)` (so WinRT sensors fire on the main STA thread) and `SDL_INIT_VIDEO (0x20)` (so SDL3 rotates portrait handheld panels into proper landscape SIXAXIS axes).
+  - Creates an automatic backup (`rpcs3.exe.bak`) with one-click **`RESTORE ORIGINAL`** support, and configures `config/input_configs/global/Default.yml` to use `Handler: SDL` (`Device: XInput Controller 1`).
+- **🖱️ Per-Profile Gyro-to-Mouse for PC & Steam Games (`Profiles`)**:
+  - Translates 250 Hz gyro motion into relative mouse input (`SendInput`) per profile with **Hold Button (ADS)**, **Toggle Button**, or **Always On** activation modes, and automatically pauses cursor injection whenever the HandheldGyroDSU window is focused.
 - **🎯 Per-Controller Quick Recenter Hotkey (Single, Combo & Handheld Macro Keys)**:
   - Assign a custom recenter shortcut per controller directly in the **Controllers** tab—supports single buttons (`R3`, `Select`), 2-button combinations (`Select + R3`, `LB + RB`), extra `RawGameController` buttons (`RawBtn`), or handheld back-paddle macro keys (`M1`/`M2` mapped to `F6..F24`, `Insert`, `Home`, etc.).
   - Re-centers pitch/roll posture and gyro bias instantaneously in-game (`POST /recenter`) with click-through HUD confirmation.
@@ -75,8 +91,6 @@ https://github.com/user-attachments/assets/6d894e63-4da2-45ef-b621-844247db87f9
 - **🎮 Custom Controller Naming & Multi-Controller Identification (Up to 8 Pads)**:
   - Automatically assigns slots `0..3` on primary UDP port **`26760`** and spawns a **Secondary DSU Cluster** on UDP port **`26762`** for controllers 5–8.
   - Automatically numbers identical controllers (`#2`, `#3`), highlights the currently pressed controller with a live **`ACTIVE INPUT`** badge, and lets you assign custom names (`✎`) to each controller.
-- **🐬 Automatic Dolphin Emulator Configuration**:
-  - Automatically configures `DSUClient.ini` and `WiimoteNew.ini` on startup (and whenever Dolphin is launched or added under **Controllers → Emulator & Game (`.exe`) Auto-Profile**), generates ready-to-load profiles (`Profiles/Wiimote/HandheldGyroDSU_Xbox.ini`, `Profiles/Wiimote/HandheldGyroDSU_Sideways.ini` with full `Upright + Sideways` Wii Wheel steering math, and `Profiles/GCPad/HandheldGyroDSU_Xbox.ini`), and binds `IMUIR` pointer + motion axes out of the box.
 - **🪟 Click-Through In-Game HUD & Always-on-Top Pin (`📌`)**:
   - Pin (`📌`) the window above other apps when tuning settings, or minimize to the system tray (`—` / `✕`).
   - Uses a click-through `WS_EX_TRANSPARENT | WS_EX_NOACTIVATE` HUD toast overlay so fullscreen games never lose focus, and drops UI polling to **0% CPU** when minimized to the system tray.
@@ -91,7 +105,8 @@ https://github.com/user-attachments/assets/6d894e63-4da2-45ef-b621-844247db87f9
 | :--- | :--- | :---: | :--- | :--- |
 | **Eden** (`eden.exe`) | Nintendo Switch | ✅ **Tested** | *Splatoon 2* | `CemuhookUDP` (`127.0.0.1:26760` + `26762` for Pads 5–8) |
 | **Cemu** (`cemu.exe`) | Wii U | ✅ **Tested** | *Splatoon* | `DSUController` (`127.0.0.1:26760`) |
-| **Dolphin** (`dolphin.exe`) | Wii / GameCube | ✅ **Tested** | *Mario Kart Wii* (Wii Wheel Sideways tilt steering & IR Pointer) | **Automatic** (Configures `DSUClient.ini`, `WiimoteNew.ini` & `Profiles/Wiimote` + `GCPad`) |
+| **Dolphin** (`dolphin.exe`) | Wii / GameCube | ✅ **Tested** | *Super Mario Galaxy*, *Mario Kart Wii* | **One-Click Installer** (`DSUClient/0/HandheldGyroDSU`, `R3` Recenter, `L3` Upright Toggle) |
+| **RPCS3** (`rpcs3.exe`) | PlayStation 3 | ✅ **Tested** | *SIXAXIS Motion Titles* | **One-Click SDL Gyro Patcher** (`Settings` tab) |
 | **Yuzu / Sudachi / Citron** | Nintendo Switch | ⚪ *Untested (Protocol Compatible)* | *Community testing welcome* | `CemuhookUDP` (`127.0.0.1:26760`) |
 | **Ryujinx** (`ryujinx.exe`) | Nintendo Switch | ⚪ *Untested (Protocol Compatible)* | *Community testing welcome* | Native CemuHook Motion (`127.0.0.1:26760`, Slot `0..3`) |
 
@@ -115,14 +130,20 @@ https://github.com/user-attachments/assets/6d894e63-4da2-45ef-b621-844247db87f9
 ### 1. Run `HandheldGyroDSU.exe`
 Download and launch [**`HandheldGyroDSU.exe`**](https://github.com/brktlhylmz/HandheldGyroDSU/releases/latest/download/HandheldGyroDSU.exe). The server immediately starts broadcasting Cemuhook DSU `v1001` packets on **`127.0.0.1:26760`**.
 
-### 2. Connect Your Emulator
+### 2. Connect Your Emulator *(Full Guide: [docs/EMULATOR_SETUP.md](docs/EMULATOR_SETUP.md))*
 
-#### **Dolphin (Wii / GameCube) — Automatic Setup**
-1. Launch **HandheldGyroDSU** (or add `Dolphin.exe` in **Controllers → Emulator & Game (`.exe`) Auto-Profile → `+ Add Emulator / Game (.exe) Rule`** for automatic profile switching).
-2. HandheldGyroDSU automatically enables Dolphin's DSU Client (`127.0.0.1:26760`) and generates ready-to-use controller profiles:
-   - **Standard Wii Remote + Nunchuk + IR Pointer**: `HandheldGyroDSU_Xbox` (under `Profiles/Wiimote`, applied automatically to `WiimoteNew.ini`)
-   - **Mario Kart Wii / Sideways Wii Wheel**: Load `HandheldGyroDSU_Sideways` in Dolphin's Emulated Wii Remote profile dropdown.
-   - **GameCube Controller**: Load `HandheldGyroDSU_Xbox` in Dolphin's GameCube Pad profile dropdown.
+#### **Dolphin (Wii / GameCube) — One-Click Installer (`Settings` Tab)**
+1. Open **HandheldGyroDSU → Settings → Dolphin DSU & Motion Profile Installer**.
+2. Click **`CONFIGURE DOLPHIN DSU & PROFILES`** (or click **`BROWSE...`** to select your `Dolphin.exe` if you use EmuDeck or a custom portable folder).
+3. HandheldGyroDSU configures `DSUClient.ini` (`[Server] Entries = HandheldGyroDSU:127.0.0.1:26760;`), sets `Device = DSUClient/0/HandheldGyroDSU`, and installs ready-to-use profiles:
+   - **Standard Wii Remote + Nunchuk + IR Pointer (`HandheldGyroDSU_Xbox`)**: Applied automatically to `WiimoteNew.ini`. Press **`R3` (Right Stick Click)** to recenter the pointer (`IMUIR/Recenter`), **`L3` (Left Stick Click)** to toggle **Upright Wii Remote** mode (*Super Mario Galaxy* Star Ball & Manta Ray surfing), and **`LB` (`L1`)** to Shake/Spin.
+   - **Mario Kart Wii / Sideways Wii Wheel (`HandheldGyroDSU_Sideways`)**: Load in Dolphin's Emulated Wii Remote profile dropdown.
+   - **GameCube Controller (`HandheldGyroDSU_Xbox`)**: Applied automatically to `GCPadNew.ini`.
+
+#### **RPCS3 (PlayStation 3) — One-Click SDL Gyro & Axis Patcher (`Settings` Tab)**
+1. Open **HandheldGyroDSU → Settings → RPCS3 Handheld SDL Gyro & Axis Patcher**.
+2. Select your `rpcs3.exe` via **`BROWSE...`** (if not auto-detected) and click **`APPLY SDL GYRO PATCH`**.
+3. HandheldGyroDSU backs up `rpcs3.exe.bak`, patches `SDL_Init` (`0x00013000` → `0x0001B020`) so `SDL_INIT_SENSOR | SDL_INIT_VIDEO` run on the main thread with landscape display orientation, and sets Player 1 in `config/input_configs/global/Default.yml` to **`Handler: SDL`** (`Device: XInput Controller 1`). *(Click **`RESTORE ORIGINAL`** anytime to revert).*
 
 #### **Cemu (Wii U)**
 1. Open **Options → Input settings**.
@@ -158,8 +179,9 @@ flowchart LR
 
     subgraph UI ["HandheldGyroDSU (Single-File WPF Overlay)"]
         MW["MainWindow Overlay UI\n(Dashboard / Controllers / Profiles / Settings)"]
-        CW["ControllerAndAppWatcherService\nAuto-Slot + Hotkeys + Dolphin Auto-Config"]
-        HUD["HudToastService\n(Click-Through In-Game OSD)"]
+        CW["ControllerAndAppWatcherService\nAuto-Slot + Hotkeys + Dolphin Installer"]
+        RPCS3["Rpcs3SdlPatcherService\nSDL_Init (0x1B020) + Default.yml Patcher"]
+        GM["GyroMouseService\n250 Hz Per-Profile Gyro-to-Mouse"]
         HUD["HudToastService\n(Click-Through In-Game OSD)"]
     end
 
@@ -170,7 +192,8 @@ flowchart LR
     SS --> UDP2
     IPC <--> MW
     CW <--> MW
-    MW --> HUD
+    RPCS3 <--> MW
+    GM <--> MW
     MW --> HUD
 ```
 
@@ -187,8 +210,9 @@ HandheldGyroDSU/
 ├── HandheldDsuWidget/                  # WPF Desktop & In-Game HUD Companion (HandheldGyroDSU.exe)
 │   ├── MainWindow.xaml                 # Responsive Card Layout & Left Navigation Rail
 │   ├── MainWindow.*.cs                 # Modular Partial Classes (Dashboard, Controllers, Profiles, Settings, Tray)
-│   ├── Services/                       # ControllerAndAppWatcherService, DsuIpcClient, LocalizationService, HudToastService
+│   ├── Services/                       # ControllerAndAppWatcherService, Rpcs3SdlPatcherService, GyroMouseService, UpdateService, DsuIpcClient, LocalizationService, HudToastService
 │   └── Locales/                        # Embedded & Extensible JSON Dictionaries (en.json, tr.json)
+├── docs/                               # Documentation & Screenshots (EMULATOR_SETUP.md, TROUBLESHOOTING.md)
 └── .github/workflows/                  # Automated Build, DSU Protocol Self-Test & Single-File .EXE Release CI
 ```
 

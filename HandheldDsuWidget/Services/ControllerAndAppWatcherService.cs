@@ -778,6 +778,229 @@ public sealed class ControllerAndAppWatcherService : IDisposable
     /// unprefixed IMUAccelerometer / IMUGyroscope bindings in WiimoteNew.ini with DSUClient/0/&lt;description&gt;:
     /// when an XInput/WGInput/SDL gamepad is selected as the primary device.
     /// </summary>
+    public const string DefaultDolphinDsuServerName = "HandheldGyroDSU";
+
+    private static string? _customDolphinPath;
+
+    public static string? CustomDolphinPath
+    {
+        get => _customDolphinPath;
+        set => _customDolphinPath = value;
+    }
+
+    public static string? DiscoverDolphinConfigDirectory()
+    {
+        if (!string.IsNullOrWhiteSpace(_customDolphinPath))
+        {
+            string? resolved = ResolveDolphinConfigDirFromPath(_customDolphinPath);
+            if (!string.IsNullOrWhiteSpace(resolved))
+                return resolved;
+        }
+
+        try
+        {
+            foreach (Process p in Process.GetProcessesByName("Dolphin"))
+            {
+                using (p)
+                {
+                    string? exePath = p.MainModule?.FileName;
+                    if (!string.IsNullOrWhiteSpace(exePath))
+                    {
+                        string? resolved = ResolveDolphinConfigDirFromPath(exePath);
+                        if (!string.IsNullOrWhiteSpace(resolved))
+                        {
+                            _customDolphinPath = exePath;
+                            return resolved;
+                        }
+                    }
+                }
+            }
+        }
+        catch
+        {
+            // Ignore process enumeration access errors
+        }
+
+        string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+        string docs = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+        string userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+
+        string[] candidates =
+        [
+            Path.Combine(appData, "Dolphin Emulator", "Config"),
+            Path.Combine(appData, "emudeck", "Emulators", "Dolphin-x64", "User", "Config"),
+            Path.Combine(docs, "Dolphin Emulator", "Config"),
+            Path.Combine(userProfile, "Downloads", "Dolphin-x64", "User", "Config"),
+            @"C:\Emulation\Emulators\Dolphin-x64\User\Config",
+            @"D:\Emulation\Emulators\Dolphin-x64\User\Config"
+        ];
+
+        foreach (string candidate in candidates)
+        {
+            if (Directory.Exists(candidate))
+                return candidate;
+        }
+
+        return null;
+    }
+
+    public static string? ResolveDolphinConfigDirFromPath(string exeOrFolderPath)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(exeOrFolderPath))
+                return null;
+
+            string dir = File.Exists(exeOrFolderPath)
+                ? (Path.GetDirectoryName(exeOrFolderPath) ?? string.Empty)
+                : exeOrFolderPath;
+
+            if (string.IsNullOrWhiteSpace(dir))
+                return null;
+
+            // If user selected the Config folder directly
+            if (string.Equals(Path.GetFileName(dir), "Config", StringComparison.OrdinalIgnoreCase))
+            {
+                Directory.CreateDirectory(dir);
+                return dir;
+            }
+
+            // If user selected the User folder directly
+            if (string.Equals(Path.GetFileName(dir), "User", StringComparison.OrdinalIgnoreCase))
+            {
+                string cfg = Path.Combine(dir, "Config");
+                Directory.CreateDirectory(cfg);
+                return cfg;
+            }
+
+            // If Dolphin installation has portable.txt or User\Config next to Dolphin.exe
+            string portableTxt = Path.Combine(dir, "portable.txt");
+            string localUserConfig = Path.Combine(dir, "User", "Config");
+            if (File.Exists(portableTxt) || Directory.Exists(localUserConfig))
+            {
+                Directory.CreateDirectory(localUserConfig);
+                return localUserConfig;
+            }
+
+            // Standard non-portable Dolphin installation stores config in %AppData%\Dolphin Emulator\Config or Documents\Dolphin Emulator\Config
+            string appDataCfg = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Dolphin Emulator", "Config");
+            string docsCfg = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "Dolphin Emulator", "Config");
+            if (Directory.Exists(appDataCfg))
+                return appDataCfg;
+            if (Directory.Exists(docsCfg))
+                return docsCfg;
+
+            Directory.CreateDirectory(appDataCfg);
+            return appDataCfg;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    public static (bool IsConfigured, string? ConfigDir) GetDolphinDsuStatus()
+    {
+        string? configDir = DiscoverDolphinConfigDirectory();
+        if (string.IsNullOrWhiteSpace(configDir) || !Directory.Exists(configDir))
+            return (false, null);
+
+        try
+        {
+            string dsuIniPath = Path.Combine(configDir, "DSUClient.ini");
+            string wiimoteIniPath = Path.Combine(configDir, "WiimoteNew.ini");
+            if (!File.Exists(dsuIniPath) || !File.Exists(wiimoteIniPath))
+                return (false, configDir);
+
+            string dsuText = File.ReadAllText(dsuIniPath);
+            string wiimoteText = File.ReadAllText(wiimoteIniPath);
+
+            bool hasDsuServer = dsuText.Contains("[Server]", StringComparison.OrdinalIgnoreCase) &&
+                                dsuText.Contains($"{DefaultDolphinDsuServerName}:127.0.0.1:", StringComparison.OrdinalIgnoreCase);
+            bool hasDsuDevice = wiimoteText.Contains($"DSUClient/0/{DefaultDolphinDsuServerName}", StringComparison.OrdinalIgnoreCase) &&
+                                wiimoteText.Contains("IMUIR/Recenter = R3", StringComparison.OrdinalIgnoreCase);
+
+            return (hasDsuServer && hasDsuDevice, configDir);
+        }
+        catch
+        {
+            return (false, configDir);
+        }
+    }
+
+    public static bool ApplyDolphinConfiguration(string? customPath, int dsuPort, out string configuredDir, out string errorMessage)
+    {
+        configuredDir = string.Empty;
+        errorMessage = string.Empty;
+
+        try
+        {
+            if (!string.IsNullOrWhiteSpace(customPath))
+            {
+                _customDolphinPath = customPath;
+            }
+
+            string? targetConfigDir = !string.IsNullOrWhiteSpace(customPath)
+                ? ResolveDolphinConfigDirFromPath(customPath)
+                : DiscoverDolphinConfigDirectory();
+
+            if (string.IsNullOrWhiteSpace(targetConfigDir))
+            {
+                errorMessage = "Dolphin configuration directory could not be resolved.";
+                return false;
+            }
+
+            StopRunningDolphinProcesses();
+            Directory.CreateDirectory(targetConfigDir);
+
+            ConfigureSingleDolphinDirectory(targetConfigDir, dsuPort, forceOverwriteActiveIni: true);
+            configuredDir = targetConfigDir;
+            return true;
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+            return false;
+        }
+    }
+
+    private static void StopRunningDolphinProcesses()
+    {
+        try
+        {
+            Process[] procs = Process.GetProcessesByName("Dolphin");
+            if (procs.Length == 0)
+                return;
+
+            foreach (Process p in procs)
+            {
+                using (p)
+                {
+                    try
+                    {
+                        p.Kill();
+                        p.WaitForExit(2000);
+                    }
+                    catch
+                    {
+                        // Ignore process termination errors
+                    }
+                }
+            }
+
+            Thread.Sleep(250);
+        }
+        catch
+        {
+            // Ignore process enumeration errors
+        }
+    }
+
+    /// <summary>
+    /// Automatically ensures Dolphin Emulator's DSUClient.ini uses the "HandheldGyroDSU" DSU server name
+    /// and configures WiimoteNew.ini / GCPadNew.ini + controller profiles with native DSU PlayStation button names
+    /// (Cross, Circle, Square, Triangle, R3, L3) and full 6-axis IMU motion bindings.
+    /// </summary>
     public static void EnsureDolphinDsuConfigured(int dsuPort = 26760)
     {
         try
@@ -797,6 +1020,13 @@ public sealed class ControllerAndAppWatcherService : IDisposable
             {
                 if (Directory.Exists(candidate))
                     configDirs.Add(candidate);
+            }
+
+            if (!string.IsNullOrWhiteSpace(_customDolphinPath))
+            {
+                string? customCfg = ResolveDolphinConfigDirFromPath(_customDolphinPath);
+                if (!string.IsNullOrWhiteSpace(customCfg) && Directory.Exists(customCfg))
+                    configDirs.Add(customCfg);
             }
 
             try
@@ -822,83 +1052,7 @@ public sealed class ControllerAndAppWatcherService : IDisposable
 
             foreach (string configDir in configDirs)
             {
-                string dsuIniPath = Path.Combine(configDir, "DSUClient.ini");
-                string dsuDescription = "HandheldGyroDSU";
-
-                if (File.Exists(dsuIniPath))
-                {
-                    string dsuText = File.ReadAllText(dsuIniPath);
-                    bool dsuChanged = false;
-
-                    // Fix empty description ":127.0.0.1:26760" which triggers Dolphin's DeviceQualifier::FromString bug
-                    if (Regex.IsMatch(dsuText, @"(?m)^Entries\s*=\s*:127\.0\.0\.1:"))
-                    {
-                        dsuText = Regex.Replace(
-                            dsuText,
-                            @"(?m)^(Entries\s*=\s*):127\.0\.0\.1:",
-                            $"${{1}}{dsuDescription}:127.0.0.1:");
-                        dsuChanged = true;
-                    }
-
-                    Match descMatch = Regex.Match(dsuText, @"(?m)^Entries\s*=\s*([^:;\r\n]+):127\.0\.0\.1:");
-                    if (descMatch.Success && !string.IsNullOrWhiteSpace(descMatch.Groups[1].Value))
-                    {
-                        dsuDescription = descMatch.Groups[1].Value.Trim();
-                    }
-
-                    if (dsuChanged)
-                    {
-                        File.WriteAllText(dsuIniPath, dsuText);
-                    }
-                }
-                else
-                {
-                    File.WriteAllText(
-                        dsuIniPath,
-                        $"[General]{Environment.NewLine}Enabled = True{Environment.NewLine}Entries = {dsuDescription}:127.0.0.1:{dsuPort};{Environment.NewLine}");
-                }
-
-                string prefix = $"DSUClient/0/{dsuDescription}:";
-                EnsureDolphinControllerProfilesExist(configDir, prefix);
-
-                string wiimoteIniPath = Path.Combine(configDir, "WiimoteNew.ini");
-                if (File.Exists(wiimoteIniPath))
-                {
-                    string wiimoteText = File.ReadAllText(wiimoteIniPath);
-
-                    // Replace unprefixed `Accel ...` or `Gyro ...` bindings with `DSUClient/0/<description>:Accel ...`
-                    string updatedWiimote = Regex.Replace(
-                        wiimoteText,
-                        @"(?m)^(\s*IMU(?:Accelerometer|Gyroscope)/[^=\r\n]+=\s*)`((?:Accel|Gyro)\s+[^`]+)`",
-                        $"${{1}}`{prefix}${{2}}`");
-
-                    // Ensure IRPassthrough is disabled and IMUIR (gyro pointer) is enabled
-                    updatedWiimote = Regex.Replace(updatedWiimote, @"(?m)^(\s*IRPassthrough/Enabled\s*=\s*)True", "${1}False");
-                    updatedWiimote = Regex.Replace(updatedWiimote, @"(?m)^(\s*IMUIR/Enabled\s*=\s*)False", "${1}True");
-                    updatedWiimote = Regex.Replace(updatedWiimote, @"(?m)^(\s*IR/Vertical Offset\s*=\s*)12\.", "${1}0.");
-                    updatedWiimote = Regex.Replace(updatedWiimote, @"(?m)^(\s*IR/Total Yaw\s*=\s*)19\.", "${1}35.");
-                    updatedWiimote = Regex.Replace(updatedWiimote, @"(?m)^(\s*IR/Total Pitch\s*=\s*)22\.", "${1}30.");
-                    updatedWiimote = Regex.Replace(updatedWiimote, @"(?m)^(\s*Options/Upright Wiimote\s*=\s*)True", "${1}False");
-
-                    // If Wiimote1 was bound to Keyboard/Mouse clicks (`Click 0`) or missing Extension in Sideways mode, upgrade WiimoteNew.ini
-                    if (updatedWiimote.Contains("Buttons/A = `Click 0`", StringComparison.OrdinalIgnoreCase))
-                    {
-                        updatedWiimote = BuildDolphinWiimoteNewIni(prefix);
-                    }
-                    else if (updatedWiimote.Contains("Options/Sideways Wiimote = True", StringComparison.OrdinalIgnoreCase))
-                    {
-                        updatedWiimote = BuildDolphinWiimoteNewIni(prefix, sideways: true);
-                    }
-
-                    if (!string.Equals(wiimoteText, updatedWiimote, StringComparison.Ordinal))
-                    {
-                        File.WriteAllText(wiimoteIniPath, updatedWiimote);
-                    }
-                }
-                else
-                {
-                    File.WriteAllText(wiimoteIniPath, BuildDolphinWiimoteNewIni(prefix));
-                }
+                ConfigureSingleDolphinDirectory(configDir, dsuPort, forceOverwriteActiveIni: false);
             }
         }
         catch
@@ -907,27 +1061,104 @@ public sealed class ControllerAndAppWatcherService : IDisposable
         }
     }
 
-    private static void EnsureDolphinControllerProfilesExist(string configDir, string dsuPrefix)
+    private static void ConfigureSingleDolphinDirectory(string configDir, int dsuPort, bool forceOverwriteActiveIni)
+    {
+        string dsuDescription = DefaultDolphinDsuServerName;
+        string dsuIniPath = Path.Combine(configDir, "DSUClient.ini");
+
+        File.WriteAllText(
+            dsuIniPath,
+            $"[Server]{Environment.NewLine}Enabled = True{Environment.NewLine}Entries = {dsuDescription}:127.0.0.1:{dsuPort};{Environment.NewLine}");
+
+        string dolphinIniPath = Path.Combine(configDir, "Dolphin.ini");
+        if (File.Exists(dolphinIniPath))
+        {
+            try
+            {
+                string dolphinIni = File.ReadAllText(dolphinIniPath);
+                if (!dolphinIni.Contains("BackgroundInput = True", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (Regex.IsMatch(dolphinIni, @"(?m)^\[Input\]"))
+                    {
+                        if (Regex.IsMatch(dolphinIni, @"(?m)^\s*BackgroundInput\s*="))
+                        {
+                            dolphinIni = Regex.Replace(dolphinIni, @"(?m)^(\s*BackgroundInput\s*=\s*).*$", "${1}True");
+                        }
+                        else
+                        {
+                            dolphinIni = Regex.Replace(dolphinIni, @"(?m)^(\[Input\]\r?\n)", $"${{1}}BackgroundInput = True{Environment.NewLine}");
+                        }
+                    }
+                    else
+                    {
+                        dolphinIni = dolphinIni.TrimEnd() + $"{Environment.NewLine}[Input]{Environment.NewLine}BackgroundInput = True{Environment.NewLine}";
+                    }
+                    File.WriteAllText(dolphinIniPath, dolphinIni);
+                }
+            }
+            catch
+            {
+                // Ignore Dolphin.ini update errors
+            }
+        }
+
+        EnsureDolphinControllerProfilesExist(configDir, dsuDescription);
+
+        string wiimoteIniPath = Path.Combine(configDir, "WiimoteNew.ini");
+        if (forceOverwriteActiveIni || !File.Exists(wiimoteIniPath))
+        {
+            bool sideways = false;
+            if (File.Exists(wiimoteIniPath))
+            {
+                string existing = File.ReadAllText(wiimoteIniPath);
+                sideways = existing.Contains("Options/Sideways Wiimote = True", StringComparison.OrdinalIgnoreCase);
+            }
+            File.WriteAllText(wiimoteIniPath, BuildDolphinWiimoteNewIni(dsuDescription, sideways));
+        }
+        else
+        {
+            string wiimoteText = File.ReadAllText(wiimoteIniPath);
+            bool sideways = wiimoteText.Contains("Options/Sideways Wiimote = True", StringComparison.OrdinalIgnoreCase);
+
+            // Upgrade legacy XInput/steamdeckgyro/Keyboard configs to full DSUClient/0/HandheldGyroDSU profile
+            if (wiimoteText.Contains("Buttons/A = `Click 0`", StringComparison.OrdinalIgnoreCase) ||
+                wiimoteText.Contains("steamdeckgyro", StringComparison.OrdinalIgnoreCase) ||
+                wiimoteText.Contains("handheldgyro", StringComparison.OrdinalIgnoreCase) ||
+                wiimoteText.Contains("Device = XInput/0/Gamepad", StringComparison.OrdinalIgnoreCase) ||
+                wiimoteText.Contains("IMUIR/Recenter = `Thumb R`", StringComparison.OrdinalIgnoreCase))
+            {
+                File.WriteAllText(wiimoteIniPath, BuildDolphinWiimoteNewIni(dsuDescription, sideways));
+            }
+        }
+
+        string gcPadIniPath = Path.Combine(configDir, "GCPadNew.ini");
+        if (forceOverwriteActiveIni || !File.Exists(gcPadIniPath))
+        {
+            File.WriteAllText(gcPadIniPath, BuildDolphinGcPadNewIni(dsuDescription));
+        }
+    }
+
+    private static void EnsureDolphinControllerProfilesExist(string configDir, string dsuDescription)
     {
         string wiimoteProfilesDir = Path.Combine(configDir, "Profiles", "Wiimote");
         Directory.CreateDirectory(wiimoteProfilesDir);
 
         string xboxWiimoteProfilePath = Path.Combine(wiimoteProfilesDir, "HandheldGyroDSU_Xbox.ini");
-        File.WriteAllText(xboxWiimoteProfilePath, BuildDolphinWiimoteProfileSection("Profile", dsuPrefix, sideways: false));
+        File.WriteAllText(xboxWiimoteProfilePath, BuildDolphinWiimoteProfileSection("Profile", dsuDescription, sideways: false));
 
         string sidewaysWiimoteProfilePath = Path.Combine(wiimoteProfilesDir, "HandheldGyroDSU_Sideways.ini");
-        File.WriteAllText(sidewaysWiimoteProfilePath, BuildDolphinWiimoteProfileSection("Profile", dsuPrefix, sideways: true));
+        File.WriteAllText(sidewaysWiimoteProfilePath, BuildDolphinWiimoteProfileSection("Profile", dsuDescription, sideways: true));
 
         string gcProfilesDir = Path.Combine(configDir, "Profiles", "GCPad");
         Directory.CreateDirectory(gcProfilesDir);
 
         string xboxGcProfilePath = Path.Combine(gcProfilesDir, "HandheldGyroDSU_Xbox.ini");
-        File.WriteAllText(xboxGcProfilePath, BuildDolphinGcPadProfileSection("Profile"));
+        File.WriteAllText(xboxGcProfilePath, BuildDolphinGcPadProfileSection("Profile", dsuDescription));
     }
 
-    private static string BuildDolphinWiimoteNewIni(string dsuPrefix, bool sideways = false)
+    private static string BuildDolphinWiimoteNewIni(string dsuDescription, bool sideways = false)
     {
-        return BuildDolphinWiimoteProfileSection("Wiimote1", dsuPrefix, sideways: sideways) +
+        return BuildDolphinWiimoteProfileSection("Wiimote1", dsuDescription, sideways: sideways) +
                Environment.NewLine +
                "[Wiimote2]" + Environment.NewLine +
                "Source = 0" + Environment.NewLine +
@@ -939,31 +1170,43 @@ public sealed class ControllerAndAppWatcherService : IDisposable
                "Source = 0" + Environment.NewLine;
     }
 
-    private static string BuildDolphinWiimoteProfileSection(string sectionName, string dsuPrefix, bool sideways)
+    private static string BuildDolphinGcPadNewIni(string dsuDescription)
+    {
+        return BuildDolphinGcPadProfileSection("GCPad1", dsuDescription) +
+               Environment.NewLine +
+               "[GCPad2]" + Environment.NewLine +
+               "Device = None" + Environment.NewLine +
+               "[GCPad3]" + Environment.NewLine +
+               "Device = None" + Environment.NewLine +
+               "[GCPad4]" + Environment.NewLine +
+               "Device = None" + Environment.NewLine;
+    }
+
+    private static string BuildDolphinWiimoteProfileSection(string sectionName, string dsuDescription, bool sideways)
     {
         string extensionLine = sideways ? "Extension = None" : "Extension = Nunchuk";
         string sidewaysLine = sideways
-            ? $"Options/Sideways Wiimote = True{Environment.NewLine}Options/Upright Wiimote = False{Environment.NewLine}Hotkeys/Upright Toggle = `Thumb L`"
-            : $"Options/Sideways Wiimote = False{Environment.NewLine}Options/Upright Wiimote = False{Environment.NewLine}Hotkeys/Sideways Toggle = `Thumb L`{Environment.NewLine}Hotkeys/Upright Toggle = `Thumb L`";
+            ? $"Options/Sideways Wiimote = True{Environment.NewLine}Options/Upright Wiimote = False{Environment.NewLine}Hotkeys/Upright Toggle = L3"
+            : $"Options/Sideways Wiimote = False{Environment.NewLine}Options/Upright Wiimote = False{Environment.NewLine}Hotkeys/Sideways Toggle = L3{Environment.NewLine}Hotkeys/Upright Toggle = L3";
 
-        string btnA = sideways ? "`Button Y`" : "`Button A`";
-        string btnB = sideways ? "`Button B`|`Trigger R`|`Shoulder R`" : "`Button B`";
-        string btn1 = sideways ? "`Button X`|`Trigger L`" : "`Button X`";
-        string btn2 = sideways ? "`Button A`|`Button Y`" : "`Button Y`";
+        string btnA = sideways ? "Triangle" : "Cross";
+        string btnB = sideways ? "Circle|R2|R1" : "Circle";
+        string btn1 = sideways ? "Square|L2" : "Square";
+        string btn2 = sideways ? "Cross|Triangle" : "Triangle";
 
-        string accelLeft = sideways ? $"`{dsuPrefix}Accel Left` * 1.8" : $"`{dsuPrefix}Accel Left`";
-        string accelRight = sideways ? $"`{dsuPrefix}Accel Right` * 1.8" : $"`{dsuPrefix}Accel Right`";
+        string accelLeft = sideways ? "`Accel Left` * 1.8" : "`Accel Left`";
+        string accelRight = sideways ? "`Accel Right` * 1.8" : "`Accel Right`";
 
         return $"""
             [{sectionName}]
-            Device = XInput/0/Gamepad
+            Device = DSUClient/0/{dsuDescription}
             Buttons/A = {btnA}
             Buttons/B = {btnB}
             Buttons/1 = {btn1}
             Buttons/2 = {btn2}
-            Buttons/- = Back
-            Buttons/+ = Start
-            Buttons/Home = Guide
+            Buttons/- = Share
+            Buttons/+ = Options
+            Buttons/Home = PS
             D-Pad/Up = `Pad N`
             D-Pad/Down = `Pad S`
             D-Pad/Left = `Pad W`
@@ -976,44 +1219,44 @@ public sealed class ControllerAndAppWatcherService : IDisposable
             IR/Down = `Right Y-`
             IR/Left = `Right X-`
             IR/Right = `Right X+`
-            Shake/X = `Shoulder L`
-            Shake/Y = `Shoulder L`
-            Shake/Z = `Shoulder L`
-            IMUAccelerometer/Up = `{dsuPrefix}Accel Up`
-            IMUAccelerometer/Down = `{dsuPrefix}Accel Down`
+            Shake/X = L1
+            Shake/Y = L1
+            Shake/Z = L1
+            IMUAccelerometer/Up = `Accel Up`
+            IMUAccelerometer/Down = `Accel Down`
             IMUAccelerometer/Left = {accelLeft}
             IMUAccelerometer/Right = {accelRight}
-            IMUAccelerometer/Forward = `{dsuPrefix}Accel Forward`
-            IMUAccelerometer/Backward = `{dsuPrefix}Accel Backward`
-            IMUGyroscope/Pitch Up = `{dsuPrefix}Gyro Pitch Up`
-            IMUGyroscope/Pitch Down = `{dsuPrefix}Gyro Pitch Down`
-            IMUGyroscope/Roll Left = `{dsuPrefix}Gyro Roll Left`
-            IMUGyroscope/Roll Right = `{dsuPrefix}Gyro Roll Right`
-            IMUGyroscope/Yaw Left = `{dsuPrefix}Gyro Yaw Left`
-            IMUGyroscope/Yaw Right = `{dsuPrefix}Gyro Yaw Right`
+            IMUAccelerometer/Forward = `Accel Forward`
+            IMUAccelerometer/Backward = `Accel Backward`
+            IMUGyroscope/Pitch Up = `Gyro Pitch Up`
+            IMUGyroscope/Pitch Down = `Gyro Pitch Down`
+            IMUGyroscope/Roll Left = `Gyro Roll Left`
+            IMUGyroscope/Roll Right = `Gyro Roll Right`
+            IMUGyroscope/Yaw Left = `Gyro Yaw Left`
+            IMUGyroscope/Yaw Right = `Gyro Yaw Right`
             IMUIR/Enabled = True
-            IMUIR/Recenter = `Thumb R`
+            IMUIR/Recenter = R3
             IRPassthrough/Enabled = False
             {extensionLine}
             {sidewaysLine}
-            Nunchuk/Buttons/C = `Shoulder R`
-            Nunchuk/Buttons/Z = `Trigger R`
+            Nunchuk/Buttons/C = R1
+            Nunchuk/Buttons/Z = R2
             Nunchuk/Stick/Up = `Left Y+`
             Nunchuk/Stick/Down = `Left Y-`
             Nunchuk/Stick/Left = `Left X-`
             Nunchuk/Stick/Right = `Left X+`
-            Nunchuk/Shake/X = `Trigger L`
-            Nunchuk/Shake/Y = `Trigger L`
-            Nunchuk/Shake/Z = `Trigger L`
-            Classic/Buttons/A = `Button B`
-            Classic/Buttons/B = `Button A`
-            Classic/Buttons/X = `Button Y`
-            Classic/Buttons/Y = `Button X`
-            Classic/Buttons/ZL = `Shoulder L`
-            Classic/Buttons/ZR = `Shoulder R`
-            Classic/Buttons/- = Back
-            Classic/Buttons/+ = Start
-            Classic/Buttons/Home = Guide
+            Nunchuk/Shake/X = L2
+            Nunchuk/Shake/Y = L2
+            Nunchuk/Shake/Z = L2
+            Classic/Buttons/A = Circle
+            Classic/Buttons/B = Cross
+            Classic/Buttons/X = Triangle
+            Classic/Buttons/Y = Square
+            Classic/Buttons/ZL = L1
+            Classic/Buttons/ZR = R1
+            Classic/Buttons/- = Share
+            Classic/Buttons/+ = Options
+            Classic/Buttons/Home = PS
             Classic/Left Stick/Up = `Left Y+`
             Classic/Left Stick/Down = `Left Y-`
             Classic/Left Stick/Left = `Left X-`
@@ -1022,30 +1265,29 @@ public sealed class ControllerAndAppWatcherService : IDisposable
             Classic/Right Stick/Down = `Right Y-`
             Classic/Right Stick/Left = `Right X-`
             Classic/Right Stick/Right = `Right X+`
-            Classic/Triggers/L = `Trigger L`
-            Classic/Triggers/R = `Trigger R`
-            Classic/Triggers/L-Analog = `Trigger L`
-            Classic/Triggers/R-Analog = `Trigger R`
+            Classic/Triggers/L = L2
+            Classic/Triggers/R = R2
+            Classic/Triggers/L-Analog = L2
+            Classic/Triggers/R-Analog = R2
             Classic/D-Pad/Up = `Pad N`
             Classic/D-Pad/Down = `Pad S`
             Classic/D-Pad/Left = `Pad W`
             Classic/D-Pad/Right = `Pad E`
-            Rumble/Motor = `Motor L`|`Motor R`
             Source = 1
             """;
     }
 
-    private static string BuildDolphinGcPadProfileSection(string sectionName)
+    private static string BuildDolphinGcPadProfileSection(string sectionName, string dsuDescription)
     {
         return $"""
             [{sectionName}]
-            Device = XInput/0/Gamepad
-            Buttons/A = `Button A`
-            Buttons/B = `Button B`
-            Buttons/X = `Button X`
-            Buttons/Y = `Button Y`
-            Buttons/Z = `Shoulder R`
-            Buttons/Start = Start
+            Device = DSUClient/0/{dsuDescription}
+            Buttons/A = Cross
+            Buttons/B = Circle
+            Buttons/X = Square
+            Buttons/Y = Triangle
+            Buttons/Z = R1
+            Buttons/Start = Options
             Main Stick/Up = `Left Y+`
             Main Stick/Down = `Left Y-`
             Main Stick/Left = `Left X-`
@@ -1054,15 +1296,14 @@ public sealed class ControllerAndAppWatcherService : IDisposable
             C-Stick/Down = `Right Y-`
             C-Stick/Left = `Right X-`
             C-Stick/Right = `Right X+`
-            Triggers/L = `Trigger L`
-            Triggers/R = `Trigger R`
-            Triggers/L-Analog = `Trigger L`
-            Triggers/R-Analog = `Trigger R`
+            Triggers/L = L2
+            Triggers/R = R2
+            Triggers/L-Analog = L2
+            Triggers/R-Analog = R2
             D-Pad/Up = `Pad N`
             D-Pad/Down = `Pad S`
             D-Pad/Left = `Pad W`
             D-Pad/Right = `Pad E`
-            Rumble/Motor = `Motor L`|`Motor R`
             """;
     }
 

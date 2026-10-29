@@ -125,6 +125,7 @@ public partial class MainWindow : Window
             }
             RenderControllersAndRulesUi();
             RefreshRpcs3PatchStatusUi();
+            RefreshDolphinConfigStatusUi();
         };
 
         _pollTimer = new DispatcherTimer
@@ -145,7 +146,8 @@ public partial class MainWindow : Window
                 UpdateUiFromStatus(resumedStatus);
                 _automationWatcher.ScanControllers(resumedStatus.ServerPort, resumedStatus.SecondaryPort);
                 RenderControllersAndRulesUi();
-            RefreshRpcs3PatchStatusUi();
+                RefreshRpcs3PatchStatusUi();
+                RefreshDolphinConfigStatusUi();
             };
         };
 
@@ -166,6 +168,7 @@ public partial class MainWindow : Window
             _automationWatcher.Start();
             RenderControllersAndRulesUi();
             RefreshRpcs3PatchStatusUi();
+            RefreshDolphinConfigStatusUi();
 
             _pollTimer.Start();
             _gamepadService.Start();
@@ -261,6 +264,8 @@ public partial class MainWindow : Window
                 DevRpcs3ApplyPatchButton,
                 DevRpcs3RestoreButton,
                 DevRpcs3BrowseButton,
+                DevDolphinApplyConfigButton,
+                DevDolphinBrowseButton,
                 DevGyroMouseToggle,
                 DevGyroMouseModeComboBox,
                 DevGyroMouseBindButton,
@@ -290,6 +295,8 @@ public partial class MainWindow : Window
                 DevRpcs3ApplyPatchButton,
                 DevRpcs3RestoreButton,
                 DevRpcs3BrowseButton,
+                DevDolphinApplyConfigButton,
+                DevDolphinBrowseButton,
                 DevGyroMouseToggle,
                 DevGyroMouseModeComboBox,
                 DevGyroMouseBindButton,
@@ -364,6 +371,7 @@ public partial class MainWindow : Window
         if (SettingsTabButton.IsChecked == true)
         {
             RefreshRpcs3PatchStatusUi();
+            RefreshDolphinConfigStatusUi();
         }
 
         MainScrollViewer?.ScrollToTop();
@@ -482,5 +490,66 @@ public partial class MainWindow : Window
         }
 
         Close();
+    }
+
+    public async System.Threading.Tasks.Task CaptureDocumentationScreenshotsAsync(string outputDir)
+    {
+        try
+        {
+            System.IO.Directory.CreateDirectory(outputDir);
+            _loc.SetLanguage("en");
+            WindowState = WindowState.Normal;
+            Width = 520;
+            Height = 680;
+            DsuStatusDto status = await _ipcClient.UpdatePreferencesAsync(forwardGamepadInputs: true);
+            UpdateUiFromStatus(status);
+            await System.Threading.Tasks.Task.Delay(450);
+
+            _snackbarTimer?.Stop();
+            AppSnackbarBorder.Visibility = Visibility.Collapsed;
+            SaveElementPng(this, System.IO.Path.Combine(outputDir, "dashboard.png"));
+
+            ControllersTabButton.IsChecked = true;
+            await System.Threading.Tasks.Task.Delay(300);
+            _snackbarTimer?.Stop();
+            AppSnackbarBorder.Visibility = Visibility.Collapsed;
+            SaveElementPng(this, System.IO.Path.Combine(outputDir, "controllers.png"));
+
+            ProfilesTabButton.IsChecked = true;
+            await System.Threading.Tasks.Task.Delay(300);
+            _snackbarTimer?.Stop();
+            AppSnackbarBorder.Visibility = Visibility.Collapsed;
+            SaveElementPng(this, System.IO.Path.Combine(outputDir, "profiles.png"));
+
+            SettingsTabButton.IsChecked = true;
+            MainScrollViewer?.ScrollToTop();
+            await System.Threading.Tasks.Task.Delay(300);
+            _snackbarTimer?.Stop();
+            AppSnackbarBorder.Visibility = Visibility.Collapsed;
+            SaveElementPng(this, System.IO.Path.Combine(outputDir, "settings.png"));
+
+            MainScrollViewer?.ScrollToBottom();
+            await System.Threading.Tasks.Task.Delay(350);
+            _snackbarTimer?.Stop();
+            AppSnackbarBorder.Visibility = Visibility.Collapsed;
+            SaveElementPng(this, System.IO.Path.Combine(outputDir, "emulator-tools.png"));
+        }
+        catch
+        {
+            // Ignore screenshot capture errors
+        }
+    }
+
+    private static void SaveElementPng(FrameworkElement element, string filePath)
+    {
+        element.UpdateLayout();
+        int width = Math.Max(1, (int)Math.Round(element.ActualWidth));
+        int height = Math.Max(1, (int)Math.Round(element.ActualHeight));
+        var rtb = new System.Windows.Media.Imaging.RenderTargetBitmap(width * 2, height * 2, 192, 192, PixelFormats.Pbgra32);
+        rtb.Render(element);
+        var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
+        encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(rtb));
+        using var fs = new System.IO.FileStream(filePath, System.IO.FileMode.Create, System.IO.FileAccess.Write);
+        encoder.Save(fs);
     }
 }

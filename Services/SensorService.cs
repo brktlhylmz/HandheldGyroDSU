@@ -555,7 +555,6 @@ public sealed class SensorService : IDisposable
         // so the calibrated holding angle acts as the 0-degree neutral reference (ay = 0, az = -1G)
         if (_usePitchOffset)
         {
-            rawAx -= restAx;
             float mag = MathF.Sqrt((restAy * restAy) + (restAz * restAz));
             if (mag > 0.2f)
             {

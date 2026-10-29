@@ -243,5 +243,17 @@
   "ToastRpcs3RestoredDesc": "Yedekten orijinal rpcs3.exe geri yüklendi",
   "ToastRpcs3PatchErrorTitle": "RPCS3 YAMA HATASI",
 
+  "DevDolphinConfigTitle": "Dolphin DSU & Hareket Profili Kurucu",
+  "DevDolphinConfigDesc": "DSUClient.ini (HandheldGyroDSU), WiimoteNew.ini ve GCPad profillerini yerleşik DSU tuşları (Cross/Circle/Square/Triangle, R3 Merkezleme, L3 Dik/Yatay Tutuş) ile yapılandırır",
+  "DevDolphinBadgeConfigured": "✓ YAPILANDIRILDI",
+  "DevDolphinBadgeUnconfigured": "YAPILANDIRILMADI",
+  "DevDolphinNotFoundDesc": "Dolphin klasörü otomatik bulunamadı • Dolphin.exe seçmek için Gözat'a tıklayın",
+  "BtnDevDolphinApply": "⚡ DOLPHIN DSU & PROFİLLERİ KUR",
+  "ToastDolphinConfiguredTitle": "⚡ DOLPHIN DSU & PROFİLLERİ KURULDU",
+  "ToastDolphinConfiguredDescFormat": "DSUClient (HandheldGyroDSU) ve Wiimote/GCPad profilleri {0} konumuna yazıldı",
+  "ToastDolphinConfigErrorTitle": "DOLPHIN YAPILANDIRMA HATASI",
+  "DolphinPromptEnableFullControllerTitle": "Tam Gamepad Aktarımı Açılsın mı?",
+  "DolphinPromptEnableFullControllerBody": "Dolphin DSU profilleri (DSUClient/0/HandheldGyroDSU), şu anda KAPALI olan 'Tam Gamepad Aktar (Tuşlar + Çubuklar + Gyro)' özelliği ile uyumlu çalışacak şekilde tasarlanmıştır.\n\nTam Gamepad Aktarımını şimdi açmak ister misiniz?\n\n• Evet: Tam Gamepad Aktarımını aç ve Dolphin profillerini kur\n• Hayır: Mevcut ayarı değiştirmeden Dolphin profillerini kur\n• İptal: Kurulumdan vazgeç",
+
   "GamepadHint": "[D-PAD] Gezin   [A] Seç/Değiştir   [Y] Kalibre Et   [LB/RB] Sekme Değiştir"
 }

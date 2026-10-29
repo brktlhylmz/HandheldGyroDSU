@@ -40,7 +40,7 @@ public sealed class DsuUdpServer : IDisposable
     private uint _packetNumber;
     private long _totalPacketsSent;
     private volatile bool _isStreamingEnabled = true;
-    private volatile bool _forwardGamepadInputs;
+    private volatile bool _forwardGamepadInputs = true;
 
     public int Port => _port;
     public byte ActiveSlot => _activeSlot;

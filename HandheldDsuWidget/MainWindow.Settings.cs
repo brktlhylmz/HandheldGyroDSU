@@ -676,6 +676,116 @@ public partial class MainWindow
         return dlg.ShowDialog() == true ? dlg.FileName : null;
     }
 
+    private void RefreshDolphinConfigStatusUi()
+    {
+        if (DevDolphinPathText is null || DevDolphinStatusBadgeText is null)
+            return;
+
+        (bool isConfigured, string? configDir) = ControllerAndAppWatcherService.GetDolphinDsuStatus();
+
+        if (string.IsNullOrWhiteSpace(configDir))
+        {
+            DevDolphinStatusBadgeText.Text = _loc["DevRpcs3BadgeNotFound"];
+            DevDolphinStatusBadgeText.Foreground = TextSecondaryBrush;
+            DevDolphinPathText.Text = _loc["DevDolphinNotFoundDesc"];
+            DevDolphinApplyConfigButton.IsEnabled = true;
+        }
+        else if (isConfigured)
+        {
+            DevDolphinStatusBadgeText.Text = _loc["DevDolphinBadgeConfigured"];
+            DevDolphinStatusBadgeText.Foreground = StatusOnlineBrush;
+            DevDolphinPathText.Text = configDir;
+            DevDolphinApplyConfigButton.IsEnabled = true;
+        }
+        else
+        {
+            DevDolphinStatusBadgeText.Text = _loc["DevDolphinBadgeUnconfigured"];
+            DevDolphinStatusBadgeText.Foreground = AccentPrimaryBrush;
+            DevDolphinPathText.Text = configDir;
+            DevDolphinApplyConfigButton.IsEnabled = true;
+        }
+    }
+
+    private async void DevDolphinApplyConfigButton_Click(object sender, RoutedEventArgs e)
+    {
+        string? targetDir = ControllerAndAppWatcherService.DiscoverDolphinConfigDirectory();
+        string? customPath = ControllerAndAppWatcherService.CustomDolphinPath;
+
+        if (string.IsNullOrWhiteSpace(targetDir) && string.IsNullOrWhiteSpace(customPath))
+        {
+            customPath = PromptForDolphinExecutablePath();
+            if (string.IsNullOrWhiteSpace(customPath))
+                return;
+        }
+
+        int dsuPort = _lastStatus?.ServerPort ?? 26760;
+
+        // Ask the user if Full Gamepad Input Forwarding is currently disabled, since the Dolphin DSU profiles
+        // bind DSUClient/0/HandheldGyroDSU as the primary device.
+        bool isFullControllerEnabled = _lastStatus?.ForwardGamepadInputs ?? (ForwardGamepadToggle?.IsChecked == true);
+        if (!isFullControllerEnabled)
+        {
+            MessageBoxResult choice = MessageBox.Show(
+                this,
+                _loc["DolphinPromptEnableFullControllerBody"],
+                _loc["DolphinPromptEnableFullControllerTitle"],
+                MessageBoxButton.YesNoCancel,
+                MessageBoxImage.Question);
+
+            if (choice == MessageBoxResult.Cancel)
+            {
+                return;
+            }
+
+            if (choice == MessageBoxResult.Yes)
+            {
+                DsuStatusDto updatedStatus = await _ipcClient.UpdatePreferencesAsync(forwardGamepadInputs: true);
+                UpdateUiFromStatus(updatedStatus);
+            }
+        }
+
+        if (ControllerAndAppWatcherService.ApplyDolphinConfiguration(customPath, dsuPort, out string configuredDir, out string errorMsg))
+        {
+            RefreshDolphinConfigStatusUi();
+            ShowToastNotification(
+                _loc["ToastDolphinConfiguredTitle"],
+                _loc.Format("ToastDolphinConfiguredDescFormat", configuredDir),
+                isError: false,
+                showHudOverlay: true);
+        }
+        else
+        {
+            RefreshDolphinConfigStatusUi();
+            ShowToastNotification(
+                _loc["ToastDolphinConfigErrorTitle"],
+                errorMsg,
+                isError: true,
+                showHudOverlay: true);
+        }
+    }
+
+    private void DevDolphinBrowseButton_Click(object sender, RoutedEventArgs e)
+    {
+        string? picked = PromptForDolphinExecutablePath();
+        if (!string.IsNullOrWhiteSpace(picked))
+        {
+            ControllerAndAppWatcherService.CustomDolphinPath = picked;
+            RefreshDolphinConfigStatusUi();
+        }
+    }
+
+    private static string? PromptForDolphinExecutablePath()
+    {
+        var dlg = new OpenFileDialog
+        {
+            Title = "Select Dolphin.exe",
+            Filter = "Dolphin Executable (Dolphin.exe)|Dolphin.exe|All Executables (*.exe)|*.exe",
+            CheckFileExists = true
+        };
+
+        return dlg.ShowDialog() == true ? dlg.FileName : null;
+    }
+
     private void DevGyroMouseSpeedSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
     {
         if (DevGyroMouseSpeedValueText is not null)

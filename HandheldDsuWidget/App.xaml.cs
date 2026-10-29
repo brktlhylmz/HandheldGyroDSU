@@ -88,6 +88,8 @@ public partial class App : Application
     {
         base.OnStartup(e);
 
+        bool captureDocs = e.Args.Any(a => string.Equals(a, "--capture-docs", StringComparison.OrdinalIgnoreCase));
+
         if (TryRelaunchOnInteractiveDefaultDesktop(e.Args))
         {
             Shutdown(0);
@@ -139,6 +141,21 @@ public partial class App : Application
 
             var window = new MainWindow(startMinimized);
             MainWindow = window;
+
+            if (captureDocs)
+            {
+                string outDir = Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "docs", "screenshots");
+                string? argDir = e.Args.FirstOrDefault(a => a.StartsWith("--out=", StringComparison.OrdinalIgnoreCase));
+                if (argDir is not null)
+                {
+                    outDir = argDir["--out=".Length..].Trim('"');
+                }
+                window.Loaded += async (_, _) =>
+                {
+                    await window.CaptureDocumentationScreenshotsAsync(outDir);
+                    Shutdown(0);
+                };
+            }
 
             // Listen for activation signals from subsequent launches to restore the window from tray
             _ = Task.Run(() =>

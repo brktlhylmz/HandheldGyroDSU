@@ -49,7 +49,7 @@ public sealed class DsuStatusDto
     public bool IsStreamingEnabled { get; set; } = true;
 
     [JsonPropertyName("forwardGamepadInputs")]
-    public bool ForwardGamepadInputs { get; set; }
+    public bool ForwardGamepadInputs { get; set; } = true;
 
     [JsonPropertyName("startWithWindows")]
     public bool StartWithWindows { get; set; }

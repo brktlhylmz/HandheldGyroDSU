@@ -19,7 +19,7 @@ public sealed class AppSettings
     public string ActiveProfileName { get; set; } = "Standard Landscape";
     public bool AutoSwitchProfiles { get; set; } = true;
     public bool IsStreamingEnabled { get; set; } = true;
-    public bool ForwardGamepadInputs { get; set; }
+    public bool ForwardGamepadInputs { get; set; } = true;
     public bool StartWithWindows { get; set; }
     public bool CloseToTray { get; set; }
     public bool GameBarOverlayEnabled { get; set; } = true;
@@ -126,6 +126,12 @@ public sealed class AppSettings
                         loaded.AxisSchemaVersion = 2;
                         loaded.Save();
                     }
+                    if (loaded.AxisSchemaVersion < 3)
+                    {
+                        loaded.ForwardGamepadInputs = true;
+                        loaded.AxisSchemaVersion = 3;
+                        loaded.Save();
+                    }
                     return loaded;
                 }
             }
@@ -135,7 +141,7 @@ public sealed class AppSettings
             // Return default settings if the configuration file is missing or corrupted
         }
 
-        return new AppSettings { AxisSchemaVersion = 2 };
+        return new AppSettings { AxisSchemaVersion = 3, ForwardGamepadInputs = true };
     }
 
     public void Save()

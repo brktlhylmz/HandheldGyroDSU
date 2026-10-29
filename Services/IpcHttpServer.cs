@@ -100,13 +100,13 @@ public sealed class IpcHttpServer : IDisposable
         _udpServer.SetSecondaryClusterActive(false, 26762);
         _udpServer.SetActiveSlot(0);
         _udpServer.ToggleStreaming(true);
-        _udpServer.ForwardGamepadInputs = false;
+        _udpServer.ForwardGamepadInputs = true;
         _sensorService.ResetAxisSettings();
         StartupManager.SetStartup(false);
         _cachedStartWithWindows = false;
 
         _settings.ActiveProfileName = "Standard Landscape";
-        _settings.ForwardGamepadInputs = false;
+        _settings.ForwardGamepadInputs = true;
         _settings.CloseToTray = false;
         _settings.GameBarOverlayEnabled = true;
         _settings.HudNotificationsEnabled = true;

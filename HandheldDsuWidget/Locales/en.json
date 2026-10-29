@@ -243,5 +243,17 @@
   "ToastRpcs3RestoredDesc": "Restored unpatched rpcs3.exe from backup",
   "ToastRpcs3PatchErrorTitle": "RPCS3 PATCH FAILED",
 
+  "DevDolphinConfigTitle": "Dolphin DSU & Motion Profile Installer",
+  "DevDolphinConfigDesc": "Configures DSUClient.ini (HandheldGyroDSU), WiimoteNew.ini, and GCPad profiles with native DSU PlayStation buttons (Cross/Circle/Square/Triangle, R3 Recenter, L3 Upright/Sideways)",
+  "DevDolphinBadgeConfigured": "✓ CONFIGURED",
+  "DevDolphinBadgeUnconfigured": "NOT CONFIGURED",
+  "DevDolphinNotFoundDesc": "Dolphin folder not detected automatically • Click Browse to select Dolphin.exe",
+  "BtnDevDolphinApply": "⚡ CONFIGURE DOLPHIN DSU & PROFILES",
+  "ToastDolphinConfiguredTitle": "⚡ DOLPHIN DSU & PROFILES CONFIGURED",
+  "ToastDolphinConfiguredDescFormat": "DSUClient (HandheldGyroDSU) & Wiimote/GCPad profiles installed in {0}",
+  "ToastDolphinConfigErrorTitle": "DOLPHIN CONFIGURATION FAILED",
+  "DolphinPromptEnableFullControllerTitle": "Enable Full Controller Forwarding?",
+  "DolphinPromptEnableFullControllerBody": "The Dolphin DSU profiles (DSUClient/0/HandheldGyroDSU) are designed to work with 'Forward Full Controller (Buttons + Sticks + Gyro)', which is currently turned OFF.\n\nWould you like to enable Full Controller Forwarding now?\n\n• Yes: Enable Full Controller Forwarding and install Dolphin profiles\n• No: Install Dolphin profiles without changing the current setting\n• Cancel: Abort installation",
+
   "GamepadHint": "[D-PAD] Navigate   [A] Toggle/Select   [Y] Calibrate   [LB/RB] Switch Tab"
 }
