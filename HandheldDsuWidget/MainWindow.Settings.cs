@@ -246,6 +246,46 @@ public partial class MainWindow
         }
     }
 
+    private const string GitHubRepoUrl = "https://github.com/brktlhylmz/HandheldGyroDSU";
+    private const string GitHubIssuesUrl = "https://github.com/brktlhylmz/HandheldGyroDSU/issues";
+
+    private void CopyGitHubUrlButton_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            Clipboard.SetText(GitHubRepoUrl);
+            ShowToastNotification(_loc["ToastGitHubUrlCopiedTitle"], _loc["ToastGitHubUrlCopiedDesc"]);
+        }
+        catch
+        {
+            // Ignore clipboard lock errors
+        }
+    }
+
+    private void OpenGitHubRepoButton_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            Process.Start(new ProcessStartInfo(GitHubRepoUrl) { UseShellExecute = true });
+        }
+        catch
+        {
+            // Ignore browser launch errors
+        }
+    }
+
+    private void OpenGitHubIssuesButton_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            Process.Start(new ProcessStartInfo(GitHubIssuesUrl) { UseShellExecute = true });
+        }
+        catch
+        {
+            // Ignore browser launch errors
+        }
+    }
+
     private async void ResetAllSettingsButton_Click(object sender, RoutedEventArgs e)
     {
         ResetAllSettingsButton.IsEnabled = false;

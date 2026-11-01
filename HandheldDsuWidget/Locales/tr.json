@@ -265,5 +265,13 @@
   "DolphinPromptEnableFullControllerTitle": "Tam Gamepad Aktarımı Açılsın mı?",
   "DolphinPromptEnableFullControllerBody": "Dolphin DSU profilleri (DSUClient/0/HandheldGyroDSU), şu anda KAPALI olan 'Tam Gamepad Aktar (Tuşlar + Çubuklar + Gyro)' özelliği ile uyumlu çalışacak şekilde tasarlanmıştır.\n\nTam Gamepad Aktarımını şimdi açmak ister misiniz?\n\n• Evet: Tam Gamepad Aktarımını aç ve Dolphin profillerini kur\n• Hayır: Mevcut ayarı değiştirmeden Dolphin profillerini kur\n• İptal: Kurulumdan vazgeç",
 
+  "SectionGitHubCommunity": "AÇIK KAYNAK & GITHUB",
+  "GitHubCommunityDesc": "HandheldGyroDSU ücretsiz ve açık kaynaklıdır. Faydalı bulduysanız GitHub üzerinden yıldız (Star) vererek veya katkıda bulunarak destek olabilirsiniz!",
+  "BtnStarOnGitHub": "⭐ GITHUB'DA YILDIZLA",
+  "BtnGitHubIssues": "🐞 SORUN BİLDİR & KATKI",
+  "BtnCopyGitHubUrlTooltip": "GitHub depo bağlantısını panoya kopyala",
+  "ToastGitHubUrlCopiedTitle": "GITHUB BAĞLANTISI KOPYALANDI",
+  "ToastGitHubUrlCopiedDesc": "https://github.com/brktlhylmz/HandheldGyroDSU panoya kopyalandı",
+
   "GamepadHint": "[D-PAD] Gezin   [A] Seç/Değiştir   [Y] Kalibre Et   [LB/RB] Sekme Değiştir"
 }

@@ -265,5 +265,13 @@
   "DolphinPromptEnableFullControllerTitle": "Enable Full Controller Forwarding?",
   "DolphinPromptEnableFullControllerBody": "The Dolphin DSU profiles (DSUClient/0/HandheldGyroDSU) are designed to work with 'Forward Full Controller (Buttons + Sticks + Gyro)', which is currently turned OFF.\n\nWould you like to enable Full Controller Forwarding now?\n\n• Yes: Enable Full Controller Forwarding and install Dolphin profiles\n• No: Install Dolphin profiles without changing the current setting\n• Cancel: Abort installation",
 
+  "SectionGitHubCommunity": "OPEN-SOURCE & GITHUB",
+  "GitHubCommunityDesc": "HandheldGyroDSU is free and open-source. If you find it useful, consider starring the repository on GitHub or contributing!",
+  "BtnStarOnGitHub": "⭐ STAR ON GITHUB",
+  "BtnGitHubIssues": "🐞 ISSUES & CONTRIBUTE",
+  "BtnCopyGitHubUrlTooltip": "Copy GitHub repository link to clipboard",
+  "ToastGitHubUrlCopiedTitle": "GITHUB LINK COPIED",
+  "ToastGitHubUrlCopiedDesc": "Copied https://github.com/brktlhylmz/HandheldGyroDSU to clipboard",
+
   "GamepadHint": "[D-PAD] Navigate   [A] Toggle/Select   [Y] Calibrate   [LB/RB] Switch Tab"
 }
