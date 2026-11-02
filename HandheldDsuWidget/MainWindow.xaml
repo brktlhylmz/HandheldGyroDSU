@@ -172,36 +172,69 @@
                         BorderBrush="{DynamicResource BrushBorderCard}"
                         BorderThickness="0,0,1,0"
                         Padding="0,10,0,10">
-                    <StackPanel VerticalAlignment="Top">
-                        <RadioButton x:Name="DashboardTabButton"
-                                     GroupName="MainNavRail"
-                                     Style="{DynamicResource AppNavRailItemStyle}"
-                                     Tag="{DynamicResource IconDashboard}"
-                                     Content="{Binding [TabDashboard], Source={x:Static services:LocalizationService.Instance}}"
-                                     IsChecked="True"
-                                     Checked="NavTab_Checked" />
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
 
-                        <RadioButton x:Name="ControllersTabButton"
-                                     GroupName="MainNavRail"
-                                     Style="{DynamicResource AppNavRailItemStyle}"
-                                     Tag="{DynamicResource IconGamepad}"
-                                     Content="{Binding [TabControllers], Source={x:Static services:LocalizationService.Instance}}"
-                                     Checked="NavTab_Checked" />
+                        <StackPanel Grid.Row="0" VerticalAlignment="Top">
+                            <RadioButton x:Name="DashboardTabButton"
+                                         GroupName="MainNavRail"
+                                         Style="{DynamicResource AppNavRailItemStyle}"
+                                         Tag="{DynamicResource IconDashboard}"
+                                         Content="{Binding [TabDashboard], Source={x:Static services:LocalizationService.Instance}}"
+                                         IsChecked="True"
+                                         Checked="NavTab_Checked" />
 
-                        <RadioButton x:Name="ProfilesTabButton"
-                                     GroupName="MainNavRail"
-                                     Style="{DynamicResource AppNavRailItemStyle}"
-                                     Tag="{DynamicResource IconProfiles}"
-                                     Content="{Binding [TabProfiles], Source={x:Static services:LocalizationService.Instance}}"
-                                     Checked="NavTab_Checked" />
+                            <RadioButton x:Name="ControllersTabButton"
+                                         GroupName="MainNavRail"
+                                         Style="{DynamicResource AppNavRailItemStyle}"
+                                         Tag="{DynamicResource IconGamepad}"
+                                         Content="{Binding [TabControllers], Source={x:Static services:LocalizationService.Instance}}"
+                                         Checked="NavTab_Checked" />
 
-                        <RadioButton x:Name="SettingsTabButton"
-                                     GroupName="MainNavRail"
-                                     Style="{DynamicResource AppNavRailItemStyle}"
-                                     Tag="{DynamicResource IconSettings}"
-                                     Content="{Binding [TabSettings], Source={x:Static services:LocalizationService.Instance}}"
-                                     Checked="NavTab_Checked" />
-                    </StackPanel>
+                            <RadioButton x:Name="ProfilesTabButton"
+                                         GroupName="MainNavRail"
+                                         Style="{DynamicResource AppNavRailItemStyle}"
+                                         Tag="{DynamicResource IconProfiles}"
+                                         Content="{Binding [TabProfiles], Source={x:Static services:LocalizationService.Instance}}"
+                                         Checked="NavTab_Checked" />
+
+                            <RadioButton x:Name="SettingsTabButton"
+                                         GroupName="MainNavRail"
+                                         Style="{DynamicResource AppNavRailItemStyle}"
+                                         Tag="{DynamicResource IconSettings}"
+                                         Content="{Binding [TabSettings], Source={x:Static services:LocalizationService.Instance}}"
+                                         Checked="NavTab_Checked" />
+                        </StackPanel>
+
+                        <!-- Pinned Bottom GitHub Star Quick-Action in Navigation Rail -->
+                        <Button x:Name="NavRailGitHubButton"
+                                Grid.Row="1"
+                                Style="{DynamicResource AppGhostButtonStyle}"
+                                Margin="6,4,6,2"
+                                Padding="2,7"
+                                Height="Auto"
+                                BorderBrush="#35FFB300"
+                                Background="#12FFB300"
+                                ToolTip="{Binding [BtnStarOnGitHub], Source={x:Static services:LocalizationService.Instance}}"
+                                Click="OpenGitHubRepoButton_Click">
+                            <StackPanel HorizontalAlignment="Center">
+                                <TextBlock Text="★"
+                                           Foreground="#FFC107"
+                                           FontSize="14"
+                                           FontWeight="Bold"
+                                           HorizontalAlignment="Center"
+                                           Margin="0,0,0,1" />
+                                <TextBlock Text="GitHub"
+                                           Foreground="{DynamicResource BrushTextSecondary}"
+                                           FontSize="8.5"
+                                           FontWeight="SemiBold"
+                                           HorizontalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+                    </Grid>
                 </Border>
 
                 <!-- RIGHT SCROLLABLE CONTENT AREA -->
@@ -1234,7 +1267,158 @@
                         <!-- ====================================================== -->
                         <StackPanel x:Name="SettingsViewPanel" Visibility="Collapsed">
 
-                            <!-- Settings Card 1: Interface Language -->
+                            <!-- Settings Card 1: Open-Source & GitHub Community (Top Banner) -->
+                            <Border Style="{DynamicResource AppCardStyle}"
+                                    BorderBrush="#38FFB300"
+                                    Margin="0,0,0,10">
+                                <StackPanel>
+                                    <Grid Margin="0,0,0,6">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                                            <Border Width="3" Height="12" Background="#FFC107" Margin="0,0,7,0" />
+                                            <TextBlock Text="{Binding [SectionGitHubCommunity], Source={x:Static services:LocalizationService.Instance}}"
+                                                       Style="{DynamicResource AppSectionHeaderStyle}"
+                                                       Foreground="#FFD54F" />
+                                        </StackPanel>
+                                        <Border Grid.Column="1"
+                                                Background="#18FFB300"
+                                                BorderBrush="#45FFB300"
+                                                BorderThickness="1"
+                                                CornerRadius="4"
+                                                Padding="7,2"
+                                                VerticalAlignment="Center">
+                                            <TextBlock Text="★ OPEN SOURCE • MIT"
+                                                       Foreground="#FFC107"
+                                                       FontFamily="{DynamicResource FontMonospace}"
+                                                       FontSize="8.5"
+                                                       FontWeight="Bold" />
+                                        </Border>
+                                    </Grid>
+
+                                    <TextBlock Text="{Binding [GitHubCommunityDesc], Source={x:Static services:LocalizationService.Instance}}"
+                                               Foreground="{DynamicResource BrushTextPrimary}"
+                                               FontSize="10"
+                                               TextWrapping="Wrap"
+                                               Margin="0,0,0,8" />
+
+                                    <Grid Margin="0,0,0,8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="6" />
+                                            <ColumnDefinition Width="32" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <Border Grid.Column="0"
+                                                Style="{DynamicResource AppSubPanelStyle}"
+                                                Padding="10,6"
+                                                VerticalAlignment="Center">
+                                            <TextBlock Text="https://github.com/brktlhylmz/HandheldGyroDSU"
+                                                       Foreground="{DynamicResource BrushTelemetryReadout}"
+                                                       FontFamily="{DynamicResource FontMonospace}"
+                                                       FontSize="9.5"
+                                                       VerticalAlignment="Center"
+                                                       TextTrimming="CharacterEllipsis" />
+                                        </Border>
+
+                                        <Button x:Name="CopyGitHubUrlButton"
+                                                Grid.Column="2"
+                                                Style="{DynamicResource AppGhostButtonStyle}"
+                                                Content="📋"
+                                                Height="30"
+                                                Padding="0"
+                                                FontSize="11"
+                                                ToolTip="{Binding [BtnCopyGitHubUrlTooltip], Source={x:Static services:LocalizationService.Instance}}"
+                                                Click="CopyGitHubUrlButton_Click" />
+                                    </Grid>
+
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="6" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <Button x:Name="OpenGitHubRepoButton"
+                                                Grid.Column="0"
+                                                Style="{DynamicResource AppPrimaryButtonStyle}"
+                                                Content="{Binding [BtnStarOnGitHub], Source={x:Static services:LocalizationService.Instance}}"
+                                                Height="32"
+                                                Padding="8,0"
+                                                FontSize="10.5"
+                                                FontWeight="Bold"
+                                                HorizontalAlignment="Stretch"
+                                                HorizontalContentAlignment="Center"
+                                                Click="OpenGitHubRepoButton_Click" />
+
+                                        <Button x:Name="OpenGitHubIssuesButton"
+                                                Grid.Column="2"
+                                                Style="{DynamicResource AppSecondaryButtonStyle}"
+                                                Content="{Binding [BtnGitHubIssues], Source={x:Static services:LocalizationService.Instance}}"
+                                                Height="32"
+                                                Padding="8,0"
+                                                FontSize="10"
+                                                HorizontalAlignment="Stretch"
+                                                HorizontalContentAlignment="Center"
+                                                Click="OpenGitHubIssuesButton_Click" />
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Settings Card 2: Software Updates & Release Channel -->
+                            <Border Style="{DynamicResource AppCardStyle}" Margin="0,0,0,10">
+                                <StackPanel>
+                                    <Grid Margin="0,0,0,8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                                            <Border Width="3" Height="12" Background="{DynamicResource BrushAccentPrimary}" Margin="0,0,7,0" />
+                                            <TextBlock Text="{Binding [SectionSoftwareUpdates], Source={x:Static services:LocalizationService.Instance}}" Style="{DynamicResource AppSectionHeaderStyle}" />
+                                        </StackPanel>
+                                        <TextBlock x:Name="CurrentVersionBadgeText" Grid.Column="1" Text="v1.0.0" FontFamily="{DynamicResource FontMonospace}" Foreground="{DynamicResource BrushTelemetryReadout}" FontSize="10" FontWeight="Bold" VerticalAlignment="Center" />
+                                    </Grid>
+
+                                    <Grid Margin="0,0,0,8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="168" />
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,10,0">
+                                            <TextBlock Text="{Binding [UpdateChannelTitle], Source={x:Static services:LocalizationService.Instance}}" Foreground="{DynamicResource BrushTextPrimary}" FontWeight="SemiBold" FontSize="11.5" />
+                                            <TextBlock Text="{Binding [UpdateChannelDesc], Source={x:Static services:LocalizationService.Instance}}" Foreground="{DynamicResource BrushTextSecondary}" FontSize="9.5" TextWrapping="Wrap" Margin="0,2,0,0" />
+                                        </StackPanel>
+                                        <ComboBox x:Name="UpdateChannelComboBox" Grid.Column="1" Style="{DynamicResource AppComboBoxStyle}" SelectedValuePath="Tag" SelectedIndex="0" SelectionChanged="UpdateChannelComboBox_SelectionChanged">
+                                            <ComboBoxItem Tag="stable" Content="{Binding [UpdateChannelStable], Source={x:Static services:LocalizationService.Instance}}" />
+                                            <ComboBoxItem Tag="beta" Content="{Binding [UpdateChannelBeta], Source={x:Static services:LocalizationService.Instance}}" />
+                                        </ComboBox>
+                                    </Grid>
+
+                                    <Grid Margin="0,0,0,8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,10,0">
+                                            <TextBlock Text="{Binding [AutoUpdateTitle], Source={x:Static services:LocalizationService.Instance}}" Foreground="{DynamicResource BrushTextPrimary}" FontWeight="SemiBold" FontSize="11.5" />
+                                            <TextBlock Text="{Binding [AutoUpdateDesc], Source={x:Static services:LocalizationService.Instance}}" Foreground="{DynamicResource BrushTextSecondary}" FontSize="9.5" TextWrapping="Wrap" Margin="0,2,0,0" />
+                                        </StackPanel>
+                                        <CheckBox x:Name="AutoUpdateToggle" Grid.Column="1" Style="{DynamicResource AppToggleSwitchStyle}" VerticalAlignment="Center" Click="AutoUpdateToggle_Click" />
+                                    </Grid>
+
+                                    <Border Style="{DynamicResource AppSubPanelStyle}" Padding="8,6" Margin="0,0,0,8">
+                                        <TextBlock x:Name="UpdateStatusText" Text="{Binding [UpdateStatusIdle], Source={x:Static services:LocalizationService.Instance}}" Foreground="{DynamicResource BrushTextSecondary}" FontFamily="{DynamicResource FontMonospace}" FontSize="9.5" HorizontalAlignment="Center" TextWrapping="Wrap" />
+                                    </Border>
+
+                                    <Button x:Name="CheckUpdateButton" Style="{DynamicResource AppSecondaryButtonStyle}" Content="{Binding [BtnCheckUpdates], Source={x:Static services:LocalizationService.Instance}}" Height="30" Padding="10,0" FontSize="10.5" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Click="CheckUpdateButton_Click" />
+                                    <Button x:Name="InstallUpdateButton" Visibility="Collapsed" Margin="0,6,0,0" Style="{DynamicResource AppPrimaryButtonStyle}" Content="{Binding [BtnInstallUpdate], Source={x:Static services:LocalizationService.Instance}}" Height="30" Padding="10,0" FontSize="10.5" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Click="InstallUpdateButton_Click" />
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Settings Card 3: Interface Language -->
                             <Border Style="{DynamicResource AppCardStyle}" Margin="0,0,0,10">
                                 <StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
@@ -1270,124 +1454,7 @@
                                 </StackPanel>
                             </Border>
 
-                            <!-- Settings Card 2: Network & DSU UDP Port -->
-                            <Border Style="{DynamicResource AppCardStyle}" Margin="0,0,0,10">
-                                <StackPanel>
-                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                                        <Border Width="3" Height="12" Background="{DynamicResource BrushAccentPrimary}" Margin="0,0,7,0" />
-                                        <TextBlock Text="{Binding [SectionNetwork], Source={x:Static services:LocalizationService.Instance}}"
-                                                   Style="{DynamicResource AppSectionHeaderStyle}" />
-                                    </StackPanel>
-
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="86" />
-                                            <ColumnDefinition Width="8" />
-                                            <ColumnDefinition Width="Auto" />
-                                        </Grid.ColumnDefinitions>
-
-                                        <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,8,0">
-                                            <TextBlock Text="{Binding [PortTitle], Source={x:Static services:LocalizationService.Instance}}"
-                                                       Foreground="{DynamicResource BrushTextPrimary}"
-                                                       FontWeight="SemiBold"
-                                                       FontSize="12" />
-                                            <TextBlock x:Name="PortStatusSubtitle"
-                                                       Text="{Binding [PortDefaultDesc], Source={x:Static services:LocalizationService.Instance}}"
-                                                       Foreground="{DynamicResource BrushTextSecondary}"
-                                                       FontSize="10"
-                                                       TextWrapping="Wrap"
-                                                       Margin="0,2,0,0" />
-                                        </StackPanel>
-
-                                        <TextBox x:Name="PortTextBox"
-                                                 Grid.Column="1"
-                                                 Style="{DynamicResource AppTextBoxStyle}"
-                                                 Text="26760"
-                                                 Height="30"
-                                                 KeyDown="PortTextBox_KeyDown" />
-
-                                        <Button x:Name="ApplyPortButton"
-                                                Grid.Column="3"
-                                                Style="{DynamicResource AppSecondaryButtonStyle}"
-                                                Content="{Binding [ApplyButton], Source={x:Static services:LocalizationService.Instance}}"
-                                                Height="30"
-                                                Click="ApplyPortButton_Click" />
-                                    </Grid>
-
-                                    <Border Style="{DynamicResource AppRowDividerStyle}" Margin="0,10,0,10" />
-
-                                    <!-- 5-8 Controller Secondary Cluster Port Toggle (UDP 26762) -->
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="Auto" />
-                                        </Grid.ColumnDefinitions>
-
-                                        <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,10,0">
-                                            <TextBlock Text="{Binding [ClusterPortTitle], Source={x:Static services:LocalizationService.Instance}}"
-                                                       Foreground="{DynamicResource BrushTextPrimary}"
-                                                       FontWeight="SemiBold"
-                                                       FontSize="11.5" />
-                                            <TextBlock Text="{Binding [ClusterPortDesc], Source={x:Static services:LocalizationService.Instance}}"
-                                                       Foreground="{DynamicResource BrushTextSecondary}"
-                                                       FontSize="9.5"
-                                                       TextWrapping="Wrap"
-                                                       Margin="0,2,0,0" />
-                                        </StackPanel>
-
-                                        <CheckBox x:Name="MultiPortClusterToggle"
-                                                  Grid.Column="1"
-                                                  Style="{DynamicResource AppToggleSwitchStyle}"
-                                                  IsChecked="False"
-                                                  VerticalAlignment="Center"
-                                                  Click="MultiPortClusterToggle_Click" />
-                                    </Grid>
-
-                                    <!-- Customizable Secondary Cluster Port Input Row (visible only when cluster is active) -->
-                                    <StackPanel x:Name="SecondaryPortRowGrid" Visibility="Collapsed">
-                                        <Border Style="{DynamicResource AppRowDividerStyle}" Margin="0,10,0,10" />
-
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="*" />
-                                                <ColumnDefinition Width="86" />
-                                                <ColumnDefinition Width="8" />
-                                                <ColumnDefinition Width="Auto" />
-                                            </Grid.ColumnDefinitions>
-
-                                            <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,8,0">
-                                                <TextBlock Text="{Binding [SecondaryPortTitle], Source={x:Static services:LocalizationService.Instance}}"
-                                                           Foreground="{DynamicResource BrushTextPrimary}"
-                                                           FontWeight="SemiBold"
-                                                           FontSize="11.5" />
-                                                <TextBlock x:Name="SecondaryPortStatusSubtitle"
-                                                           Text="{Binding [SecondaryPortDefaultDesc], Source={x:Static services:LocalizationService.Instance}}"
-                                                           Foreground="{DynamicResource BrushTextSecondary}"
-                                                           FontSize="9.5"
-                                                           TextWrapping="Wrap"
-                                                           Margin="0,2,0,0" />
-                                            </StackPanel>
-
-                                            <TextBox x:Name="SecondaryPortTextBox"
-                                                     Grid.Column="1"
-                                                     Style="{DynamicResource AppTextBoxStyle}"
-                                                     Text="26762"
-                                                     Height="30"
-                                                     KeyDown="SecondaryPortTextBox_KeyDown" />
-
-                                            <Button x:Name="ApplySecondaryPortButton"
-                                                    Grid.Column="3"
-                                                    Style="{DynamicResource AppSecondaryButtonStyle}"
-                                                    Content="{Binding [ApplyButton], Source={x:Static services:LocalizationService.Instance}}"
-                                                    Height="30"
-                                                    Click="ApplySecondaryPortButton_Click" />
-                                        </Grid>
-                                    </StackPanel>
-                                </StackPanel>
-                            </Border>
-
-                            <!-- Settings Card 3: System & Tray Behavior -->
+                            <!-- Settings Card 4: System & Tray Behavior -->
                             <Border Style="{DynamicResource AppCardStyle}" Margin="0,0,0,10">
                                 <StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
@@ -1542,154 +1609,124 @@
                                 </StackPanel>
                             </Border>
 
-                            <!-- Settings Card 3b: Software Updates & Release Channel -->
+                            <!-- Settings Card 5: Network & DSU UDP Port -->
                             <Border Style="{DynamicResource AppCardStyle}" Margin="0,0,0,10">
                                 <StackPanel>
-                                    <Grid Margin="0,0,0,8">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="Auto" />
-                                        </Grid.ColumnDefinitions>
-                                        <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                                            <Border Width="3" Height="12" Background="{DynamicResource BrushAccentPrimary}" Margin="0,0,7,0" />
-                                            <TextBlock Text="{Binding [SectionSoftwareUpdates], Source={x:Static services:LocalizationService.Instance}}" Style="{DynamicResource AppSectionHeaderStyle}" />
-                                        </StackPanel>
-                                        <TextBlock x:Name="CurrentVersionBadgeText" Grid.Column="1" Text="v1.0.0" FontFamily="{DynamicResource FontMonospace}" Foreground="{DynamicResource BrushTelemetryReadout}" FontSize="10" FontWeight="Bold" VerticalAlignment="Center" />
-                                    </Grid>
-
-                                    <Grid Margin="0,0,0,8">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="168" />
-                                        </Grid.ColumnDefinitions>
-                                        <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,10,0">
-                                            <TextBlock Text="{Binding [UpdateChannelTitle], Source={x:Static services:LocalizationService.Instance}}" Foreground="{DynamicResource BrushTextPrimary}" FontWeight="SemiBold" FontSize="11.5" />
-                                            <TextBlock Text="{Binding [UpdateChannelDesc], Source={x:Static services:LocalizationService.Instance}}" Foreground="{DynamicResource BrushTextSecondary}" FontSize="9.5" TextWrapping="Wrap" Margin="0,2,0,0" />
-                                        </StackPanel>
-                                        <ComboBox x:Name="UpdateChannelComboBox" Grid.Column="1" Style="{DynamicResource AppComboBoxStyle}" SelectedValuePath="Tag" SelectedIndex="0" SelectionChanged="UpdateChannelComboBox_SelectionChanged">
-                                            <ComboBoxItem Tag="stable" Content="{Binding [UpdateChannelStable], Source={x:Static services:LocalizationService.Instance}}" />
-                                            <ComboBoxItem Tag="beta" Content="{Binding [UpdateChannelBeta], Source={x:Static services:LocalizationService.Instance}}" />
-                                        </ComboBox>
-                                    </Grid>
-
-                                    <Grid Margin="0,0,0,8">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="Auto" />
-                                        </Grid.ColumnDefinitions>
-                                        <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,10,0">
-                                            <TextBlock Text="{Binding [AutoUpdateTitle], Source={x:Static services:LocalizationService.Instance}}" Foreground="{DynamicResource BrushTextPrimary}" FontWeight="SemiBold" FontSize="11.5" />
-                                            <TextBlock Text="{Binding [AutoUpdateDesc], Source={x:Static services:LocalizationService.Instance}}" Foreground="{DynamicResource BrushTextSecondary}" FontSize="9.5" TextWrapping="Wrap" Margin="0,2,0,0" />
-                                        </StackPanel>
-                                        <CheckBox x:Name="AutoUpdateToggle" Grid.Column="1" Style="{DynamicResource AppToggleSwitchStyle}" VerticalAlignment="Center" Click="AutoUpdateToggle_Click" />
-                                    </Grid>
-
-                                    <Border Style="{DynamicResource AppSubPanelStyle}" Padding="8,6" Margin="0,0,0,8">
-                                        <TextBlock x:Name="UpdateStatusText" Text="{Binding [UpdateStatusIdle], Source={x:Static services:LocalizationService.Instance}}" Foreground="{DynamicResource BrushTextSecondary}" FontFamily="{DynamicResource FontMonospace}" FontSize="9.5" HorizontalAlignment="Center" TextWrapping="Wrap" />
-                                    </Border>
-
-                                    <Button x:Name="CheckUpdateButton" Style="{DynamicResource AppSecondaryButtonStyle}" Content="{Binding [BtnCheckUpdates], Source={x:Static services:LocalizationService.Instance}}" Height="30" Padding="10,0" FontSize="10.5" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Click="CheckUpdateButton_Click" />
-                                    <Button x:Name="InstallUpdateButton" Visibility="Collapsed" Margin="0,6,0,0" Style="{DynamicResource AppPrimaryButtonStyle}" Content="{Binding [BtnInstallUpdate], Source={x:Static services:LocalizationService.Instance}}" Height="30" Padding="10,0" FontSize="10.5" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Click="InstallUpdateButton_Click" />
-                                </StackPanel>
-                            </Border>
-
-                            <!-- Settings Card 3c: Open-Source & GitHub Community -->
-                            <Border Style="{DynamicResource AppCardStyle}" Margin="0,0,0,10">
-                                <StackPanel>
-                                    <Grid Margin="0,0,0,6">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="Auto" />
-                                        </Grid.ColumnDefinitions>
-                                        <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                                            <Border Width="3" Height="12" Background="{DynamicResource BrushAccentPrimary}" Margin="0,0,7,0" />
-                                            <TextBlock Text="{Binding [SectionGitHubCommunity], Source={x:Static services:LocalizationService.Instance}}"
-                                                       Style="{DynamicResource AppSectionHeaderStyle}" />
-                                        </StackPanel>
-                                        <Border Grid.Column="1"
-                                                Background="#1800E5FF"
-                                                BorderBrush="#4000E5FF"
-                                                BorderThickness="1"
-                                                CornerRadius="4"
-                                                Padding="7,2"
-                                                VerticalAlignment="Center">
-                                            <TextBlock Text="MIT LICENSE"
-                                                       Foreground="{DynamicResource BrushAccentCyan}"
-                                                       FontFamily="{DynamicResource FontMonospace}"
-                                                       FontSize="8.5"
-                                                       FontWeight="Bold" />
-                                        </Border>
-                                    </Grid>
-
-                                    <TextBlock Text="{Binding [GitHubCommunityDesc], Source={x:Static services:LocalizationService.Instance}}"
-                                               Foreground="{DynamicResource BrushTextSecondary}"
-                                               FontSize="9.5"
-                                               TextWrapping="Wrap"
-                                               Margin="0,0,0,8" />
-
-                                    <Grid Margin="0,0,0,8">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="6" />
-                                            <ColumnDefinition Width="32" />
-                                        </Grid.ColumnDefinitions>
-
-                                        <Border Grid.Column="0"
-                                                Style="{DynamicResource AppSubPanelStyle}"
-                                                Padding="10,6"
-                                                VerticalAlignment="Center">
-                                            <TextBlock Text="https://github.com/brktlhylmz/HandheldGyroDSU"
-                                                       Foreground="{DynamicResource BrushTelemetryReadout}"
-                                                       FontFamily="{DynamicResource FontMonospace}"
-                                                       FontSize="9.5"
-                                                       VerticalAlignment="Center"
-                                                       TextTrimming="CharacterEllipsis" />
-                                        </Border>
-
-                                        <Button x:Name="CopyGitHubUrlButton"
-                                                Grid.Column="2"
-                                                Style="{DynamicResource AppGhostButtonStyle}"
-                                                Content="📋"
-                                                Height="30"
-                                                Padding="0"
-                                                FontSize="11"
-                                                ToolTip="{Binding [BtnCopyGitHubUrlTooltip], Source={x:Static services:LocalizationService.Instance}}"
-                                                Click="CopyGitHubUrlButton_Click" />
-                                    </Grid>
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                                        <Border Width="3" Height="12" Background="{DynamicResource BrushAccentPrimary}" Margin="0,0,7,0" />
+                                        <TextBlock Text="{Binding [SectionNetwork], Source={x:Static services:LocalizationService.Instance}}"
+                                                   Style="{DynamicResource AppSectionHeaderStyle}" />
+                                    </StackPanel>
 
                                     <Grid>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="6" />
-                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="86" />
+                                            <ColumnDefinition Width="8" />
+                                            <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
 
-                                        <Button x:Name="OpenGitHubRepoButton"
-                                                Grid.Column="0"
-                                                Style="{DynamicResource AppPrimaryButtonStyle}"
-                                                Content="{Binding [BtnStarOnGitHub], Source={x:Static services:LocalizationService.Instance}}"
-                                                Height="30"
-                                                Padding="8,0"
-                                                FontSize="10"
-                                                HorizontalAlignment="Stretch"
-                                                HorizontalContentAlignment="Center"
-                                                Click="OpenGitHubRepoButton_Click" />
+                                        <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,8,0">
+                                            <TextBlock Text="{Binding [PortTitle], Source={x:Static services:LocalizationService.Instance}}"
+                                                       Foreground="{DynamicResource BrushTextPrimary}"
+                                                       FontWeight="SemiBold"
+                                                       FontSize="12" />
+                                            <TextBlock x:Name="PortStatusSubtitle"
+                                                       Text="{Binding [PortDefaultDesc], Source={x:Static services:LocalizationService.Instance}}"
+                                                       Foreground="{DynamicResource BrushTextSecondary}"
+                                                       FontSize="10"
+                                                       TextWrapping="Wrap"
+                                                       Margin="0,2,0,0" />
+                                        </StackPanel>
 
-                                        <Button x:Name="OpenGitHubIssuesButton"
-                                                Grid.Column="2"
+                                        <TextBox x:Name="PortTextBox"
+                                                 Grid.Column="1"
+                                                 Style="{DynamicResource AppTextBoxStyle}"
+                                                 Text="26760"
+                                                 Height="30"
+                                                 KeyDown="PortTextBox_KeyDown" />
+
+                                        <Button x:Name="ApplyPortButton"
+                                                Grid.Column="3"
                                                 Style="{DynamicResource AppSecondaryButtonStyle}"
-                                                Content="{Binding [BtnGitHubIssues], Source={x:Static services:LocalizationService.Instance}}"
+                                                Content="{Binding [ApplyButton], Source={x:Static services:LocalizationService.Instance}}"
                                                 Height="30"
-                                                Padding="8,0"
-                                                FontSize="10"
-                                                HorizontalAlignment="Stretch"
-                                                HorizontalContentAlignment="Center"
-                                                Click="OpenGitHubIssuesButton_Click" />
+                                                Click="ApplyPortButton_Click" />
                                     </Grid>
+
+                                    <Border Style="{DynamicResource AppRowDividerStyle}" Margin="0,10,0,10" />
+
+                                    <!-- 5-8 Controller Secondary Cluster Port Toggle (UDP 26762) -->
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,10,0">
+                                            <TextBlock Text="{Binding [ClusterPortTitle], Source={x:Static services:LocalizationService.Instance}}"
+                                                       Foreground="{DynamicResource BrushTextPrimary}"
+                                                       FontWeight="SemiBold"
+                                                       FontSize="11.5" />
+                                            <TextBlock Text="{Binding [ClusterPortDesc], Source={x:Static services:LocalizationService.Instance}}"
+                                                       Foreground="{DynamicResource BrushTextSecondary}"
+                                                       FontSize="9.5"
+                                                       TextWrapping="Wrap"
+                                                       Margin="0,2,0,0" />
+                                        </StackPanel>
+
+                                        <CheckBox x:Name="MultiPortClusterToggle"
+                                                  Grid.Column="1"
+                                                  Style="{DynamicResource AppToggleSwitchStyle}"
+                                                  IsChecked="False"
+                                                  VerticalAlignment="Center"
+                                                  Click="MultiPortClusterToggle_Click" />
+                                    </Grid>
+
+                                    <!-- Customizable Secondary Cluster Port Input Row (visible only when cluster is active) -->
+                                    <StackPanel x:Name="SecondaryPortRowGrid" Visibility="Collapsed">
+                                        <Border Style="{DynamicResource AppRowDividerStyle}" Margin="0,10,0,10" />
+
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="86" />
+                                                <ColumnDefinition Width="8" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+
+                                            <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,8,0">
+                                                <TextBlock Text="{Binding [SecondaryPortTitle], Source={x:Static services:LocalizationService.Instance}}"
+                                                           Foreground="{DynamicResource BrushTextPrimary}"
+                                                           FontWeight="SemiBold"
+                                                           FontSize="11.5" />
+                                                <TextBlock x:Name="SecondaryPortStatusSubtitle"
+                                                           Text="{Binding [SecondaryPortDefaultDesc], Source={x:Static services:LocalizationService.Instance}}"
+                                                           Foreground="{DynamicResource BrushTextSecondary}"
+                                                           FontSize="9.5"
+                                                           TextWrapping="Wrap"
+                                                           Margin="0,2,0,0" />
+                                            </StackPanel>
+
+                                            <TextBox x:Name="SecondaryPortTextBox"
+                                                     Grid.Column="1"
+                                                     Style="{DynamicResource AppTextBoxStyle}"
+                                                     Text="26762"
+                                                     Height="30"
+                                                     KeyDown="SecondaryPortTextBox_KeyDown" />
+
+                                            <Button x:Name="ApplySecondaryPortButton"
+                                                    Grid.Column="3"
+                                                    Style="{DynamicResource AppSecondaryButtonStyle}"
+                                                    Content="{Binding [ApplyButton], Source={x:Static services:LocalizationService.Instance}}"
+                                                    Height="30"
+                                                    Click="ApplySecondaryPortButton_Click" />
+                                        </Grid>
+                                    </StackPanel>
                                 </StackPanel>
                             </Border>
 
-                            <!-- Settings Card 4: Data & Maintenance Shortcuts -->
+                            <!-- Settings Card 6: Data & Maintenance Shortcuts -->
                             <Border Style="{DynamicResource AppCardStyle}" Margin="0,0,0,10">
                                 <StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
