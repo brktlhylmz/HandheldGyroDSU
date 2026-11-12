@@ -1290,7 +1290,7 @@
                                                 CornerRadius="4"
                                                 Padding="7,2"
                                                 VerticalAlignment="Center">
-                                            <TextBlock Text="★ OPEN SOURCE • MIT"
+                                            <TextBlock Text="★ OPEN SOURCE • GPL-3.0"
                                                        Foreground="#FFC107"
                                                        FontFamily="{DynamicResource FontMonospace}"
                                                        FontSize="8.5"

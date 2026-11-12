@@ -15,7 +15,7 @@
 [![Latest Release](https://img.shields.io/github/v/release/brktlhylmz/HandheldGyroDSU?color=2979FF&label=Release)](https://github.com/brktlhylmz/HandheldGyroDSU/releases)
 [![.NET 10](https://img.shields.io/badge/.NET-10.0%20Windows-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
 [![Protocol](https://img.shields.io/badge/Protocol-Cemuhook%20DSU%20v1001-00B0FF)](https://v1993.github.io/cemuhook-protocol/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 
 **HandheldGyroDSU** is a lightweight, zero-configuration **Cemuhook DSU (`v1001`) motion server**, **emulator configurator**, and **desktop / in-game HUD companion** built to bring native gyro aiming and motion controls to **Dolphin**, **RPCS3**, **Cemu**, **Nintendo Switch emulators** (**Eden**, **Yuzu**, **Sudachi**, **Citron**, **Ryujinx**), and **PC / Steam games** on Windows handheld gaming PCs (**ASUS ROG Ally / Ally X**, **Lenovo Legion Go**, **MSI Claw**, **Ayaneo**, **GPD**) and motion-capable controllers.
 
@@ -263,4 +263,4 @@ Contributions, controller `VID:PID` additions, and new language translations (`H
 
 ## 📄 License
 
-Distributed under the **MIT License**. See [LICENSE](LICENSE) for full details.
+Distributed under the **GNU General Public License v3.0 (GPL-3.0)**. See [LICENSE](LICENSE) for full details.
